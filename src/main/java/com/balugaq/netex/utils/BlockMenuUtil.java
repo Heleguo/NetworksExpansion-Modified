@@ -1,5 +1,6 @@
 package com.balugaq.netex.utils;
 
+import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import lombok.experimental.UtilityClass;
@@ -9,20 +10,21 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @UtilityClass
 public class BlockMenuUtil {
+    public static void pushItem(@Nonnull BlockMenu blockMenu, @Nullable ItemStack stack,int... slots) {
+        pushItem(blockMenu,ItemStackCache.of(stack),false,slots);
+    }
     @Nullable
-    public static ItemStack pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack item, int... slots) {
-        if (item == null || item.getType() == Material.AIR) {
+    public static ItemStack pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStackCache item,boolean needReturn, int... slots) {
+        if (item == null || item.getItemType() == Material.AIR) {
             throw new IllegalArgumentException("Cannot push null or AIR");
         }
-
-        int leftAmount = item.getAmount();
+        Material material = item.getItemType();
+        int maxSize=material.getMaxStackSize();
+        int leftAmount = item.getItemAmount();
 
         for (int slot : slots) {
             if (leftAmount <= 0) {
@@ -32,13 +34,13 @@ public class BlockMenuUtil {
             ItemStack existing = blockMenu.getItemInSlot(slot);
 
             if (existing == null || existing.getType() == Material.AIR) {
-                int received = Math.min(leftAmount, item.getMaxStackSize());
+                int received = Math.min(leftAmount, maxSize);
                 blockMenu.replaceExistingItem(slot, StackUtils.getAsQuantity(item, received));
                 leftAmount -= received;
-                item.setAmount(Math.max(0, leftAmount));
+               // item.setItemAmount();
             } else {
                 int existingAmount = existing.getAmount();
-                if (existingAmount >= item.getMaxStackSize()) {
+                if (existingAmount >= maxSize) {
                     continue;
                 }
 
@@ -46,48 +48,50 @@ public class BlockMenuUtil {
                     continue;
                 }
 
-                int received = Math.max(0, Math.min(item.getMaxStackSize() - existingAmount, leftAmount));
+                int received = Math.max(0, Math.min(maxSize - existingAmount, leftAmount));
                 leftAmount -= received;
                 existing.setAmount(existingAmount + received);
-                item.setAmount(leftAmount);
             }
         }
+        item.setItemAmount(leftAmount);
 
-        if (leftAmount > 0) {
-            return new CustomItemStack(item, leftAmount);
+        if (needReturn&&leftAmount > 0) {
+            return StackUtils.getAsQuantity(item, leftAmount);
         } else {
             return null;
         }
     }
 
     @Nonnull
-    public static Map<ItemStack, Integer> pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack[] items, int... slots) {
+    public static List<ItemStack> pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack[] items, int... slots) {
         if (items == null || items.length == 0) {
             throw new IllegalArgumentException("Cannot push null or empty array");
         }
 
-        List<ItemStack> listItems = new ArrayList<>();
-        for (ItemStack item : items) {
-            if (item != null && item.getType() != Material.AIR) {
-                listItems.add(item);
-            }
-        }
-
+        List<ItemStack> listItems = Arrays.stream(items).filter(item->item != null && item.getType() != Material.AIR).toList();
+//                new ArrayList<>();
+//        for (ItemStack item : items) {
+//            if (item != null && item.getType() != Material.AIR) {
+//                listItems.add(item);
+//            }
+//        }
         return pushItem(blockMenu, listItems, slots);
     }
 
     @Nonnull
-    public static Map<ItemStack, Integer> pushItem(@Nonnull BlockMenu blockMenu, @Nonnull List<ItemStack> items, int... slots) {
+    public static List<ItemStack> pushItem(@Nonnull BlockMenu blockMenu, @Nonnull List<ItemStack> items, int... slots) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Cannot push null or empty list");
         }
 
-        Map<ItemStack, Integer> itemMap = new HashMap<>();
+        List<ItemStack> itemMap = new ArrayList<>(items.size());
         for (ItemStack item : items) {
             if (item != null && item.getType() != Material.AIR) {
-                ItemStack leftOver = pushItem(blockMenu, item, slots);
-                if (leftOver != null) {
-                    itemMap.put(leftOver, itemMap.getOrDefault(leftOver, 0) + leftOver.getAmount());
+                //ItemStack leftOver =
+                ItemStackCache cache=ItemStackCache.of(item);
+                pushItem(blockMenu, cache,false, slots);
+                if (cache.getItemAmount() >0) {
+                    itemMap.add(cache.getItemStack());
                 }
             }
         }

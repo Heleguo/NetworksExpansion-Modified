@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 public class Networks extends JavaPlugin implements SlimefunAddon {
@@ -347,9 +348,9 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         return MessageFormat.format("https://slimefun-addons-wiki.guizhanss.cn/networks/{0}/{1}", this.username, this.repo);
     }
 
-    public void debug(String message) {
+    public void debug(Supplier<String> message) {
         if (getConfigManager().isDebug()) {
-            getLogger().warning("[DEBUG] " + message);
+            getLogger().warning("[DEBUG] " + message.get());
         }
     }
 }

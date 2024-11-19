@@ -4,6 +4,7 @@ import com.balugaq.netex.api.data.SuperRecipe;
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
+import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.slimefun.network.AdminDebuggable;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -169,8 +170,8 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
                         continue;
                     }
                 }
-                ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackUtil.getCleanItem(item), getOutputSlots());
-                if (left != null && left.getType() != Material.AIR) {
+                ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackCache.of( ItemStackUtil.getCleanItem(item)),true, getOutputSlots());
+                if (left != null&&left.getAmount()>0 && left.getType() != Material.AIR) {
                     player.sendMessage(ChatColor.RED + "No enough space in output slots.");
                     world.dropItem(blockMenu.getLocation(), left);
                 }
@@ -263,8 +264,8 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
                         continue;
                     }
                 }
-                ItemStack left = BlockMenuUtil.pushItem(blockMenu, item, getOutputSlots());
-                if (left != null && left.getType() != Material.AIR) {
+                ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackCache.of(ItemStackUtil.getCleanItem(item)),true, getOutputSlots());
+                if (left != null&&left.getAmount()>0 && left.getType() != Material.AIR) {
                     player.sendMessage(ChatColor.RED + "Not enough space in output slots.");
                     world.dropItem(blockMenu.getLocation(), left);
                 }

@@ -162,11 +162,11 @@ public class NetworkBlueprintDecoder extends NetworkObject {
         }
 
         input.setAmount(input.getAmount() - 1);
-        Map<ItemStack, Integer> left = BlockMenuUtil.pushItem(menu, inputs, getOutputSlots());
+        List<ItemStack> left = BlockMenuUtil.pushItem(menu, inputs, getOutputSlots());
         if (left != null && !left.isEmpty()) {
-            for (Map.Entry<ItemStack, Integer> entry : left.entrySet()) {
+            for (ItemStack entry : left) {
                 player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.decoder.output_full"));
-                menu.getLocation().getWorld().dropItem(menu.getLocation(), entry.getKey());
+                menu.getLocation().getWorld().dropItem(menu.getLocation(), entry);
             }
         }
 

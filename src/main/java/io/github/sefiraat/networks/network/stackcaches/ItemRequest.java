@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
 import lombok.Getter;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
@@ -9,7 +10,15 @@ import javax.annotation.Nonnull;
 public class ItemRequest extends ItemStackCache {
 
     private int amount;
-
+    private static ItemRequest instanceTemplate=new ItemRequest(new ItemStack(Material.STONE),0);
+    public static ItemRequest of(ItemStack itemStack, int amount) {
+        return instanceTemplate.clone().init(itemStack, amount);
+    }
+    protected ItemRequest init(ItemStack itemStack, int amount) {
+        super.init(itemStack);
+        this.amount = amount;
+        return this;
+    }
     public ItemRequest(@Nonnull ItemStack itemStack, int amount) {
         super(itemStack);
         this.amount = amount;
@@ -29,5 +38,8 @@ public class ItemRequest extends ItemStackCache {
                 "itemStack=" + getItemStack() +
                 ", amount=" + amount +
                 '}';
+    }
+    public ItemRequest clone() {
+        return (ItemRequest) super.clone();
     }
 }

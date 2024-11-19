@@ -3,6 +3,8 @@ package io.github.sefiraat.networks.utils;
 import com.balugaq.netex.api.enums.MCVersion;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
+import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
@@ -40,6 +42,7 @@ import org.bukkit.inventory.meta.WritableBookMeta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -59,77 +62,90 @@ public class StackUtils {
         clone.setAmount(amount);
         return clone;
     }
+    public static ItemStack getAsQuantity(@Nonnull ItemStackCache cache,int amount){
+        if (cache.getItemStack() == null) {
+            return new ItemStack(Material.AIR);
+        }
+        ItemStack clone = cache.getItemStack().clone();
+        clone.setAmount(amount);
+        return clone;
+    }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore, boolean checkAmount) {
-        return itemsMatch(new ItemStackCache(itemStack1), itemStack2, checkLore, checkAmount);
+        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, checkAmount);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore) {
-        return itemsMatch(new ItemStackCache(itemStack1), itemStack2, checkLore, false);
+        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, false);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2) {
-        return itemsMatch(new ItemStackCache(itemStack1), itemStack2, false, false);
+        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), false, false);
     }
 
     public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack, boolean checkLore) {
-        return itemsMatch(cache, itemStack, checkLore, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false);
     }
 
     public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack) {
-        return itemsMatch(cache, itemStack, false, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache, boolean checkLore, boolean checkAmount) {
-        return itemsMatch(cache, itemStack, checkLore, checkAmount);
+        return itemsMatchCore(cache,ItemStackCache.of(itemStack), checkLore, checkAmount);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache, boolean checkLore) {
-        return itemsMatch(cache, itemStack, checkLore, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache) {
-        return itemsMatch(cache, itemStack, false, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false);
+    }
+    public static boolean itemsMatch(@Nonnull ItemStackCache cache1,@Nonnull ItemStackCache cache2){
+        return itemsMatchCore(cache1,cache2, false, false);
     }
 
     /**
      * Checks if items match each other, checks go in order from lightest to heaviest
      *
      * @param cache     The cached {@link ItemStack} to compare against
-     * @param itemStack The {@link ItemStack} being evaluated
+     * @param cache2 The {@link ItemStack} being evaluated
      * @return True if items match
      */
-    public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack, boolean checkLore, boolean checkAmount) {
+    public static boolean itemsMatchCore(@Nonnull ItemStackCache cache, @Nonnull ItemStackCache cache2, boolean checkLore, boolean checkAmount) {
         // Null check
-        if (cache.getItemStack() == null || itemStack == null) {
-            return itemStack == null && cache.getItemStack() == null;
+        if (cache.getItemStack() == null || cache2.getItemStack()== null) {
+            return cache2.getItemStack() == null && cache.getItemStack() == null;
         }
 
         // If types do not match, then the items cannot possibly match
-        if (itemStack.getType() != cache.getItemType()) {
+        Material type=cache2.getItemType();
+        if (type != cache.getItemType()) {
+            return false;
+        }
+        //todo remove
+        if (Tag.SHULKER_BOXES.isTagged(type)) {
             return false;
         }
 
-        if (Tag.SHULKER_BOXES.isTagged(itemStack.getType())) {
-            return false;
-        }
-
-        if (itemStack.getType() == Material.BUNDLE) {
+        if (cache2.getItemType() == Material.BUNDLE) {
             return false;
         }
 
         // If amounts do not match, then the items cannot possibly match
-        if (checkAmount && itemStack.getAmount() > cache.getItemStack().getAmount()) {
+        if (checkAmount && cache2.getItemAmount() > cache.getItemAmount()) {
             return false;
         }
 
         // If either item does not have a meta then either a mismatch or both without meta = vanilla
-        if (!itemStack.hasItemMeta() || !cache.getItemStack().hasItemMeta()) {
-            return itemStack.hasItemMeta() == cache.getItemStack().hasItemMeta();
-        }
+//        if (!itemStack.hasItemMeta() || !cache.getItemStack().hasItemMeta()) {
+//            return itemStack.hasItemMeta() == cache.getItemStack().hasItemMeta();
+//        }
+        //no use
 
         // Now we need to compare meta's directly - cache is already out, but let's fetch the 2nd meta also
-        final ItemMeta itemMeta = itemStack.getItemMeta();
+        final ItemMeta itemMeta = cache2.getItemMeta();
         final ItemMeta cachedMeta = cache.getItemMeta();
 
         if (itemMeta == null || cachedMeta == null) {
@@ -145,11 +161,14 @@ public class StackUtils {
         if (canQuickEscapeMetaVariant(itemMeta, cachedMeta)) {
             return false;
         }
-
-        // Has a display name (checking the name occurs later)
-        if (itemMeta.hasDisplayName() != cachedMeta.hasDisplayName()) {
+        if(!checkVersionedFeatures(itemMeta, cachedMeta)){
             return false;
         }
+
+//        // Has a display name (checking the name occurs later)
+//        if (itemMeta.hasDisplayName() != cachedMeta.hasDisplayName()) {
+//            return false;
+//        }
 
         // Custom model data is different, no match
         final boolean hasCustomOne = itemMeta.hasCustomModelData();
@@ -188,74 +207,20 @@ public class StackUtils {
             return false;
         }
 
-        if (IS_1_20_5) {
-            // Check if fire-resistant
-            if (itemMeta.isFireResistant() != cachedMeta.isFireResistant()) {
-                return false;
-            }
-
-            // Check if unbreakable
-            if (itemMeta.isUnbreakable() != cachedMeta.isUnbreakable()) {
-                return false;
-            }
-
-            // Check if hide tooltip
-            if (itemMeta.isHideTooltip() != cachedMeta.isHideTooltip()) {
-                return false;
-            }
-
-            // Check rarity
-            final boolean hasRarityOne = itemMeta.hasRarity();
-            final boolean hasRarityTwo = cachedMeta.hasRarity();
-            if (hasRarityOne) {
-                if (!hasRarityTwo || itemMeta.getRarity() != cachedMeta.getRarity()) {
-                    return false;
-                }
-            } else if (hasRarityTwo) {
-                return false;
-            }
-
-            // Check food components
-            if (itemMeta.hasFood() && cachedMeta.hasFood()) {
-                if (!Objects.equals(itemMeta.getFood(), cachedMeta.getFood())) {
-                    return false;
-                }
-            } else if (itemMeta.hasFood() != cachedMeta.hasFood()) {
-                return false;
-            }
-
-            // Check tool components
-            if (itemMeta.hasTool() && cachedMeta.hasTool()) {
-                if (!Objects.equals(itemMeta.getTool(), cachedMeta.getTool())) {
-                    return false;
-                }
-            } else if (itemMeta.hasTool() != cachedMeta.hasTool()) {
-                return false;
-            }
-
-            if (IS_1_21) {
-                // Check jukebox playable
-                if (itemMeta.hasJukeboxPlayable() && cachedMeta.hasJukeboxPlayable()) {
-                    if (!Objects.equals(itemMeta.getJukeboxPlayable(), cachedMeta.getJukeboxPlayable())) {
-                        return false;
-                    }
-                } else if (itemMeta.hasJukeboxPlayable() != cachedMeta.hasJukeboxPlayable()) {
-                    return false;
-                }
-            }
-        }
-
         // Check the lore
         if (checkLore
-                || itemStack.getType() == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
-                || itemStack.getType() == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
-                || itemStack.getType() == Material.SUGAR // Fix Symbols in MomoTech
+                //these shits should be compared in Distinctive Items,
+            //|| itemStack.getType() == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
+            //|| type == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
+            //|| itemStack.getType() == Material.SUGAR // Fix Symbols in MomoTech
         ) {
-            if (itemMeta.hasLore() && cachedMeta.hasLore()) {
+            final boolean hasLore1= itemMeta.hasLore();
+            final boolean hasLore2 = cachedMeta.hasLore();
+            if (hasLore1&&hasLore2) {
                 if (!Objects.equals(itemMeta.getLore(), cachedMeta.getLore())) {
                     return false;
                 }
-            } else if (itemMeta.hasLore() != cachedMeta.hasLore()) {
+            } else if (hasLore1!=hasLore2) {
                 return false;
             }
         }
@@ -267,11 +232,26 @@ public class StackUtils {
             return false;
         }
         if (optionalStackId1.isPresent()) {
-            return optionalStackId1.get().equals(optionalStackId2.get());
+            final String stackId1 = optionalStackId1.get();
+            //final String stackId2 = optionalStackId2.get();
+//            if (!stackId1.equals(stackId2)) {
+//                return false;
+//            }else {
+            //when pdc equals, id value should equals
+            SlimefunItem item=SlimefunItem.getById(stackId1);
+            //compare distinctives
+            if(item instanceof DistinctiveItem distinctiveItem){
+                if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
+                    return false;
+                }
+            }
+            //SlimefunItem matched
+            return true;
+//            }
         }
 
         // Check the display name
-        if (itemMeta.hasDisplayName() && !Objects.equals(itemMeta.getDisplayName(), cachedMeta.getDisplayName())) {
+        if (!Objects.equals(itemMeta.getDisplayName(), cachedMeta.getDisplayName())) {
             return false;
         }
 
@@ -341,7 +321,7 @@ public class StackUtils {
                 return true;
             }
 
-            if (!instanceOne.getBlockState().equals(instanceTwo.getBlockState())) {
+            if (!matchBlockStateMeta(instanceOne,instanceTwo)) {
                 return true;
             }
         }
@@ -474,6 +454,7 @@ public class StackUtils {
         }
 
         // Skull
+        //too many skull items in slimefun
         if (metaOne instanceof SkullMeta instanceOne && metaTwo instanceof SkullMeta instanceTwo) {
             if (instanceOne.hasOwner() != instanceTwo.hasOwner()) {
                 return true;
@@ -568,6 +549,85 @@ public class StackUtils {
         // Cannot escape via any meta extension check
         return false;
     }
+    public static boolean checkVersionedFeatures(ItemMeta itemMeta,ItemMeta cachedMeta){
+        if (IS_1_20_5) {
+            // Check if fire-resistant
+            if (itemMeta.isFireResistant() != cachedMeta.isFireResistant()) {
+                return false;
+            }
+
+            // Check if unbreakable
+            if (itemMeta.isUnbreakable() != cachedMeta.isUnbreakable()) {
+                return false;
+            }
+
+            // Check if hide tooltip
+            if (itemMeta.isHideTooltip() != cachedMeta.isHideTooltip()) {
+                return false;
+            }
+
+            // Check rarity
+            final boolean hasRarityOne = itemMeta.hasRarity();
+            final boolean hasRarityTwo = cachedMeta.hasRarity();
+            if (hasRarityOne) {
+                if (!hasRarityTwo || itemMeta.getRarity() != cachedMeta.getRarity()) {
+                    return false;
+                }
+            } else if (hasRarityTwo) {
+                return false;
+            }
+
+            // Check food components
+            if (itemMeta.hasFood() && cachedMeta.hasFood()) {
+                if (!Objects.equals(itemMeta.getFood(), cachedMeta.getFood())) {
+                    return false;
+                }
+            } else if (itemMeta.hasFood() != cachedMeta.hasFood()) {
+                return false;
+            }
+
+            // Check tool components
+            if (itemMeta.hasTool() && cachedMeta.hasTool()) {
+                if (!Objects.equals(itemMeta.getTool(), cachedMeta.getTool())) {
+                    return false;
+                }
+            } else if (itemMeta.hasTool() != cachedMeta.hasTool()) {
+                return false;
+            }
+
+            if (IS_1_21) {
+                // Check jukebox playable
+                if (itemMeta.hasJukeboxPlayable() && cachedMeta.hasJukeboxPlayable()) {
+                    if (!Objects.equals(itemMeta.getJukeboxPlayable(), cachedMeta.getJukeboxPlayable())) {
+                        return false;
+                    }
+                } else if (itemMeta.hasJukeboxPlayable() != cachedMeta.hasJukeboxPlayable()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    private static Class CraftMetaBlockState;
+    private static Field blockEntityTag;
+    private static boolean hasFailed;
+    public static boolean matchBlockStateMeta(BlockStateMeta meta1, BlockStateMeta meta2){
+        if(!hasFailed){
+            try{
+                if(CraftMetaBlockState==null){
+                    var field=ReflectUtils.getDeclaredFieldsRecursively(meta1.getClass(),"blockEntityTag");
+                    CraftMetaBlockState=field.getSecondValue();
+                    blockEntityTag=field.getFirstValue();
+                    blockEntityTag.setAccessible(true);
+                }
+                return Objects.equals(blockEntityTag.get(meta1),blockEntityTag.get(meta2));
+            }catch (Throwable e){
+                hasFailed=true;
+            }
+        }
+        return meta1.equals(meta2);
+    }
+
 
     /**
      * Heal the entity by the provided amount

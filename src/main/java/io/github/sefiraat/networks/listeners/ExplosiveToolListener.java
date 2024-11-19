@@ -31,7 +31,7 @@ public class ExplosiveToolListener implements Listener {
             if (item != null) {
                 if (isAntiExplosiveBlock(item)) {
                     blocksToRemove.add(block);
-                    Networks.getInstance().debug("Disabled explosive block: " + NetworksMain.locationToString(block.getLocation()));
+                    Networks.getInstance().debug(()->"Disabled explosive block: " + NetworksMain.locationToString(block.getLocation()));
                 }
             }
         }

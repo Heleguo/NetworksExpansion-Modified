@@ -5,23 +5,41 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 
 @ToString
-public class ItemStackCache {
+public class ItemStackCache implements Cloneable {
 
     private ItemStack itemStack;
     @Nullable
     private ItemMeta itemMeta = null;
     private boolean metaCached = false;
-
-    public ItemStackCache(@Nullable ItemStack itemStack) {
+    private static ItemStackCache instanceTemplate=new ItemStackCache(new ItemStack(Material.STONE));
+    protected ItemStackCache init(ItemStack itemStack) {
         this.itemStack = itemStack;
+        this.itemMeta = null;
+        this.metaCached = false;
+        return this;
+    }
+    public static ItemStackCache of(ItemStack itemStack) {
+        return instanceTemplate.clone().init(itemStack);
+    }
+    public ItemStackCache(@Nullable ItemStack itemStack) {
+        init(itemStack);
     }
 
     @Nullable
     public ItemStack getItemStack() {
         return this.itemStack;
+    }
+
+    public int getItemAmount(){
+        return this.itemStack.getAmount();
+    }
+    public void setItemAmount(int amount){
+        this.itemStack.setAmount(amount);
     }
 
     public void setItemStack(ItemStack itemStack) {
@@ -41,8 +59,19 @@ public class ItemStackCache {
         return this.itemMeta;
     }
 
-    @Nullable
+    @Nonnull
     public Material getItemType() {
         return this.itemStack.getType();
+    }
+
+    @Override
+    public ItemStackCache clone() {
+        try {
+            ItemStackCache clone = (ItemStackCache) super.clone();
+            // TODO: copy mutable state here, so the clone can't change the internals of the original
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError(e);
+        }
     }
 }

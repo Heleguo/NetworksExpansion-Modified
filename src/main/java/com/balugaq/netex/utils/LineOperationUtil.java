@@ -17,7 +17,11 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 @UtilityClass
@@ -31,30 +35,58 @@ public class LineOperationUtil {
     }
 
     public static void doOperation(Location startLocation, BlockFace direction, int limit, boolean skipNoMenu, boolean optimizeExperience, Consumer<BlockMenu> consumer) {
+        doOperationAsync(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
+//        Location location = startLocation.clone();
+//        int finalLimit = limit;
+//        if (optimizeExperience) {
+//            finalLimit += 1;
+//        }
+//        for (int i = 0; i < finalLimit; i++) {
+//            switch (direction) {
+//                case NORTH -> location.setZ(location.getZ() - 1);
+//                case SOUTH -> location.setZ(location.getZ() + 1);
+//                case EAST -> location.setX(location.getX() + 1);
+//                case WEST -> location.setX(location.getX() - 1);
+//                case UP -> location.setY(location.getY() + 1);
+//                case DOWN -> location.setY(location.getY() - 1);
+//            }
+//            final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
+//            if (blockMenu == null) {
+//                if (skipNoMenu) {
+//                    continue;
+//                } else {
+//                    return;
+//                }
+//            }
+//            consumer.accept(blockMenu);
+//        }
+    }
+    public static void doOperationAsync(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer) {
         Location location = startLocation.clone();
         int finalLimit = limit;
         if (optimizeExperience) {
             finalLimit += 1;
         }
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < finalLimit; i++) {
-            switch (direction) {
-                case NORTH -> location.setZ(location.getZ() - 1);
-                case SOUTH -> location.setZ(location.getZ() + 1);
-                case EAST -> location.setX(location.getX() + 1);
-                case WEST -> location.setX(location.getX() - 1);
-                case UP -> location.setY(location.getY() + 1);
-                case DOWN -> location.setY(location.getY() - 1);
-            }
+            location.add(direction.getDirection());
             final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
             if (blockMenu == null) {
                 if (skipNoMenu) {
                     continue;
-                } else {
-                    return;
+                }else {
+                    break;
                 }
             }
-            consumer.accept(blockMenu);
+            futures.add(CompletableFuture.runAsync(() -> {
+                try{
+                    consumer.accept(blockMenu);
+                }catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }));
         }
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
     }
 
     public static void grabItem(

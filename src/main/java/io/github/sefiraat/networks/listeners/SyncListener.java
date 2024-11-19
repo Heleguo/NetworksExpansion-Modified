@@ -24,19 +24,19 @@ public class SyncListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
-        Networks.getInstance().debug(MessageFormat.format(S1, e.getBlock().getLocation()));
+        Networks.getInstance().debug(()->MessageFormat.format(S1, e.getBlock().getLocation()));
         NetworkUtils.clearNetwork(e.getBlock().getLocation());
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {
-        Networks.getInstance().debug(MessageFormat.format(S2, e.getBlock().getLocation()));
+        Networks.getInstance().debug(()->MessageFormat.format(S2, e.getBlock().getLocation()));
         NetworkUtils.clearNetwork(e.getBlock().getLocation());
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChunkUnload(ChunkUnloadEvent e) {
-        Networks.getInstance().debug(MessageFormat.format(S3, e.getWorld().getName(), e.getChunk().getX(), e.getChunk().getZ()));
+        Networks.getInstance().debug(()->MessageFormat.format(S3, e.getWorld().getName(), e.getChunk().getX(), e.getChunk().getZ()));
         NetworkStorage.unregisterChunk(e.getChunk());
     }
 }
