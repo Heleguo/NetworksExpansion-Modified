@@ -58,11 +58,8 @@ public class NetworkStorage {
         if (locations == null) {
             return;
         }
-        Iterator<Location> iterator = locations.iterator();
-        while (iterator.hasNext()) {
-            Location location = iterator.next();
+        for (Location location : locations) {
             removeNode(location);
-            iterator.remove();
         }
         ALL_NETWORK_OBJECTS_BY_CHUNK.remove(chunkPosition);
     }

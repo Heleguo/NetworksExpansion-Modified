@@ -71,49 +71,53 @@ public class StackUtils {
         return clone;
     }
 
+    public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
+        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, checkAmount, checkCustomModelId);
+    }
+
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore, boolean checkAmount) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, checkAmount);
+        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, checkAmount,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, false);
+        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, false,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), false, false);
+        return itemsMatchCore(ItemStackCache.of(itemStack1),ItemStackCache.of(itemStack2), false, false,true);
     }
 
     public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack, boolean checkLore) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false,true);
     }
 
     public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache, boolean checkLore, boolean checkAmount) {
-        return itemsMatchCore(cache,ItemStackCache.of(itemStack), checkLore, checkAmount);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, checkAmount,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache, boolean checkLore) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false);
+        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false,true);
     }
-    public static boolean itemsMatch(@Nonnull ItemStackCache cache1,@Nonnull ItemStackCache cache2){
-        return itemsMatchCore(cache1,cache2, false, false);
+    public static boolean itemsMatch(@Nullable ItemStackCache itemStack, @Nonnull ItemStackCache cache) {
+        return itemsMatchCore(cache, itemStack, false, false,true);
     }
 
     /**
      * Checks if items match each other, checks go in order from lightest to heaviest
      *
      * @param cache     The cached {@link ItemStack} to compare against
-     * @param cache2 The {@link ItemStack} being evaluated
      * @return True if items match
      */
-    public static boolean itemsMatchCore(@Nonnull ItemStackCache cache, @Nonnull ItemStackCache cache2, boolean checkLore, boolean checkAmount) {
+
+    public static boolean itemsMatchCore(@Nonnull ItemStackCache cache, @Nonnull ItemStackCache cache2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
         // Null check
         if (cache.getItemStack() == null || cache2.getItemStack()== null) {
             return cache2.getItemStack() == null && cache.getItemStack() == null;
@@ -165,20 +169,17 @@ public class StackUtils {
             return false;
         }
 
-//        // Has a display name (checking the name occurs later)
-//        if (itemMeta.hasDisplayName() != cachedMeta.hasDisplayName()) {
-//            return false;
-//        }
-
-        // Custom model data is different, no match
-        final boolean hasCustomOne = itemMeta.hasCustomModelData();
-        final boolean hasCustomTwo = cachedMeta.hasCustomModelData();
-        if (hasCustomOne) {
-            if (!hasCustomTwo || itemMeta.getCustomModelData() != cachedMeta.getCustomModelData()) {
+        if (checkCustomModelId) {
+            // Custom model data is different, no match
+            final boolean hasCustomOne = itemMeta.hasCustomModelData();
+            final boolean hasCustomTwo = cachedMeta.hasCustomModelData();
+            if (hasCustomOne) {
+                if (!hasCustomTwo || itemMeta.getCustomModelData() != cachedMeta.getCustomModelData()) {
+                    return false;
+                }
+            } else if (hasCustomTwo) {
                 return false;
             }
-        } else if (hasCustomTwo) {
-            return false;
         }
 
         // PDCs don't match
