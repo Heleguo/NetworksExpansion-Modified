@@ -15,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -35,41 +36,39 @@ public class LineOperationUtil {
     }
 
     public static void doOperation(Location startLocation, BlockFace direction, int limit, boolean skipNoMenu, boolean optimizeExperience, Consumer<BlockMenu> consumer) {
-        doOperationAsync(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
-//        Location location = startLocation.clone();
-//        int finalLimit = limit;
-//        if (optimizeExperience) {
-//            finalLimit += 1;
-//        }
-//        for (int i = 0; i < finalLimit; i++) {
-//            switch (direction) {
-//                case NORTH -> location.setZ(location.getZ() - 1);
-//                case SOUTH -> location.setZ(location.getZ() + 1);
-//                case EAST -> location.setX(location.getX() + 1);
-//                case WEST -> location.setX(location.getX() - 1);
-//                case UP -> location.setY(location.getY() + 1);
-//                case DOWN -> location.setY(location.getY() - 1);
-//            }
-//            final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
-//            if (blockMenu == null) {
-//                if (skipNoMenu) {
-//                    continue;
-//                } else {
-//                    return;
-//                }
-//            }
-//            consumer.accept(blockMenu);
-//        }
+        //doOperationAsync(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
+        doOperationOrdinal(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
     }
-    public static void doOperationAsync(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer) {
+    public static void doOperationOrdinal(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer){
+        Location location = startLocation.clone();
+        int finalLimit = limit;
+        if (optimizeExperience) {
+            finalLimit += 1;
+        }
+        Vector directionVec = direction.getDirection();
+        for (int i = 0; i < finalLimit; i++) {
+            location.add(directionVec);
+            final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
+            if (blockMenu == null) {
+                if (skipNoMenu) {
+                    continue;
+                } else {
+                    return;
+                }
+            }
+            consumer.accept(blockMenu);
+        }
+    }
+    public static void doOperationParallel(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer) {
         Location location = startLocation.clone();
         int finalLimit = limit;
         if (optimizeExperience) {
             finalLimit += 1;
         }
         List<CompletableFuture<Void>> futures = new ArrayList<>();
+        Vector directionVec = direction.getDirection();
         for (int i = 0; i < finalLimit; i++) {
-            location.add(direction.getDirection());
+            location.add(directionVec);
             final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
             if (blockMenu == null) {
                 if (skipNoMenu) {
