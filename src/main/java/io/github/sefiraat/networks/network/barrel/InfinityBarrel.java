@@ -27,7 +27,8 @@ public class InfinityBarrel extends BarrelIdentity {
     @Override
     public ItemStack requestItem(@Nonnull ItemRequest itemRequest) {
         BlockMenu blockMenu = StorageCacheUtils.getMenu(this.getLocation());
-        return blockMenu == null ? null : blockMenu.getItemInSlot(this.getOutputSlot()[0]);
+        if (blockMenu == null) {return null;}
+        return blockMenu.getItemInSlot(this.getOutputSlot()[0]);
     }
 
     @Override

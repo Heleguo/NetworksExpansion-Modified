@@ -210,10 +210,11 @@ public class StackUtils {
 
         // Check the lore
         if (checkLore
-                //these shits should be compared in Distinctive Items,
-            //|| itemStack.getType() == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
-            //|| type == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
-            //|| itemStack.getType() == Material.SUGAR // Fix Symbols in MomoTech
+                //these shits should be compared in Distinctive Items,but we do these comparasion for them,
+                //but we call on these devs to put data in pdc
+            || type == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
+            || type == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
+            || type == Material.SUGAR // Fix Symbols in MomoTech
         ) {
             final boolean hasLore1= itemMeta.hasLore();
             final boolean hasLore2 = cachedMeta.hasLore();
@@ -233,20 +234,20 @@ public class StackUtils {
             return false;
         }
         if (optionalStackId1.isPresent()) {
-            final String stackId1 = optionalStackId1.get();
-            //final String stackId2 = optionalStackId2.get();
-//            if (!stackId1.equals(stackId2)) {
-//                return false;
-//            }else {
-            //when pdc equals, id value should equals
-            SlimefunItem item=SlimefunItem.getById(stackId1);
-            //compare distinctives
-            if(item instanceof DistinctiveItem distinctiveItem){
-                if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
-                    return false;
-                }
-            }
-            //SlimefunItem matched
+//            final String stackId1 = optionalStackId1.get();
+//            //final String stackId2 = optionalStackId2.get();
+////            if (!stackId1.equals(stackId2)) {
+////                return false;
+////            }else {
+//            //when pdc equals, id value should equals
+//            SlimefunItem item=SlimefunItem.getById(stackId1);
+//            //compare distinctives
+//            if(item instanceof DistinctiveItem distinctiveItem){
+//                if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
+//                    return false;
+//                }
+//            }
+//            //SlimefunItem matched
             return true;
 //            }
         }

@@ -8,13 +8,22 @@ import javax.annotation.Nullable;
 
 public interface BarrelCore {
 
+    /**
+     * this method should be multi-thread safe
+     * @param itemRequest
+     * @return
+     */
     @Nullable
     ItemStack requestItem(@Nonnull ItemRequest itemRequest);
 
     default void depositItemStack(ItemStack itemToDeposit) {
         depositItemStack(new ItemStack[]{itemToDeposit});
     }
+    /**
+     * this method should be multi-thread safe
 
+     * @return
+     */
     void depositItemStack(ItemStack[] itemsToDeposit);
 
     int[] getInputSlot();

@@ -68,6 +68,7 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
             }
 
             final ItemStack clone = testItem.clone();
+            //
             clone.setAmount(1);
             final ItemRequest itemRequest = new ItemRequest(clone, clone.getMaxStackSize());
 
