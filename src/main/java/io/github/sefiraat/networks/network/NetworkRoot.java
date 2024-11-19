@@ -10,6 +10,7 @@ import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawe
 import io.github.mooy1.infinityexpansion.items.storage.StorageCache;
 import io.github.mooy1.infinityexpansion.items.storage.StorageUnit;
 import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.barrel.FluffyBarrel;
 import io.github.sefiraat.networks.network.barrel.InfinityBarrel;
 import io.github.sefiraat.networks.network.barrel.NetworkStorage;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("unused")
 public class NetworkRoot extends NetworkNode {
@@ -52,9 +54,9 @@ public class NetworkRoot extends NetworkNode {
     private final long CREATED_TIME = System.currentTimeMillis();
     @Getter
     private final Set<Location> nodeLocations = new HashSet<>();
-    private final int[] CELL_AVAILABLE_SLOTS = NetworkCell.SLOTS.stream().mapToInt(i -> i).toArray();
-    private final int[] GREEDY_BLOCK_AVAILABLE_SLOTS = new int[]{NetworkGreedyBlock.INPUT_SLOT};
-    private final int[] ADVANCED_GREEDY_BLOCK_AVAILABLE_SLOTS = AdvancedGreedyBlock.INPUT_SLOTS;
+    protected final int[] CELL_AVAILABLE_SLOTS = NetworkCell.SLOTS.stream().mapToInt(i -> i).toArray();
+    protected final int[] GREEDY_BLOCK_AVAILABLE_SLOTS = new int[]{NetworkGreedyBlock.INPUT_SLOT};
+    final int[] ADVANCED_GREEDY_BLOCK_AVAILABLE_SLOTS = AdvancedGreedyBlock.INPUT_SLOTS;
     @Getter
     private final Set<Location> bridges = ConcurrentHashMap.newKeySet();
     @Getter
@@ -136,8 +138,14 @@ public class NetworkRoot extends NetworkNode {
 
     @Getter
     private boolean displayParticles = false;
-
-    public NetworkRoot(@Nonnull Location location, @Nonnull NodeType type, int maxNodes) {
+    public static NetworkRoot newInstance(Location location,NodeType type,int maxNodes){
+        if(ExperimentalFeatureManager.getInstance().isEnableAsyncSafeNetworkRoot()){
+            return new NetworkRootPlus(location,type,maxNodes);
+        }else {
+            return new NetworkRoot(location,type,maxNodes);
+        }
+    }
+    protected NetworkRoot(@Nonnull Location location, @Nonnull NodeType type, int maxNodes) {
         super(location, type);
         this.maxNodes = maxNodes;
         this.root = this;

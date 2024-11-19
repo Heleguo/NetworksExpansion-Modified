@@ -13,6 +13,7 @@ import io.github.bakedlibs.dough.collections.Pair;
 import io.github.bakedlibs.dough.skins.PlayerHead;
 import io.github.bakedlibs.dough.skins.PlayerSkin;
 import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.stackcaches.BlueprintInstance;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.QuantumCache;
@@ -51,15 +52,7 @@ import org.bukkit.util.StringUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -1180,6 +1173,15 @@ public class NetworksMain implements TabExecutor {
                     viewLog(player);
                     return true;
                 }
+                case "experimental"->{
+                    if (!player.hasPermission("networks.admin") && !player.hasPermission("networks.commands.experimental")) {
+                        player.sendMessage(getErrorMessage(ErrorType.NO_PERMISSION));
+                        return true;
+                    }
+
+                    return ExperimentalFeatureManager.getInstance().onCommand(sender,command,label, Arrays.copyOfRange(args,1,args.length));
+                }
+
 
                 default -> {
                     help(player, null);
@@ -1265,11 +1267,15 @@ public class NetworksMain implements TabExecutor {
     @Override
     public @Nullable List<String> onTabComplete(
             @Nonnull CommandSender sender, @Nonnull Command command, @Nonnull String label, @Nonnull String[] args) {
+        if(args.length > 0&&"experimental".equals(args[0])) {
+            return ExperimentalFeatureManager.getInstance().onTabComplete(sender,command,label, Arrays.copyOfRange(args,1,args.length));
+        }
         List<String> raw = onTabCompleteRaw(sender, args);
         return StringUtil.copyPartialMatches(args[args.length - 1], raw, new ArrayList<>());
     }
 
     public @Nonnull List<String> onTabCompleteRaw(@Nonnull CommandSender sender, @Nonnull String[] args) {
+
         switch (args.length) {
             case 1 -> {
                 return List.of(
@@ -1283,7 +1289,8 @@ public class NetworksMain implements TabExecutor {
                         "setQuantum",
                         "updateItem",
                         "viewLog",
-                        "worldedit"
+                        "worldedit",
+                        "experimental"
                 );
             }
             case 2 -> {

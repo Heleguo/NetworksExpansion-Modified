@@ -55,7 +55,7 @@ public class NetworkController extends NetworkObject {
                         }
 
                         addToRegistry(block);
-                        NetworkRoot networkRoot = new NetworkRoot(block.getLocation(), NodeType.CONTROLLER, maxNodes.getValue());
+                        NetworkRoot networkRoot = NetworkRoot.newInstance(block.getLocation(), NodeType.CONTROLLER, maxNodes.getValue());
                         networkRoot.addAllChildren();
 
                         boolean crayon = CRAYONS.contains(block.getLocation());

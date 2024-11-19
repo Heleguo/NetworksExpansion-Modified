@@ -2,6 +2,7 @@ package com.balugaq.netex.utils;
 
 import com.balugaq.netex.api.enums.TransportMode;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.slimefun.network.NetworkObject;
@@ -36,8 +37,11 @@ public class LineOperationUtil {
     }
 
     public static void doOperation(Location startLocation, BlockFace direction, int limit, boolean skipNoMenu, boolean optimizeExperience, Consumer<BlockMenu> consumer) {
-        //doOperationAsync(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
-        doOperationOrdinal(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
+        if(ExperimentalFeatureManager.getInstance().isEnableParallelLineOperation()){
+            doOperationParallel(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
+        }else {
+            doOperationOrdinal(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
+        }
     }
     public static void doOperationOrdinal(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer){
         Location location = startLocation.clone();
