@@ -99,7 +99,6 @@ public class LineOperationUtil {
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
     }
 
-
     public static void grabItem(
             @Nonnull NetworkRoot root,
             @Nonnull BlockMenu blockMenu,
@@ -166,9 +165,7 @@ public class LineOperationUtil {
                     final ItemStack item = blockMenu.getItemInSlot(slot);
                     if (item != null && item.getType() != Material.AIR) {
                         limit=sendLimitedItemToRoot(root, item, limit);
-                        if (limit <= 0) {
-                            break;
-                        }
+                        break;
                     }
                 }
             }

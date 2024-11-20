@@ -6,6 +6,7 @@ import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.network.stackcaches.QuantumCache;
 import io.github.sefiraat.networks.utils.Keys;
@@ -49,6 +50,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("deprecation")
 public class NetworkQuantumStorage extends SpecialSlimefunItem implements DistinctiveItem {
@@ -118,19 +121,18 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
     }
 
     @ParametersAreNonnullByDefault
-    public static void tryInputItem(Location location, ItemStack[] input, QuantumCache cache) {
+    public static void tryInputItem(Location location, ItemStack itemStack, QuantumCache cache) {
         if (cache.getItemStack() == null) {
             return;
         }
-        for (ItemStack itemStack : input) {
-            if (isBlacklisted(itemStack)) {
-                continue;
-            }
-            if (StackUtils.itemsMatch(cache, itemStack)) {
-                int leftover = cache.increaseAmount(itemStack.getAmount());
-                itemStack.setAmount(leftover);
-            }
+        if (ExperimentalFeatureManager.getInstance().isEnableNetworkStorageBlacklist()&& isBlacklisted(itemStack)) {
+            return;
         }
+        if (StackUtils.itemsMatch(cache, itemStack)) {
+            int leftover = cache.increaseAmount(itemStack.getAmount());
+            itemStack.setAmount(leftover);
+        }
+
         syncBlock(location, cache);
     }
 
@@ -149,41 +151,82 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         }
         return getItemStack(cache, blockMenu, cache.getItemStack().getMaxStackSize());
     }
-
     @ParametersAreNonnullByDefault
     @Nullable
-    public static ItemStack getItemStack(@Nonnull QuantumCache cache, @Nonnull BlockMenu blockMenu, int amount) {
+    public static ItemStack getItemStack(@Nonnull QuantumCache cache, @Nonnull Location location, int amount) {
         if (cache.getAmount() < amount) {
             // Storage has no content or not enough, mix and match!
-            ItemStack output = blockMenu.getItemInSlot(OUTPUT_SLOT);
             ItemStack fetched = cache.withdrawItem(amount);
-
-            if (output != null
-                    && output.getType() != Material.AIR
-                    && StackUtils.itemsMatch(cache, output)
-            ) {
-                // We have an output item we can use also
-                if (fetched == null || fetched.getType() == Material.AIR) {
-                    // Storage is totally empty - just use output slot
-                    fetched = output.clone();
-                    if (fetched.getAmount() > amount) {
-                        fetched.setAmount(amount);
+            BlockMenu blockMenu=StorageCacheUtils.getMenu(location);
+            if (blockMenu != null) {
+                //if lock required ,this part is locked by blockMenu
+                ItemStack output= blockMenu.getItemInSlot(OUTPUT_SLOT);
+                //actually we don't use these part frequently
+                if (output != null
+                        && output.getType() != Material.AIR
+                        && StackUtils.itemsMatch(cache, output)
+                ) {
+                    // We have an output item we can use also
+                    if (fetched == null || fetched.getType() == Material.AIR) {
+                        // Storage is totally empty - just use output slot
+                        fetched = output.clone();
+                        if (fetched.getAmount() > amount) {
+                            fetched.setAmount(amount);
+                        }
+                        output.setAmount(output.getAmount() - fetched.getAmount());
+                    } else {
+                        // Storage has content, lets add on top of it
+                        int additional = Math.min(amount - fetched.getAmount(), output.getAmount());
+                        output.setAmount(output.getAmount() - additional);
+                        fetched.setAmount(fetched.getAmount() + additional);
                     }
-                    output.setAmount(output.getAmount() - fetched.getAmount());
-                } else {
-                    // Storage has content, lets add on top of it
-                    int additional = Math.min(amount - fetched.getAmount(), output.getAmount());
-                    output.setAmount(output.getAmount() - additional);
-                    fetched.setAmount(fetched.getAmount() + additional);
                 }
             }
-            syncBlock(blockMenu.getLocation(), cache);
+            syncBlock(location, cache);
             return fetched;
         } else {
             // Storage has everything we need
-            syncBlock(blockMenu.getLocation(), cache);
-            return cache.withdrawItem(amount);
+            ItemStack fetched = cache.withdrawItem(amount);
+            syncBlock(location, cache);
+            return fetched;
         }
+    }
+    @Deprecated
+    @ParametersAreNonnullByDefault
+    @Nullable
+    public static ItemStack getItemStack(@Nonnull QuantumCache cache, @Nonnull BlockMenu blockMenu, int amount) {
+        return getItemStack(cache,blockMenu.getLocation(),amount);
+//        if (cache.getAmount() < amount) {
+//            // Storage has no content or not enough, mix and match!
+//            ItemStack output = blockMenu.getItemInSlot(OUTPUT_SLOT);
+//            ItemStack fetched = cache.withdrawItem(amount);
+//
+//            if (output != null
+//                    && output.getType() != Material.AIR
+//                    && StackUtils.itemsMatch(cache, output)
+//            ) {
+//                // We have an output item we can use also
+//                if (fetched == null || fetched.getType() == Material.AIR) {
+//                    // Storage is totally empty - just use output slot
+//                    fetched = output.clone();
+//                    if (fetched.getAmount() > amount) {
+//                        fetched.setAmount(amount);
+//                    }
+//                    output.setAmount(output.getAmount() - fetched.getAmount());
+//                } else {
+//                    // Storage has content, lets add on top of it
+//                    int additional = Math.min(amount - fetched.getAmount(), output.getAmount());
+//                    output.setAmount(output.getAmount() - additional);
+//                    fetched.setAmount(fetched.getAmount() + additional);
+//                }
+//            }
+//            syncBlock(blockMenu.getLocation(), cache);
+//            return fetched;
+//        } else {
+//            // Storage has everything we need
+//            syncBlock(blockMenu.getLocation(), cache);
+//            return cache.withdrawItem(amount);
+//        }
     }
 
     public static void updateDisplayItem(@Nonnull BlockMenu menu, @Nonnull QuantumCache cache) {
@@ -210,14 +253,24 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
     }
 
     public static void syncBlock(@Nonnull Location location, @Nonnull QuantumCache cache) {
-        var blockData = StorageCacheUtils.getBlock(location);
-        if(blockData!=null&&SlimefunItem.getById( blockData.getSfId()) instanceof NetworkQuantumStorage) {
-            blockData.setData(BS_AMOUNT, String.valueOf(cache.getAmount()));
-            blockData.setData(BS_VOID, String.valueOf(cache.isVoidExcess()));
-            if (cache.supportsCustomMaxAmount()) {
-                blockData.setData(BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
-                //StorageCacheUtils.setData(location, BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
-            }
+        AtomicBoolean save=cache.getSaving();
+        if(save.compareAndSet(false,true)){
+            CompletableFuture.supplyAsync(()->{
+                try{
+                    var blockData = StorageCacheUtils.getBlock(location);
+                    if(blockData!=null&&SlimefunItem.getById( blockData.getSfId()) instanceof NetworkQuantumStorage) {
+                        blockData.setData(BS_AMOUNT, String.valueOf(cache.getAmount()));
+                        blockData.setData(BS_VOID, String.valueOf(cache.isVoidExcess()));
+                        if (cache.supportsCustomMaxAmount()) {
+                            blockData.setData(BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+                            //StorageCacheUtils.setData(location, BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+                        }
+                    }
+                }finally {
+                    save.set(false);
+                }
+                return null;
+            });
         }
     }
 
@@ -281,7 +334,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         // Move items from the input slot into the card
         final ItemStack input = blockMenu.getItemInSlot(INPUT_SLOT);
         if (input != null && input.getType() != Material.AIR) {
-            tryInputItem(blockMenu.getLocation(), new ItemStack[]{input}, cache);
+            tryInputItem(blockMenu.getLocation(), input, cache);
             blockMenu.markDirty();
         }
 

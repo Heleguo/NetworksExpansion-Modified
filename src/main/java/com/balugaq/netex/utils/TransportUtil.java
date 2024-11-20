@@ -1,5 +1,6 @@
 package com.balugaq.netex.utils;
 
+import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.utils.StackUtils;
@@ -50,6 +51,20 @@ public class TransportUtil {
         if (retrieved != null && retrieved.getType() != Material.AIR) {
             //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
             BlockMenuUtil.pushItemWithMatchedSlots(blockMenu, retrieved, matchedSlots);
+        }
+    }
+    public static int commonMatch(ItemStack itemStack,ItemRequest itemRequest){
+        int maxStackSize=itemRequest.getMaxStackSize();
+        if (itemStack == null || itemStack.getType() == Material.AIR) {
+            return maxStackSize;
+        } else {
+            if (itemStack.getAmount() >= maxStackSize) {
+                return 0;
+            }
+            if (StackUtils.itemsMatch(itemRequest, itemStack)) {
+                return maxStackSize - itemStack.getAmount();
+            }
+            return 0;
         }
     }
 }

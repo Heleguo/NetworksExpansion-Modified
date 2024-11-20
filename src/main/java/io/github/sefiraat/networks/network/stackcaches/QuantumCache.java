@@ -9,6 +9,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class QuantumCache extends ItemStackCache {
 
@@ -17,12 +18,15 @@ public class QuantumCache extends ItemStackCache {
     private final boolean supportsCustomMaxAmount;
     @Getter
     private int limit;
-    @Getter
+
     private long amount;
     private final byte[] lock=new byte[0];
 
     @Getter
     private boolean voidExcess;
+    //lock for saving thread
+    @Getter
+    private final AtomicBoolean saving = new AtomicBoolean(false);
 
     public QuantumCache(@Nullable ItemStack storedItem, long amount, int limit, boolean voidExcess, boolean supportsCustomMaxAmount) {
         super(storedItem);
@@ -38,8 +42,12 @@ public class QuantumCache extends ItemStackCache {
     public ItemMeta getStoredItemMeta() {
         return this.storedItemMeta;
     }
-
-    public synchronized void setAmount(int amount) {
+    public long getAmount(){
+        synchronized (lock){
+            return this.amount;
+        }
+    }
+    public void setAmount(int amount) {
         synchronized (lock) {
             this.amount = amount;
         }

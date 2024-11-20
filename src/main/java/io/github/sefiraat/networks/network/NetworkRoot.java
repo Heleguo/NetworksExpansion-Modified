@@ -610,7 +610,6 @@ public class NetworkRoot extends NetworkNode {
 
         // Barrels first
         for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-
             if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
                 continue;
             }

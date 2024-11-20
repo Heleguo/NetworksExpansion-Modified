@@ -2,6 +2,7 @@ package com.ytdd9527.networksexpansion.implementation.machines.networks.advanced
 
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.BlockMenuUtil;
+import com.balugaq.netex.utils.TransportUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.implementation.ExpansionItems;
@@ -115,46 +116,54 @@ public class AdvancedExport extends NetworkObject implements RecipeDisplayItem {
             return;
         }
         NetworkRoot networkRoot = definition.getNode().getRoot();
-
-        List<ItemRequest> itemRequests = new ArrayList<>();
-        int totalFreeStackSpaces = 0;
-
-        for (int outputSlot : getOutputSlots()) {
-            ItemStack currentStack = blockMenu.getItemInSlot(outputSlot);
-            if (currentStack == null || currentStack.getType() == Material.AIR) {
-                totalFreeStackSpaces += 64;
-            } else {
-                totalFreeStackSpaces += currentStack.getMaxStackSize() - currentStack.getAmount();
-            }
-        }
-
-        // no free space, we should escape quickly
-        if (totalFreeStackSpaces == 0) {
-            return;
-        }
-
-        // for each every slot, then make itemRequests
         for (int testItemSlot : getTestSlots()) {
             ItemStack currentStack = blockMenu.getItemInSlot(testItemSlot);
             if (currentStack != null && currentStack.getType() != Material.AIR) {
-                itemRequests.add(new ItemRequest(StackUtils.getAsQuantity(currentStack, 1), currentStack.getAmount()));
+                ItemRequest request=ItemRequest.of(currentStack,currentStack.getAmount());
+                //todo can optimize
+                //itemRequests.add(new ItemRequest(StackUtils.getAsQuantity(currentStack, 1), currentStack.getAmount()));
+                TransportUtil.fetchItemAndPush(networkRoot,blockMenu,request,i->TransportUtil.commonMatch(i,request),currentStack.getAmount(),false,getOutputSlots());
             }
         }
-
-        // if there is no item request, we should escape quickly
-        if (itemRequests.isEmpty()) {
-            return;
-        }
-
-        // fetch items from network
-        ItemStack fetched = null;
-        for (ItemRequest itemRequest : itemRequests) {
-            fetched = networkRoot.getItemStack(itemRequest); // fetch item from network
-            if (fetched != null) {
-                // amount may not be excepted, but it is the max amount we can fetch.
-                placeItems(networkRoot, blockMenu, fetched.clone(), fetched.getAmount(), getOutputSlots());
-            }
-        }
+//        List<ItemRequest> itemRequests = new ArrayList<>();
+//        int totalFreeStackSpaces = 0;
+//
+//        for (int outputSlot : getOutputSlots()) {
+//            ItemStack currentStack = blockMenu.getItemInSlot(outputSlot);
+//            if (currentStack == null || currentStack.getType() == Material.AIR) {
+//                totalFreeStackSpaces += 64;
+//            } else {
+//                totalFreeStackSpaces += currentStack.getMaxStackSize() - currentStack.getAmount();
+//            }
+//        }
+//
+//        // no free space, we should escape quickly
+//        if (totalFreeStackSpaces == 0) {
+//            return;
+//        }
+//
+//        // for each every slot, then make itemRequests
+//        for (int testItemSlot : getTestSlots()) {
+//            ItemStack currentStack = blockMenu.getItemInSlot(testItemSlot);
+//            if (currentStack != null && currentStack.getType() != Material.AIR) {
+//                itemRequests.add(new ItemRequest(StackUtils.getAsQuantity(currentStack, 1), currentStack.getAmount()));
+//            }
+//        }
+//
+//        // if there is no item request, we should escape quickly
+//        if (itemRequests.isEmpty()) {
+//            return;
+//        }
+//
+//        // fetch items from network
+//        ItemStack fetched = null;
+//        for (ItemRequest itemRequest : itemRequests) {
+//            fetched = networkRoot.getItemStack(itemRequest); // fetch item from network
+//            if (fetched != null) {
+//                // amount may not be excepted, but it is the max amount we can fetch.
+//                placeItems(networkRoot, blockMenu, fetched.clone(), fetched.getAmount(), getOutputSlots());
+//            }
+//        }
     }
 
     private void placeItems(@Nonnull NetworkRoot root, @Nonnull BlockMenu blockMenu, @Nonnull ItemStack itemStack, @Nonnull int itemAmount, int[] outputSlots) {

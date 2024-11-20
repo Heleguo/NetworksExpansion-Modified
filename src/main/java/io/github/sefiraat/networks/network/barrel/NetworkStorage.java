@@ -21,23 +21,21 @@ public class NetworkStorage extends BarrelIdentity {
     @Override
     @Nullable
     public ItemStack requestItem(@Nonnull ItemRequest itemRequest) {
-        final BlockMenu blockMenu = StorageCacheUtils.getMenu(this.getLocation());
+//        final BlockMenu blockMenu = StorageCacheUtils.getMenu(this.getLocation());
+//
+//        if (blockMenu == null) {
+//            return null;
+//        }
 
-        if (blockMenu == null) {
-            return null;
-        }
-
-        final QuantumCache cache = NetworkQuantumStorage.getCaches().get(blockMenu.getLocation());
-
+        final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
         if (cache == null) {
             return null;
         }
-
-        return NetworkQuantumStorage.getItemStack(cache, blockMenu, itemRequest.getAmount());
+        return NetworkQuantumStorage.getItemStack(cache, this.getLocation(), itemRequest.getAmount());
     }
 
     @Override
-    public void depositItemStack(ItemStack[] itemsToDeposit) {
+    public void depositItemStack(ItemStack itemsToDeposit) {
         final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
         if (cache != null) {
             NetworkQuantumStorage.tryInputItem(this.getLocation(), itemsToDeposit, cache);

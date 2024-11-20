@@ -39,6 +39,8 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
     private boolean enableMatchDistinctiveItem=false;
     @Getter
+    private boolean enableNetworkStorageBlacklist=false;
+    @Getter
     private boolean enableLineGrabberParallel=true;
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

@@ -72,17 +72,9 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
             //
             clone.setAmount(1);
             final ItemRequest itemRequest = new ItemRequest(clone, clone.getMaxStackSize());
-
+            //todo Parallel slotAccess
             int[] slots = targetMenu.getPreset().getSlotsAccessedByItemTransport(targetMenu, ItemTransportFlow.INSERT, clone);
-            TransportUtil.fetchItemAndPush(definition.getNode().getRoot(),blockMenu,itemRequest,(itemStack)->{
-                if (itemStack != null && itemStack.getType() != Material.AIR) {
-                    final int space = itemStack.getMaxStackSize() - itemStack.getAmount();
-                    if (space > 0 && StackUtils.itemsMatch(itemRequest, itemStack)) {
-                        return space;
-                    }
-                }
-                return 0;
-            },64,true,slots);
+            TransportUtil.fetchItemAndPush(definition.getNode().getRoot(),targetMenu,itemRequest,(itemStack)->TransportUtil.commonMatch(itemStack,itemRequest),64,true,slots);
 //            for (int slot : slots) {
 //                final ItemStack itemStack = targetMenu.getItemInSlot(slot);
 //

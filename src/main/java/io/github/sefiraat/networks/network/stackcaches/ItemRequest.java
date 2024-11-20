@@ -19,13 +19,13 @@ public class ItemRequest extends ItemStackCache {
     protected ItemRequest init(ItemStack itemStack, int amount) {
         super.init(itemStack);
         this.amount = amount;
-        this.maxStackSize = itemStack.getAmount();
+        this.maxStackSize = itemStack.getMaxStackSize();
         return this;
     }
     public ItemRequest(@Nonnull ItemStack itemStack, int amount) {
         super(itemStack);
         this.amount = amount;
-        this.maxStackSize = itemStack.getAmount();
+        this.maxStackSize = itemStack.getMaxStackSize();
     }
 
 

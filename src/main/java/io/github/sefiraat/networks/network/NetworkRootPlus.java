@@ -28,11 +28,12 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public ItemStack getItemStack(@Nonnull ItemRequest itemRequest) {
-        if(enableGetAsync&& ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
-            return getItemStackAsync(itemRequest);
-        }else {
-            return super.getItemStack(itemRequest);
-        }
+        return getItemStackRewrite(itemRequest);
+//        if(enableGetAsync&& ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
+//            return getItemStackAsync(itemRequest);
+//        }else {
+//            return super.getItemStack(itemRequest);
+//        }
     }
     @Override
     public void addItemStack(ItemStack itemStack) {
@@ -46,77 +47,68 @@ public class NetworkRootPlus extends NetworkRoot {
     private static final boolean enableGetAsync=false;
     private static final boolean enableAddAsync=true;
     private static Constructor<NetworkRoot> constructor;
-    /**
-     * getItemStack from network ,this method should be multi-thread safe
-     * @param request
-     * @return
-     */
-    @Nullable
-    public ItemStack getItemStackAsync(@Nonnull ItemRequest request) {
-        ItemStack stackToReturn = null;
+    public ItemStack getItemStackRewrite(@Nonnull ItemRequest request) {
+
         if (request.getAmount() <= 0) {
             return null;
         }
+        ItemStack stackToReturn = null;
+        int totalAmount=0;
+        requestItem:{
+            // Barrels first
+            for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
+                if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
+                    continue;
+                }
 
-        // Barrels first
-        //most of our modern network-based Factory are made of barrels and StorageUnits
-        for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-            boolean infinity;
-            final ItemStack fetched;
-            if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
-                continue;
-            }
-            infinity = barrelIdentity instanceof InfinityBarrel;
-            synchronized (barrelIdentity){
-                fetched = barrelIdentity.requestItem(request);
-            }
-            if (fetched == null || fetched.getType() == Material.AIR || (infinity && fetched.getAmount() == 1)) {
-                continue;
-            }
-            // Stack is null, so we can fill it here
-            if (stackToReturn == null) {
-                stackToReturn = fetched.clone();
-                stackToReturn.setAmount(0);
-            }
-
-            final int preserveAmount = infinity ? fetched.getAmount() - 1 : fetched.getAmount();
-
-            if (request.getAmount() <= preserveAmount) {
-                stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
-                fetched.setAmount(fetched.getAmount() - request.getAmount());
-                return stackToReturn;
-            } else {
-                stackToReturn.setAmount(stackToReturn.getAmount() + preserveAmount);
-                request.receiveAmount(preserveAmount);
-                fetched.setAmount(fetched.getAmount() - preserveAmount);
-            }
-        }
-
-        // Units
-        for (StorageUnitData cache : getOutputAbleCargoStorageUnitDatas().keySet()) {
-            final ItemStack take;
-            synchronized (cache){
-                take= cache.requestItem(request);
-            }
-            if (take != null) {
+                boolean infinity = barrelIdentity instanceof InfinityBarrel;
+                final ItemStack fetched = barrelIdentity.requestItem(request);
+                if (fetched == null || fetched.getType() == Material.AIR || (infinity && fetched.getAmount() == 1)) {
+                    continue;
+                }
+                // Stack is null, so we can fill it here
                 if (stackToReturn == null) {
-                    stackToReturn = take.clone();
-                } else {
-                    stackToReturn.setAmount(stackToReturn.getAmount() + take.getAmount());
+                    stackToReturn = fetched.clone();
+                    totalAmount=0;
                 }
-                request.receiveAmount(stackToReturn.getAmount());
-
-                if (request.getAmount() <= 0) {
-                    return stackToReturn;
+                final int fetchedAmount=fetched.getAmount();
+                final int preserveAmount = infinity ? fetchedAmount - 1 :fetchedAmount;
+                final int requestAmount=request.getAmount();
+                if (requestAmount <= preserveAmount) {
+                    totalAmount+=requestAmount;
+                    //re getAmount in case of Async
+                    fetched.setAmount(fetched.getAmount() - requestAmount);
+                    break requestItem;
+                } else {
+                    totalAmount+=preserveAmount;
+                    request.receiveAmount(preserveAmount);
+                    //setAmount for Infinity fetchItem
+                    //so what kind of shit would do this?
+                    fetched.setAmount(fetched.getAmount() - preserveAmount);
                 }
             }
-        }
 
-        // Cells
-        for (BlockMenu blockMenu : getCellMenus()) {
-            int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
-            for (int slot : slots) {
-                synchronized (cellMenuSlotLock[slot]){
+            // Units
+            for (StorageUnitData cache : getOutputAbleCargoStorageUnitDatas().keySet()) {
+                ItemStack take = cache.requestItem(request);
+                if (take != null) {
+                    if (stackToReturn == null) {
+                        stackToReturn = take.clone();
+                        totalAmount=0;
+                    }
+                    totalAmount+=take.getAmount();
+                    request.receiveAmount(take.getAmount());
+
+                    if (request.getAmount() <= 0) {
+                        break requestItem;
+                    }
+                }
+            }
+
+            // Cells
+            for (BlockMenu blockMenu : getCellMenus()) {
+                int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
+                for (int slot : slots) {
                     final ItemStack itemStack = blockMenu.getItemInSlot(slot);
                     if (itemStack == null
                             || itemStack.getType() == Material.AIR
@@ -131,59 +123,26 @@ public class NetworkRootPlus extends NetworkRoot {
                     // If the return stack is null, we need to set it up
                     if (stackToReturn == null) {
                         stackToReturn = itemStack.clone();
-                        stackToReturn.setAmount(0);
                     }
-
-                    if (request.getAmount() <= itemStack.getAmount()) {
+                    int requestedAmount=request.getAmount();
+                    int itemAmount=itemStack.getAmount();
+                    if (requestedAmount <= itemAmount) {
                         // We can't take more than this stack. Level to request amount, remove items and then return
-                        stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
-                        itemStack.setAmount(itemStack.getAmount() - request.getAmount());
-                        return stackToReturn;
+                        totalAmount+=requestedAmount;
+                        itemStack.setAmount(itemStack.getAmount() - requestedAmount);
+                        break requestItem;
                     } else {
                         // We can take more than what is here, consume before trying to take more
-                        stackToReturn.setAmount(stackToReturn.getAmount() + itemStack.getAmount());
-                        request.receiveAmount(itemStack.getAmount());
+                        totalAmount+=itemAmount;
+                        request.receiveAmount(itemAmount);
                         itemStack.setAmount(0);
                     }
                 }
             }
-        }
 
-        // Crafters
-        for (BlockMenu blockMenu : getCrafterOutputs()) {
-            int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
-            for (int slot : slots) {
-                synchronized (blockMenu){
-                    final ItemStack itemStack = blockMenu.getItemInSlot(slot);
-                    if (itemStack == null || itemStack.getType() == Material.AIR || !StackUtils.itemsMatch(
-                            request,
-                            itemStack
-                    )) {
-                        continue;
-                    }
-
-                    // Stack is null, so we can fill it here
-                    if (stackToReturn == null) {
-                        stackToReturn = itemStack.clone();
-                        stackToReturn.setAmount(0);
-                    }
-
-                    if (request.getAmount() <= itemStack.getAmount()) {
-                        stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
-                        itemStack.setAmount(itemStack.getAmount() - request.getAmount());
-                        return stackToReturn;
-                    } else {
-                        stackToReturn.setAmount(stackToReturn.getAmount() + itemStack.getAmount());
-                        request.receiveAmount(itemStack.getAmount());
-                        itemStack.setAmount(0);
-                    }
-                }
-            }
-        }
-
-        for (BlockMenu blockMenu : getAdvancedGreedyBlockMenus()) {
-            int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
-            synchronized (blockMenu){
+            // Crafters
+            for (BlockMenu blockMenu : getCrafterOutputs()) {
+                int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
                 for (int slot : slots) {
                     final ItemStack itemStack = blockMenu.getItemInSlot(slot);
                     if (itemStack == null || itemStack.getType() == Material.AIR || !StackUtils.itemsMatch(
@@ -196,26 +155,61 @@ public class NetworkRootPlus extends NetworkRoot {
                     // Stack is null, so we can fill it here
                     if (stackToReturn == null) {
                         stackToReturn = itemStack.clone();
-                        stackToReturn.setAmount(0);
+                        totalAmount=0;
                     }
 
-                    if (request.getAmount() <= itemStack.getAmount()) {
-                        stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
-                        itemStack.setAmount(itemStack.getAmount() - request.getAmount());
-                        return stackToReturn;
+                    int requestedAmount=request.getAmount();
+                    int itemAmount=itemStack.getAmount();
+                    if (requestedAmount <= itemAmount) {
+                        // We can't take more than this stack. Level to request amount, remove items and then return
+                        totalAmount+=requestedAmount;
+                        itemStack.setAmount(itemStack.getAmount() - requestedAmount);
+                        break requestItem;
                     } else {
-                        stackToReturn.setAmount(stackToReturn.getAmount() + itemStack.getAmount());
-                        request.receiveAmount(itemStack.getAmount());
+                        // We can take more than what is here, consume before trying to take more
+                        totalAmount+=itemAmount;
+                        request.receiveAmount(itemAmount);
                         itemStack.setAmount(0);
                     }
                 }
             }
-        }
 
-        // Greedy Blocks
-        for (BlockMenu blockMenu : getGreedyBlockMenus()) {
-            int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
-            synchronized (blockMenu){
+            for (BlockMenu blockMenu : getAdvancedGreedyBlockMenus()) {
+                int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
+                for (int slot : slots) {
+                    final ItemStack itemStack = blockMenu.getItemInSlot(slot);
+                    if (itemStack == null || itemStack.getType() == Material.AIR || !StackUtils.itemsMatch(
+                            request,
+                            itemStack
+                    )) {
+                        continue;
+                    }
+
+                    // Stack is null, so we can fill it here
+                    if (stackToReturn == null) {
+                        stackToReturn = itemStack.clone();
+                        totalAmount=0;
+                    }
+
+                    int requestedAmount=request.getAmount();
+                    int itemAmount=itemStack.getAmount();
+                    if (requestedAmount <= itemAmount) {
+                        // We can't take more than this stack. Level to request amount, remove items and then return
+                        totalAmount+=requestedAmount;
+                        itemStack.setAmount(itemStack.getAmount() - requestedAmount);
+                        break requestItem;
+                    } else {
+                        // We can take more than what is here, consume before trying to take more
+                        totalAmount+=itemAmount;
+                        request.receiveAmount(itemAmount);
+                        itemStack.setAmount(0);
+                    }
+                }
+            }
+
+            // Greedy Blocks
+            for (BlockMenu blockMenu : getGreedyBlockMenus()) {
+                int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
                 final ItemStack itemStack = blockMenu.getItemInSlot(slots[0]);
                 if (itemStack == null
                         || itemStack.getType() == Material.AIR
@@ -230,27 +224,29 @@ public class NetworkRootPlus extends NetworkRoot {
                 // If the return stack is null, we need to set it up
                 if (stackToReturn == null) {
                     stackToReturn = itemStack.clone();
-                    stackToReturn.setAmount(0);
+                    totalAmount=0;
                 }
 
-                if (request.getAmount() <= itemStack.getAmount()) {
+                int requestedAmount=request.getAmount();
+                int itemAmount=itemStack.getAmount();
+                if (requestedAmount <= itemAmount) {
                     // We can't take more than this stack. Level to request amount, remove items and then return
-                    stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
-                    itemStack.setAmount(itemStack.getAmount() - request.getAmount());
-                    return stackToReturn;
+                    totalAmount+=requestedAmount;
+                    itemStack.setAmount(itemStack.getAmount() - requestedAmount);
+                    break requestItem;
                 } else {
                     // We can take more than what is here, consume before trying to take more
-                    stackToReturn.setAmount(stackToReturn.getAmount() + itemStack.getAmount());
-                    request.receiveAmount(itemStack.getAmount());
+                    totalAmount+=itemAmount;
+                    request.receiveAmount(itemAmount);
                     itemStack.setAmount(0);
                 }
             }
         }
-
-        if (stackToReturn == null || stackToReturn.getAmount() == 0) {
+        //end ,setAmount and return
+        if(stackToReturn == null||totalAmount<=0){
             return null;
         }
-
+        stackToReturn.setAmount(totalAmount);
         return stackToReturn;
     }
     /**
