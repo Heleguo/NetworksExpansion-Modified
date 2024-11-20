@@ -17,6 +17,31 @@ public class BlockMenuUtil {
     public static void pushItem(@Nonnull BlockMenu blockMenu, @Nullable ItemStack stack,int... slots) {
         pushItem(blockMenu,ItemStackCache.of(stack),false,slots);
     }
+    public static void pushItemWithMatchedSlots(@Nonnull BlockMenu inv, @Nullable ItemStack stack,List<Integer> slots) {
+        int maxSize=stack.getMaxStackSize();
+        int amount=stack.getAmount();
+        if(amount<=0)return;
+        for (int slot : slots) {
+            ItemStack slotItem=inv.getItemInSlot(slot);
+
+            if(slotItem==null||slotItem.getType()==Material.AIR) {
+                int transfered=Math.min(amount,maxSize);
+                inv.replaceExistingItem(slot,stack,false);
+                slotItem=inv.getItemInSlot(slot);
+                slotItem.setAmount(transfered);
+                amount-=transfered;
+            }else {
+                int slotAmount=slotItem.getAmount();
+                int transfered=Math.min(amount,maxSize-slotAmount);
+                slotItem.setAmount(slotAmount+transfered);
+                amount-=transfered;
+            }
+            if(amount<=0){
+                break;
+            }
+        }
+        stack.setAmount(amount);
+    }
     @Nullable
     public static ItemStack pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStackCache item,boolean needReturn, int... slots) {
         if (item == null || item.getItemType() == Material.AIR) {
@@ -35,7 +60,9 @@ public class BlockMenuUtil {
 
             if (existing == null || existing.getType() == Material.AIR) {
                 int received = Math.min(leftAmount, maxSize);
-                blockMenu.replaceExistingItem(slot, StackUtils.getAsQuantity(item, received));
+                blockMenu.replaceExistingItem(slot, item.getItemStack());
+                existing = blockMenu.getItemInSlot(slot);
+                existing.setAmount(received);
                 leftAmount -= received;
                // item.setItemAmount();
             } else {
@@ -43,11 +70,9 @@ public class BlockMenuUtil {
                 if (existingAmount >= maxSize) {
                     continue;
                 }
-
                 if (!StackUtils.itemsMatch(item, existing)) {
                     continue;
                 }
-
                 int received = Math.max(0, Math.min(maxSize - existingAmount, leftAmount));
                 leftAmount -= received;
                 existing.setAmount(existingAmount + received);

@@ -19,6 +19,8 @@ public class QuantumCache extends ItemStackCache {
     private int limit;
     @Getter
     private long amount;
+    private final byte[] lock=new byte[0];
+
     @Getter
     private boolean voidExcess;
 
@@ -37,8 +39,10 @@ public class QuantumCache extends ItemStackCache {
         return this.storedItemMeta;
     }
 
-    public void setAmount(int amount) {
-        this.amount = amount;
+    public synchronized void setAmount(int amount) {
+        synchronized (lock) {
+            this.amount = amount;
+        }
     }
 
     public boolean supportsCustomMaxAmount() {
@@ -46,20 +50,24 @@ public class QuantumCache extends ItemStackCache {
     }
 
     public int increaseAmount(int amount) {
-        long total = this.amount + (long) amount;
-        if (total > this.limit) {
-            this.amount = this.limit;
-            if (!this.voidExcess) {
-                return (int) (total - this.limit);
+        synchronized (lock) {
+            long total = this.amount + (long) amount;
+            if (total > this.limit) {
+                this.amount = this.limit;
+                if (!this.voidExcess) {
+                    return (int) (total - this.limit);
+                }
+            } else {
+                this.amount = this.amount + amount;
             }
-        } else {
-            this.amount = this.amount + amount;
         }
         return 0;
     }
 
     public void reduceAmount(int amount) {
-        this.amount = this.amount - amount;
+        synchronized (lock) {
+            this.amount -= amount;
+        }
     }
 
     public void setLimit(int limit) {
@@ -77,8 +85,10 @@ public class QuantumCache extends ItemStackCache {
             return null;
         }
         final ItemStack clone = this.getItemStack().clone();
-        clone.setAmount((int) Math.min(this.amount, amount));
-        reduceAmount(clone.getAmount());
+        synchronized (lock) {
+            clone.setAmount((int) Math.min(this.amount, amount));
+            reduceAmount(clone.getAmount());
+        }
         return clone;
     }
 

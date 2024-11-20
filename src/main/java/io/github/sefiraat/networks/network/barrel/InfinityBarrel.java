@@ -33,7 +33,9 @@ public class InfinityBarrel extends BarrelIdentity {
 
     @Override
     public void depositItemStack(ItemStack[] itemsToDeposit) {
-        cache.depositAll(itemsToDeposit, true);
+        synchronized (this){
+            cache.depositAll(itemsToDeposit, true);
+        }
     }
 
     @Override

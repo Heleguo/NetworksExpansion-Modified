@@ -68,8 +68,9 @@ public class FluffyBarrel extends BarrelIdentity {
         if (menu == null) {
             return;
         }
-
-        BlockMenuUtil.pushItem(menu, itemsToDeposit, getInputSlot());
+        synchronized (this){
+            BlockMenuUtil.pushItem(menu, itemsToDeposit, getInputSlot());
+        }
     }
 
     @Override

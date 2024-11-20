@@ -29,15 +29,17 @@ public class ExperimentalFeatureManager implements TabExecutor {
         }
     }
     @Getter
-    private boolean enableParallelLineOperation=false;
+    private boolean enableParallelLineOperation=true;
     @Getter
-    private boolean enableAsyncSafeNetworkRoot=false;
+    private boolean enableAsyncSafeNetworkRoot=true;
     @Getter
     private boolean enableRootGetItemStackAsync=false;
     @Getter
-    private boolean enableRootAddItemStackAsync=false;
+    private boolean enableRootAddItemStackAsync=true;
     @Getter
     private boolean enableMatchDistinctiveItem=false;
+    @Getter
+    private boolean enableLineGrabberParallel=true;
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length<2){

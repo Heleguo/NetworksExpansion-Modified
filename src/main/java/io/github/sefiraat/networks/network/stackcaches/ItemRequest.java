@@ -10,6 +10,8 @@ import javax.annotation.Nonnull;
 public class ItemRequest extends ItemStackCache {
 
     private int amount;
+    @Getter
+    private int maxStackSize;
     private static ItemRequest instanceTemplate=new ItemRequest(new ItemStack(Material.STONE),0);
     public static ItemRequest of(ItemStack itemStack, int amount) {
         return instanceTemplate.clone().init(itemStack, amount);
@@ -17,11 +19,13 @@ public class ItemRequest extends ItemStackCache {
     protected ItemRequest init(ItemStack itemStack, int amount) {
         super.init(itemStack);
         this.amount = amount;
+        this.maxStackSize = itemStack.getAmount();
         return this;
     }
     public ItemRequest(@Nonnull ItemStack itemStack, int amount) {
         super(itemStack);
         this.amount = amount;
+        this.maxStackSize = itemStack.getAmount();
     }
 
 

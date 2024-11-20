@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 @ToString
@@ -31,6 +32,7 @@ public class StorageUnitData {
     private boolean isPlaced;
     private StorageUnitType sizeType;
     private Location lastLocation;
+    private byte[] mapLock=new byte[0];
     private byte[][] containerLock= IntStream.range(0,54).mapToObj(i->new byte[0]).toArray(byte[][]::new);
     public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation) {
         this(id, Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)), sizeType, isPlaced, lastLocation, new HashMap<>());
@@ -90,46 +92,50 @@ public class StorageUnitData {
 
     /**
      * Add item to unit
+     * this method should be multi-thread safe
      *
      * @param item:   item will be added
      * @param amount: amount will be added
      * @return the amount actual added
      */
+
     public int addStoredItem(ItemStack item, int amount, boolean contentLocked, boolean force) {
         int add = 0;
         boolean isVoidExcess = NetworksDrawer.isVoidExcess(getLastLocation());
-        for (ItemContainer each : storedItems.values()) {
+        int index=0;
+        for (ItemContainer each : getStoredItems()) {
             if (each.isSimilar(item)) {
                 // Found existing one, add amount
-                add = Math.min(amount, sizeType.getEachMaxSize() - each.getAmount());
-                if (isVoidExcess) {
-                    if (add > 0) {
+                synchronized (containerLock[index]) {
+                    add = Math.min(amount, sizeType.getEachMaxSize() - each.getAmount());
+                    if (add > 0||!isVoidExcess) {
                         each.addAmount(add);
                         DataStorage.setStoredAmount(id, each.getId(), each.getAmount());
                     } else {
                         item.setAmount(0);
                         return add;
                     }
-                } else {
-                    each.addAmount(add);
-                    DataStorage.setStoredAmount(id, each.getId(), each.getAmount());
+                    return add;
                 }
-                return add;
             }
+            index+=1;
         }
-
         // isforce?
         if (!force) {
             // If in content locked mode, no new input allowed
             if (contentLocked || NetworksDrawer.isLocked(getLastLocation())) return 0;
         }
         // Not found, new one
-        if (storedItems.size() < sizeType.getMaxItemCount()) {
-            add = Math.min(amount, sizeType.getEachMaxSize());
-            int itemId = DataStorage.getItemId(item);
-            storedItems.put(itemId, new ItemContainer(itemId, item, add));
-            DataStorage.addStoredItem(id, itemId, add);
-            return add;
+        synchronized (mapLock){
+            if (storedItems.size() < sizeType.getMaxItemCount()) {
+                add = Math.min(amount, sizeType.getEachMaxSize());
+                synchronized (containerLock[index]) {
+                    int itemId = DataStorage.getItemId(item);
+                    storedItems.put(itemId, new ItemContainer(itemId, item, add));
+                    DataStorage.addStoredItem(id, itemId, add);
+                    return add;
+                }
+            }
         }
         return add;
     }
@@ -172,8 +178,10 @@ public class StorageUnitData {
     }
 
     public void removeItem(int itemId) {
-        if (storedItems.remove(itemId) != null) {
-            DataStorage.deleteStoredItem(id, itemId);
+        synchronized (mapLock){
+            if (storedItems.remove(itemId) != null) {
+                DataStorage.deleteStoredItem(id, itemId);
+            }
         }
     }
 
@@ -183,7 +191,10 @@ public class StorageUnitData {
             removeItem(itemId);
             return;
         }
-        ItemContainer container = storedItems.get(itemId);
+        ItemContainer container;
+        synchronized (mapLock){
+            container = storedItems.get(itemId);
+        }
         if (container != null) {
             container.setAmount(amount);
             DataStorage.setStoredAmount(id, itemId, amount);
@@ -191,7 +202,10 @@ public class StorageUnitData {
     }
 
     public void removeAmount(int itemId, int amount) {
-        ItemContainer container = storedItems.get(itemId);
+        ItemContainer container;
+        synchronized (mapLock){
+            container = storedItems.get(itemId);
+        }
         if (container != null) {
             container.removeAmount(amount);
             if (container.getAmount() <= 0 && !NetworksDrawer.isLocked(getLastLocation())) {
@@ -203,19 +217,28 @@ public class StorageUnitData {
     }
 
     public int getStoredTypeCount() {
-        return storedItems.size();
+        synchronized (mapLock){
+            return storedItems.size();
+        }
     }
 
     public int getTotalAmount() {
         int re = 0;
-        for (ItemContainer each : storedItems.values()) {
+        for (ItemContainer each : getStoredItemArray()) {
             re += each.getAmount();
         }
         return re;
     }
 
     public List<ItemContainer> getStoredItems() {
-        return new ArrayList<>(storedItems.values());
+        synchronized (mapLock){
+            return new ArrayList<>(storedItems.values());
+        }
+    }
+    public ItemContainer[] getStoredItemArray(){
+        synchronized (mapLock){
+            return storedItems.values().toArray(ItemContainer[]::new);
+        }
     }
 
     public OfflinePlayer getOwner() {
@@ -230,7 +253,7 @@ public class StorageUnitData {
         }
 
         int amount = itemRequest.getAmount();
-        for (ItemContainer itemContainer : getStoredItems()) {
+        for (ItemContainer itemContainer : getStoredItemArray()) {
             int containerAmount = itemContainer.getAmount();
             if (StackUtils.itemsMatch(itemContainer.getSample(), item)) {
                 int take = Math.min(amount, containerAmount);

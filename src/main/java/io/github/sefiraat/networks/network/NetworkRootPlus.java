@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Constructor;
 import java.util.stream.IntStream;
 
 public class NetworkRootPlus extends NetworkRoot {
@@ -27,7 +28,7 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public ItemStack getItemStack(@Nonnull ItemRequest itemRequest) {
-        if(ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
+        if(enableGetAsync&& ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
             return getItemStackAsync(itemRequest);
         }else {
             return super.getItemStack(itemRequest);
@@ -35,14 +36,16 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public void addItemStack(ItemStack itemStack) {
-        if(ExperimentalFeatureManager.getInstance().isEnableRootAddItemStackAsync()){
+        if(enableAddAsync&&ExperimentalFeatureManager.getInstance().isEnableRootAddItemStackAsync()){
             addItemStackAsync(itemStack);
         }else {
             super.addItemStack(itemStack);
         }
     }
     private byte[][] cellMenuSlotLock= IntStream.range(0,63).mapToObj(i->new byte[0]).toArray(byte[][]::new);
-
+    private static final boolean enableGetAsync=false;
+    private static final boolean enableAddAsync=true;
+    private static Constructor<NetworkRoot> constructor;
     /**
      * getItemStack from network ,this method should be multi-thread safe
      * @param request
@@ -289,9 +292,8 @@ public class NetworkRootPlus extends NetworkRoot {
         // Run for matching barrels
         for (BarrelIdentity barrelIdentity : getInputAbleBarrels()) {
             if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {
-                synchronized (barrelIdentity) {
-                    barrelIdentity.depositItemStack(incoming);
-                }
+                // barrel Identity should realize multi-thread safe somehow
+                barrelIdentity.depositItemStack(incoming);
                 // All distributed, can escape
                 if (incoming.getAmount() == 0) {
                     return;
@@ -300,9 +302,8 @@ public class NetworkRootPlus extends NetworkRoot {
         }
 
         for (StorageUnitData cache : getInputAbleCargoStorageUnitDatas().keySet()) {
-            synchronized (cache) {
-                cache.depositItemStack(incoming, true);
-            }
+            //storageUnitData should realize multi-thread safe somehow
+            cache.depositItemStack(incoming, true);
             if (incoming.getAmount() == 0) {
                 return;
             }
@@ -310,12 +311,47 @@ public class NetworkRootPlus extends NetworkRoot {
 
         for (BlockMenu blockMenu : getCellMenus()) {
             blockMenu.markDirty();
-            synchronized (blockMenu) {
-                BlockMenuUtil.pushItem(blockMenu, incomingCache,false, CELL_AVAILABLE_SLOTS);
-            }
+            //multi-thread safe method of cell Menus
+            pushCellAsync(blockMenu,incomingCache);
             if (incoming.getAmount() == 0) {
                 return;
             }
         }
+    }
+    public void pushCellAsync(BlockMenu cellMenu,ItemStackCache item){
+        Material material = item.getItemType();
+        int maxSize=material.getMaxStackSize();
+        int leftAmount = item.getItemAmount();
+
+        for (int slot : CELL_AVAILABLE_SLOTS) {
+            if (leftAmount <= 0) {
+                break;
+            }
+            synchronized (cellMenuSlotLock[slot]) {
+                ItemStack existing = cellMenu.getItemInSlot(slot);
+
+                if (existing == null || existing.getType() == Material.AIR) {
+                    int received = Math.min(leftAmount, maxSize);
+
+                    cellMenu.replaceExistingItem(slot,item.getItemStack(),false);
+                    existing=cellMenu.getItemInSlot(slot);
+                    existing.setAmount(received);
+                    leftAmount -= received;
+                    // item.setItemAmount();
+                } else {
+                    int existingAmount = existing.getAmount();
+                    if (existingAmount >= maxSize) {
+                        continue;
+                    }
+                    if (!StackUtils.itemsMatch(item, existing)) {
+                        continue;
+                    }
+                    int received = Math.max(0, Math.min(maxSize - existingAmount, leftAmount));
+                    leftAmount -= received;
+                    existing.setAmount(existingAmount + received);
+                }
+            }
+        }
+        item.setItemAmount(leftAmount);
     }
 }

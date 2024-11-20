@@ -9,6 +9,7 @@ import com.ytdd9527.networksexpansion.utils.DisplayGroupGenerators;
 import dev.sefiraat.sefilib.entity.display.DisplayGroup;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
@@ -241,6 +242,7 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
                 maxDistance,
                 true,
                 true,
+                ExperimentalFeatureManager.getInstance().isEnableLineGrabberParallel(),
                 (targetMenu) -> {
                     LineOperationUtil.grabItem(root, targetMenu, TransportMode.FIRST_STOP, 64);
                 });

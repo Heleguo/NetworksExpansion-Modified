@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.network.pusher;
 
 import com.balugaq.netex.api.helpers.Icon;
+import com.balugaq.netex.utils.TransportUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -73,28 +74,36 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
             final ItemRequest itemRequest = new ItemRequest(clone, clone.getMaxStackSize());
 
             int[] slots = targetMenu.getPreset().getSlotsAccessedByItemTransport(targetMenu, ItemTransportFlow.INSERT, clone);
-
-            for (int slot : slots) {
-                final ItemStack itemStack = targetMenu.getItemInSlot(slot);
-
+            TransportUtil.fetchItemAndPush(definition.getNode().getRoot(),blockMenu,itemRequest,(itemStack)->{
                 if (itemStack != null && itemStack.getType() != Material.AIR) {
                     final int space = itemStack.getMaxStackSize() - itemStack.getAmount();
                     if (space > 0 && StackUtils.itemsMatch(itemRequest, itemStack)) {
-                        itemRequest.setAmount(space);
-                    } else {
-                        continue;
+                        return space;
                     }
                 }
-
-                ItemStack retrieved = definition.getNode().getRoot().getItemStack(itemRequest);
-                if (retrieved != null) {
-                    targetMenu.pushItem(retrieved, slots);
-                    if (definition.getNode().getRoot().isDisplayParticles()) {
-                        showParticle(blockMenu.getLocation(), direction);
-                    }
-                }
-                break;
-            }
+                return 0;
+            },64,true,slots);
+//            for (int slot : slots) {
+//                final ItemStack itemStack = targetMenu.getItemInSlot(slot);
+//
+//                if (itemStack != null && itemStack.getType() != Material.AIR) {
+//                    final int space = itemStack.getMaxStackSize() - itemStack.getAmount();
+//                    if (space > 0 && StackUtils.itemsMatch(itemRequest, itemStack)) {
+//                        itemRequest.setAmount(space);
+//                    } else {
+//                        continue;
+//                    }
+//                }
+//
+//                ItemStack retrieved = definition.getNode().getRoot().getItemStack(itemRequest);
+//                if (retrieved != null) {
+//                    targetMenu.pushItem(retrieved, slots);
+//                    if (definition.getNode().getRoot().isDisplayParticles()) {
+//                        showParticle(blockMenu.getLocation(), direction);
+//                    }
+//                }
+//                break;
+//            }
         }
     }
 

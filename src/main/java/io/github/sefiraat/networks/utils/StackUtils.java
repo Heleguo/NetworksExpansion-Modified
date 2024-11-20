@@ -56,20 +56,33 @@ public class StackUtils {
 
     @Nonnull
     public static ItemStack getAsQuantity(@Nullable ItemStack itemStack, int amount) {
+        return getAsQuantity(itemStack,amount,true);
+    }
+    public static ItemStack getLimitedRequest(@Nullable ItemStack itemStack, int amount) {
+        if(itemStack == null) {
+            return new ItemStack(Material.AIR);
+        }
+        if(itemStack.getAmount() <= amount) {
+            return itemStack;
+        }else {
+            ItemStack newItem = itemStack.clone();
+            newItem.setAmount(amount);
+            return newItem;
+        }
+    }
+    public static ItemStack getAsQuantity(@Nullable ItemStack itemStack,int amount,boolean forceCopy) {
         if (itemStack == null) {
             return new ItemStack(Material.AIR);
+        }
+        if(!forceCopy&&itemStack.getAmount()<=amount){
+            return itemStack;
         }
         ItemStack clone = itemStack.clone();
         clone.setAmount(amount);
         return clone;
     }
     public static ItemStack getAsQuantity(@Nonnull ItemStackCache cache,int amount){
-        if (cache.getItemStack() == null) {
-            return new ItemStack(Material.AIR);
-        }
-        ItemStack clone = cache.getItemStack().clone();
-        clone.setAmount(amount);
-        return clone;
+        return getAsQuantity(cache.getItemStack(),amount,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {

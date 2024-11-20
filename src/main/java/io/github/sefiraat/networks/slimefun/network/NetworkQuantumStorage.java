@@ -211,10 +211,13 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 
     public static void syncBlock(@Nonnull Location location, @Nonnull QuantumCache cache) {
         var blockData = StorageCacheUtils.getBlock(location);
-        blockData.setData(BS_AMOUNT, String.valueOf(cache.getAmount()));
-        blockData.setData(BS_VOID, String.valueOf(cache.isVoidExcess()));
-        if (cache.supportsCustomMaxAmount()) {
-            StorageCacheUtils.setData(location, BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+        if(blockData!=null&&SlimefunItem.getById( blockData.getSfId()) instanceof NetworkQuantumStorage) {
+            blockData.setData(BS_AMOUNT, String.valueOf(cache.getAmount()));
+            blockData.setData(BS_VOID, String.valueOf(cache.isVoidExcess()));
+            if (cache.supportsCustomMaxAmount()) {
+                blockData.setData(BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+                //StorageCacheUtils.setData(location, BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+            }
         }
     }
 
