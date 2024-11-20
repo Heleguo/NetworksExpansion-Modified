@@ -285,7 +285,7 @@ public class NetworkRoot extends NetworkNode {
                     continue;
                 }
                 final ItemStack clone = StackUtils.getAsQuantity(itemStack, 1);
-                itemStacks.compute(clone,(i,num)->num==null?(long)clone.getAmount():(long)num+clone.getAmount());
+                itemStacks.compute(clone,(i,num)->num==null?(long)itemStack.getAmount():(long)num+itemStack.getAmount());
             }
         }
 
@@ -296,7 +296,7 @@ public class NetworkRoot extends NetworkNode {
                 continue;
             }
             final ItemStack clone = StackUtils.getAsQuantity(itemStack, 1);
-            itemStacks.compute(clone,(i,num)->num==null?(long)clone.getAmount():(long)num+clone.getAmount());
+            itemStacks.compute(clone,(i,num)->num==null?(long)itemStack.getAmount():(long)num+itemStack.getAmount());
         }
 
         for (BlockMenu blockMenu : getCrafterOutputs()) {
@@ -307,7 +307,7 @@ public class NetworkRoot extends NetworkNode {
                     continue;
                 }
                 final ItemStack clone = StackUtils.getAsQuantity(itemStack, 1);
-                itemStacks.compute(clone,(i,num)->num==null?(long)clone.getAmount():(long)num+clone.getAmount());
+                itemStacks.compute(clone,(i,num)->num==null?(long)itemStack.getAmount():(long)num+itemStack.getAmount());
             }
         }
 
@@ -317,7 +317,7 @@ public class NetworkRoot extends NetworkNode {
                 final ItemStack itemStack = blockMenu.getItemInSlot(slot);
                 if (itemStack != null && itemStack.getType() != Material.AIR) {
                     final ItemStack clone = StackUtils.getAsQuantity(itemStack, 1);
-                    itemStacks.compute(clone,(i,num)->num==null?(long)clone.getAmount():(long)num+clone.getAmount());
+                    itemStacks.compute(clone,(i,num)->num==null?(long)itemStack.getAmount():(long)num+itemStack.getAmount());
                 }
             }
         }
