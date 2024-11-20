@@ -35,7 +35,9 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
     private boolean enableRootGetItemStackAsync=false;
     @Getter
-    private boolean enableRootAddItemStackSync=false;
+    private boolean enableRootAddItemStackAsync=false;
+    @Getter
+    private boolean enableMatchDistinctiveItem=false;
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length<2){

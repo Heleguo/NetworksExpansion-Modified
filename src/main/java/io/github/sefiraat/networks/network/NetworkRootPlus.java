@@ -27,7 +27,7 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public ItemStack getItemStack(@Nonnull ItemRequest itemRequest) {
-        if(ExperimentalFeatureManager.getInstance().isEnableRootAddItemStackSync()){
+        if(ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
             return getItemStackAsync(itemRequest);
         }else {
             return super.getItemStack(itemRequest);
@@ -35,7 +35,7 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public void addItemStack(ItemStack itemStack) {
-        if(ExperimentalFeatureManager.getInstance().isEnableRootAddItemStackSync()){
+        if(ExperimentalFeatureManager.getInstance().isEnableRootAddItemStackAsync()){
             addItemStackAsync(itemStack);
         }else {
             super.addItemStack(itemStack);
