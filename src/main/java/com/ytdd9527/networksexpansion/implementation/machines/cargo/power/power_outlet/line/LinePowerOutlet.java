@@ -2,6 +2,7 @@ package com.ytdd9527.networksexpansion.implementation.machines.cargo.power.power
 
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.balugaq.netex.utils.LineOperationUtil;
+import com.balugaq.netex.utils.TransportUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.NetworkRoot;
@@ -62,8 +63,8 @@ public class LinePowerOutlet extends NetworkDirectional implements Configurable 
 
         final NetworkRoot root = definition.getNode().getRoot();
         final BlockFace blockFace = getCurrentDirection(blockMenu);
-        LineOperationUtil.doOperation(blockMenu.getLocation(), blockFace, this.maxDistance, false, (targetMenu) -> {
-            LineOperationUtil.outPower(targetMenu.getLocation(), root, this.rate);
+        LineOperationUtil.doOperation(blockMenu.getLocation(), blockFace, this.maxDistance, true,(targetLocation->true),(targetLocation) -> {
+            TransportUtil.outPower(targetLocation, root, this.rate);
         });
     }
 }

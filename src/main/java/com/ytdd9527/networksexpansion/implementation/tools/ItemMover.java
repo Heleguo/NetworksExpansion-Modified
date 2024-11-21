@@ -370,7 +370,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
             return null;
         }
 
-        return new NetworkStorage(location, stored, storedAmount);
+        return new NetworkStorage(location, stored,cache, storedAmount);
     }
 
     private static void tryDepositIntoMover(Player player, ItemStack mover, Location clickedLocation) {

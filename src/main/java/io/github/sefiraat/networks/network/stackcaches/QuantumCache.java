@@ -3,6 +3,7 @@ package io.github.sefiraat.networks.network.stackcaches;
 import com.balugaq.netex.api.helpers.ItemStackHelper;
 import io.github.sefiraat.networks.Networks;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -27,6 +28,12 @@ public class QuantumCache extends ItemStackCache {
     //lock for saving thread
     @Getter
     private final AtomicBoolean saving = new AtomicBoolean(false);
+    /**
+     * pendingMove must be set true when removed from CACHES
+     */
+    @Getter
+    @Setter
+    private boolean pendingMove=false;
 
     public QuantumCache(@Nullable ItemStack storedItem, long amount, int limit, boolean voidExcess, boolean supportsCustomMaxAmount) {
         super(storedItem);

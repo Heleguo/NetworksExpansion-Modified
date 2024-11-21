@@ -122,17 +122,17 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 
     @ParametersAreNonnullByDefault
     public static void tryInputItem(Location location, ItemStack itemStack, QuantumCache cache) {
-        if (cache.getItemStack() == null) {
+        if (cache.getItemStack() == null||cache.getItemType().isAir()) {
             return;
         }
-        if (ExperimentalFeatureManager.getInstance().isEnableNetworkStorageBlacklist()&& isBlacklisted(itemStack)) {
-            return;
-        }
+        //actually ,you can not set a quatumStorage type as these
+//        if (ExperimentalFeatureManager.getInstance().isEnableNetworkStorageBlacklist()&& isBlacklisted(itemStack)) {
+//            return;
+//        }
         if (StackUtils.itemsMatch(cache, itemStack)) {
             int leftover = cache.increaseAmount(itemStack.getAmount());
             itemStack.setAmount(leftover);
         }
-
         syncBlock(location, cache);
     }
 
@@ -255,7 +255,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
     public static void syncBlock(@Nonnull Location location, @Nonnull QuantumCache cache) {
         AtomicBoolean save=cache.getSaving();
         if(save.compareAndSet(false,true)){
-            CompletableFuture.supplyAsync(()->{
+            CompletableFuture.runAsync(()->{
                 try{
                     var blockData = StorageCacheUtils.getBlock(location);
                     if(blockData!=null&&SlimefunItem.getById( blockData.getSfId()) instanceof NetworkQuantumStorage) {
@@ -269,15 +269,25 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
                 }finally {
                     save.set(false);
                 }
-                return null;
             });
         }
     }
 
+    /**
+     * shouldn't remove cache by these method
+     * @return
+     */
     public static Map<Location, QuantumCache> getCaches() {
         return CACHES;
     }
-
+    public static QuantumCache removeCache(Location location) {
+        QuantumCache cache=CACHES.remove(location);
+        if(cache!=null) {
+            cache.setPendingMove(true);
+            return cache;
+        }
+        return null;
+    }
     public static int[] getSizes() {
         return SIZES;
     }
@@ -317,7 +327,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         final BlockMenu blockMenu = StorageCacheUtils.getMenu(block.getLocation());
 
         if (blockMenu == null) {
-            CACHES.remove(block.getLocation());
+            removeCache(block.getLocation());
             return;
         }
 
@@ -640,8 +650,8 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         final BlockMenu blockMenu = StorageCacheUtils.getMenu(event.getBlock().getLocation());
 
         if (blockMenu != null) {
-            final QuantumCache cache = CACHES.remove(blockMenu.getLocation());
 
+            final QuantumCache cache = removeCache(blockMenu.getLocation());
             if (cache != null && cache.getAmount() > 0 && cache.getItemStack() != null) {
                 final ItemStack itemToDrop = this.getItem().clone();
                 final ItemMeta itemMeta = itemToDrop.getItemMeta();

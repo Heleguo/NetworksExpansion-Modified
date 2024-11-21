@@ -29,6 +29,7 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class AdvancedImport extends NetworkObject implements RecipeDisplayItem {
     private static final int[] INPUT_SLOTS = new int[]{
@@ -82,20 +83,23 @@ public class AdvancedImport extends NetworkObject implements RecipeDisplayItem {
     private void tryAddItem(@Nonnull BlockMenu blockMenu) {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
-        if (definition == null || definition.getNode() == null) {
+        if (definition.getNode() == null) {
             return;
         }
+        CompletableFuture<?>[] threads=new CompletableFuture[INPUT_SLOTS.length];
+        final NetworkRoot root=definition.getNode().getRoot();
+        for (int i=0;i<INPUT_SLOTS.length;i++) {
+            int inputSlot = INPUT_SLOTS[i];
+            threads[i]=CompletableFuture.runAsync(() -> {
+                final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
 
-        final NetworkRoot root = definition.getNode().getRoot();
-
-        for (int inputSlot : INPUT_SLOTS) {
-            final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
-
-            if (itemStack == null || itemStack.getType() == Material.AIR) {
-                continue;
-            }
-            root.addItemStack(itemStack);
+                if (itemStack == null || itemStack.getType() == Material.AIR) {
+                    return;
+                }
+                root.addItemStack(itemStack);
+            });
         }
+        CompletableFuture.allOf(threads).join();
     }
 
     @Override

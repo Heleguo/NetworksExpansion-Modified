@@ -107,15 +107,15 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         boolean wildChests = Networks.getSupportedPluginManager().isWildChests();
         boolean isChest = wildChests && WildChestsAPI.getChest(targetBlock.getLocation()) != null;
 
-        sendDebugMessage(block.getLocation(), String.format(Networks.getLocalizationService().getString("messages.debug.wildchests"), wildChests));
-        sendDebugMessage(block.getLocation(), String.format(Networks.getLocalizationService().getString("messages.debug.ischest"), isChest));
+        sendDebugMessage(block.getLocation(), ()->String.format(Networks.getLocalizationService().getString("messages.debug.wildchests"), wildChests));
+        sendDebugMessage(block.getLocation(),()-> String.format(Networks.getLocalizationService().getString("messages.debug.ischest"), isChest));
 
         if (wildChests && isChest) {
-            sendDebugMessage(block.getLocation(), Networks.getLocalizationService().getString("messages.debug.wildchests_test_failed"));
+            sendDebugMessage(block.getLocation(), ()->Networks.getLocalizationService().getString("messages.debug.wildchests_test_failed"));
             return;
         }
 
-        sendDebugMessage(block.getLocation(), Networks.getLocalizationService().getString("messages.debug.wildchests_test_success"));
+        sendDebugMessage(block.getLocation(),()-> Networks.getLocalizationService().getString("messages.debug.wildchests_test_success"));
         final Inventory inventory = holder.getInventory();
 
         if (inventory instanceof FurnaceInventory furnaceInventory) {

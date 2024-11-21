@@ -284,7 +284,6 @@ public class NetworkRootPlus extends NetworkRoot {
             return;
         }
 
-
         // Run for matching barrels
         for (BarrelIdentity barrelIdentity : getInputAbleBarrels()) {
             if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {

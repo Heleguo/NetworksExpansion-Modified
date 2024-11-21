@@ -116,13 +116,14 @@ public class AdvancedExport extends NetworkObject implements RecipeDisplayItem {
             return;
         }
         NetworkRoot networkRoot = definition.getNode().getRoot();
+        BlockMenuUtil.BlockMenuSnapShot snapShot=BlockMenuUtil.ofSnapShot(blockMenu);
         for (int testItemSlot : getTestSlots()) {
             ItemStack currentStack = blockMenu.getItemInSlot(testItemSlot);
             if (currentStack != null && currentStack.getType() != Material.AIR) {
                 ItemRequest request=ItemRequest.of(currentStack,currentStack.getAmount());
                 //todo can optimize
                 //itemRequests.add(new ItemRequest(StackUtils.getAsQuantity(currentStack, 1), currentStack.getAmount()));
-                TransportUtil.fetchItemAndPush(networkRoot,blockMenu,request,i->TransportUtil.commonMatch(i,request),currentStack.getAmount(),false,getOutputSlots());
+                TransportUtil.fetchItemAndPushSnapShot(networkRoot,snapShot,request,i->TransportUtil.commonMatchCache(i,request),currentStack.getAmount(),false,getOutputSlots());
             }
         }
 //        List<ItemRequest> itemRequests = new ArrayList<>();

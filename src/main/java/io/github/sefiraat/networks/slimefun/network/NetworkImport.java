@@ -2,6 +2,7 @@ package io.github.sefiraat.networks.slimefun.network;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import io.github.sefiraat.networks.NetworkStorage;
+import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
 import io.github.sefiraat.networks.slimefun.NetworkSlimefunItems;
@@ -23,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("deprecation")
 public class NetworkImport extends NetworkObject {
@@ -74,15 +76,20 @@ public class NetworkImport extends NetworkObject {
         if (definition.getNode() == null) {
             return;
         }
+        CompletableFuture<?>[] threads=new CompletableFuture[INPUT_SLOTS.length];
+        final NetworkRoot root=definition.getNode().getRoot();
+        for (int i=0;i<INPUT_SLOTS.length;i++) {
+            int inputSlot = INPUT_SLOTS[i];
+            threads[i]=CompletableFuture.runAsync(() -> {
+                final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
 
-        for (int inputSlot : INPUT_SLOTS) {
-            final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
-
-            if (itemStack == null || itemStack.getType() == Material.AIR) {
-                continue;
-            }
-            definition.getNode().getRoot().addItemStack(itemStack);
+                if (itemStack == null || itemStack.getType() == Material.AIR) {
+                    return;
+                }
+                root.addItemStack(itemStack);
+            });
         }
+        CompletableFuture.allOf(threads).join();
     }
 
     @Override

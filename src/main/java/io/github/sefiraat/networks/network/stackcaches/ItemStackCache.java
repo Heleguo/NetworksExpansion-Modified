@@ -58,6 +58,10 @@ public class ItemStackCache implements Cloneable {
         }
         return this.itemMeta;
     }
+    protected void setItemMeta0(ItemMeta itemMeta) {
+        this.itemMeta = itemMeta;
+        this.metaCached =  true;
+    }
 
     @Nonnull
     public Material getItemType() {

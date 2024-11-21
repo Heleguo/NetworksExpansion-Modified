@@ -1,9 +1,12 @@
 package io.github.sefiraat.networks.slimefun.network.pusher;
 
 import com.balugaq.netex.api.helpers.Icon;
+import com.balugaq.netex.utils.BlockMenuUtil;
 import com.balugaq.netex.utils.TransportUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
+import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
@@ -23,6 +26,9 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractNetworkPusher extends NetworkDirectional {
     private static final int NORTH_SLOT = 11;
@@ -60,7 +66,9 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
         if (targetMenu == null) {
             return;
         }
-
+        BlockMenuUtil.BlockMenuSnapShot snapShot=BlockMenuUtil.ofSnapShot(targetMenu);
+        NetworkRoot root=definition.getNode().getRoot();
+        //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(true);
         for (int itemSlot : this.getItemSlots()) {
             final ItemStack testItem = blockMenu.getItemInSlot(itemSlot);
 
@@ -74,29 +82,13 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
             final ItemRequest itemRequest = new ItemRequest(clone, clone.getMaxStackSize());
             //todo Parallel slotAccess
             int[] slots = targetMenu.getPreset().getSlotsAccessedByItemTransport(targetMenu, ItemTransportFlow.INSERT, clone);
-            TransportUtil.fetchItemAndPush(definition.getNode().getRoot(),targetMenu,itemRequest,(itemStack)->TransportUtil.commonMatch(itemStack,itemRequest),64,true,slots);
-//            for (int slot : slots) {
-//                final ItemStack itemStack = targetMenu.getItemInSlot(slot);
-//
-//                if (itemStack != null && itemStack.getType() != Material.AIR) {
-//                    final int space = itemStack.getMaxStackSize() - itemStack.getAmount();
-//                    if (space > 0 && StackUtils.itemsMatch(itemRequest, itemStack)) {
-//                        itemRequest.setAmount(space);
-//                    } else {
-//                        continue;
-//                    }
-//                }
-//
-//                ItemStack retrieved = definition.getNode().getRoot().getItemStack(itemRequest);
-//                if (retrieved != null) {
-//                    targetMenu.pushItem(retrieved, slots);
-//                    if (definition.getNode().getRoot().isDisplayParticles()) {
-//                        showParticle(blockMenu.getLocation(), direction);
-//                    }
-//                }
-//                break;
-//            }
+            if(ExperimentalFeatureManager.getInstance().isEnableSnapShotOptimize()){
+                TransportUtil.fetchItemAndPushSnapShot(root,snapShot,itemRequest,(itemStack)->TransportUtil.commonMatchCache(itemStack,itemRequest),64,true,slots);
+            }else {
+                TransportUtil.fetchItemAndPush(root,targetMenu,itemRequest,(itemStack)->TransportUtil.commonMatch(itemStack,itemRequest),64,true,slots);
+            }
         }
+        //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(false);
     }
 
     @Override

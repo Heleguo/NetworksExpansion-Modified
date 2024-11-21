@@ -13,9 +13,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class NetworkStorage extends BarrelIdentity {
-
-    public NetworkStorage(Location location, ItemStack itemStack, long amount) {
+    final QuantumCache cacheReference;
+    public NetworkStorage(Location location, ItemStack itemStack,QuantumCache storedCache, long amount) {
         super(location, itemStack, amount, BarrelType.NETWORKS);
+        this.cacheReference = storedCache;
     }
 
     @Override
@@ -26,19 +27,30 @@ public class NetworkStorage extends BarrelIdentity {
 //        if (blockMenu == null) {
 //            return null;
 //        }
-
-        final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
-        if (cache == null) {
+        // we don't need to refresh this cacheReference
+        //if this is removed in a normal way, pendingMove will be set true,
+        //if QuantumStorage is replaced with air but Cache still exists,
+        //as we have tested before,there's no dupe in this situation
+        //as we all know,NTWStorage is just a temporary cache which refresh every sft
+        //this check also prevent part of dupe13 somehow
+        //final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
+        if (cacheReference.isPendingMove()) {
             return null;
         }
-        return NetworkQuantumStorage.getItemStack(cache, this.getLocation(), itemRequest.getAmount());
+        return NetworkQuantumStorage.getItemStack(cacheReference, this.getLocation(), itemRequest.getAmount());
     }
 
     @Override
     public void depositItemStack(ItemStack itemsToDeposit) {
-        final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
-        if (cache != null) {
-            NetworkQuantumStorage.tryInputItem(this.getLocation(), itemsToDeposit, cache);
+        //final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
+        // we don't need to refresh this cacheReference
+        //if this is removed in a normal way, pendingMove will be set true,
+        //if QuantumStorage is replaced with air but Cache still exists,
+        //as we have tested before,there's no dupe in this situation
+        //as we all know,NTWStorage is just a temporary cache which refresh every sft
+        //this check also prevent part of dupe13 somehow
+        if (!cacheReference.isPendingMove()) {
+            NetworkQuantumStorage.tryInputItem(this.getLocation(), itemsToDeposit, cacheReference);
         }
 
     }

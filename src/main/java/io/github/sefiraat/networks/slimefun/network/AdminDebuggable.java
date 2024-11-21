@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 public interface AdminDebuggable {
@@ -33,16 +34,16 @@ public interface AdminDebuggable {
         }
     }
 
-    default void sendDebugMessage(@Nonnull Location location, @Nonnull String string) {
+    default void sendDebugMessage(@Nonnull Location location, @Nonnull Supplier<String> string) {
         if (isDebug(location)) {
             final String locationString = "W[" + location.getWorld().getName() + "] " +
                     "X[" + location.getBlockX() + "] " +
                     "Y[" + location.getBlockY() + "] " +
                     "Z[" + location.getBlockZ() + "] ";
-            Networks.getInstance().getLogger().log(Level.INFO, String.format(Networks.getLocalizationService().getString("messages.debug.info"), locationString, string));
+            Networks.getInstance().getLogger().log(Level.INFO, String.format(Networks.getLocalizationService().getString("messages.debug.info"), locationString, string.get()));
             for (Player player : VIEWERS) {
                 if (player.isOnline()) {
-                    player.sendMessage(String.format(Networks.getLocalizationService().getString("messages.debug.viewer-info"), locationString, string));
+                    player.sendMessage(String.format(Networks.getLocalizationService().getString("messages.debug.viewer-info"), locationString, string.get()));
                 } else {
                     removeViewer(player);
                 }

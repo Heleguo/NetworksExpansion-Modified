@@ -16,13 +16,16 @@ public interface BarrelCore {
     @Nullable
     ItemStack requestItem(@Nonnull ItemRequest itemRequest);
 
-    public void depositItemStack(ItemStack itemToDeposit) ;
+    default void depositItemStack(ItemStack... itemToDeposit) {
+        for (ItemStack itemStack : itemToDeposit) {
+            depositItemStack(itemStack);
+        }
+    }
     /**
      * this method should be multi-thread safe
-
      * @return
      */
-    //void depositItemStack(ItemStack... itemsToDeposit);
+    void depositItemStack(ItemStack itemsToDeposit);
 
     int[] getInputSlot();
 

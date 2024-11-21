@@ -4,8 +4,6 @@ import com.balugaq.netex.api.enums.MCVersion;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
-import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
-import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
@@ -165,10 +163,20 @@ public class StackUtils {
         // Now we need to compare meta's directly - cache is already out, but let's fetch the 2nd meta also
         final ItemMeta itemMeta = cache2.getItemMeta();
         final ItemMeta cachedMeta = cache.getItemMeta();
+        boolean result=metaMatchCore(type,itemMeta,cachedMeta,checkLore,checkCustomModelId);
+        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta ends %s");
+        return result;
+    }
 
+    public static boolean metaMatchCore(Material itemType,ItemMeta itemMeta,ItemMeta cachedMeta,boolean checkLore, boolean checkCustomModelId) {
+        //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         if (itemMeta == null || cachedMeta == null) {
             return itemMeta == cachedMeta;
         }
+
+//        if(ExperimentalFeatureManager.getInstance().isEnableMetaDirectlyCompare()){
+//            return itemMeta.equals(cachedMeta);
+//        }
 
         // ItemMetas are different types and cannot match
         if (!itemMeta.getClass().equals(cachedMeta.getClass())) {
@@ -196,21 +204,31 @@ public class StackUtils {
             }
         }
 
+//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta basic match %s");
+//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // PDCs don't match
         if (!itemMeta.getPersistentDataContainer().equals(cachedMeta.getPersistentDataContainer())) {
             return false;
         }
 
+//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta pdc match %s");
+//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // Make sure enchantments match
-        if (!itemMeta.getEnchants().equals(cachedMeta.getEnchants())) {
-            return false;
-        }
+        boolean hasEnchant1=itemMeta.hasEnchants();
+        boolean hasEnchant2=cachedMeta.hasEnchants();
+        if(hasEnchant2==hasEnchant1){
+            if(hasEnchant1){
+                if(!matchEnchantments(itemMeta,cachedMeta))
+                    return false;
+            }
+        }else return false;
 
+        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta enchant match %s");
         // Check item flags
-        if (!itemMeta.getItemFlags().equals(cachedMeta.getItemFlags())) {
-            return false;
-        }
+        //null
 
+
+        //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // Check the attribute modifiers
         final boolean hasAttributeOne = itemMeta.hasAttributeModifiers();
         final boolean hasAttributeTwo = cachedMeta.hasAttributeModifiers();
@@ -221,14 +239,18 @@ public class StackUtils {
         } else if (hasAttributeTwo) {
             return false;
         }
-
+//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta attribute match %s");
+//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // Check the lore
         if (checkLore
                 //these shits should be compared in Distinctive Items,but we do these comparasion for them,
                 //should put data in pdc
-            || (!ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem()&&( type == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
-            || type == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
-            || type == Material.SUGAR ))// Fix Symbols in MomoTech
+                ||
+                //(!ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem() &&
+                ( itemType == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
+                || itemType == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
+                || itemType == Material.SUGAR )// Fix Symbols in MomoTech
+                //)
         ) {
             final boolean hasLore1= itemMeta.hasLore();
             final boolean hasLore2 = cachedMeta.hasLore();
@@ -248,17 +270,19 @@ public class StackUtils {
             return false;
         }
         if (optionalStackId1.isPresent()) {
-            if(ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem()){
-                final String stackId1 = optionalStackId1.get();
-                //when pdc equals, id value should equals
-                SlimefunItem item=SlimefunItem.getById(stackId1);
-                //compare distinctives
-                if(item instanceof DistinctiveItem distinctiveItem){
-                    if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
-                        return false;
-                    }
-                }
-            }
+
+//            if(ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem()){
+//                final String stackId1 = optionalStackId1.get();
+//                //when pdc equals, id value should equals
+//                SlimefunItem item=SlimefunItem.getById(stackId1);
+//                //compare distinctives
+//                if(item instanceof DistinctiveItem distinctiveItem){
+//                    if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
+//                        return false;
+//                    }
+//                }
+//            }
+            //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"meta All matched sf %s");
             //SlimefunItem matched
             return true;
 //            }
@@ -268,7 +292,7 @@ public class StackUtils {
         if (!Objects.equals(itemMeta.getDisplayName(), cachedMeta.getDisplayName())) {
             return false;
         }
-
+        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"meta All matched vanilla %s");
         // Everything should match if we've managed to get here
         return true;
     }
@@ -624,22 +648,60 @@ public class StackUtils {
     }
     private static Class CraftMetaBlockState;
     private static Field blockEntityTag;
-    private static boolean hasFailed;
+    private static boolean hasFailedBlockStateMeta;
     public static boolean matchBlockStateMeta(BlockStateMeta meta1, BlockStateMeta meta2){
-        if(!hasFailed){
+        if(!hasFailedBlockStateMeta){
             try{
                 if(CraftMetaBlockState==null){
-                    var field=ReflectUtils.getDeclaredFieldsRecursively(meta1.getClass(),"blockEntityTag");
-                    CraftMetaBlockState=field.getSecondValue();
-                    blockEntityTag=field.getFirstValue();
-                    blockEntityTag.setAccessible(true);
+                    try{
+                        var field=ReflectUtils.getDeclaredFieldsRecursively(meta1.getClass(),"blockEntityTag");
+                        CraftMetaBlockState=field.getSecondValue();
+                        blockEntityTag=field.getFirstValue();
+                        blockEntityTag.setAccessible(true);
+                    }
+                    catch (Throwable e){
+                            Networks.getInstance().getLogger().severe(()->"Unexpected ERROR occured while initializing CraftMetaBlockState Reflection,please contact the author");
+                            e.printStackTrace();
+                            hasFailedBlockStateMeta =true;
+                    }
                 }
                 return Objects.equals(blockEntityTag.get(meta1),blockEntityTag.get(meta2));
             }catch (Throwable e){
-                hasFailed=true;
+                hasFailedBlockStateMeta =true;
             }
         }
         return meta1.equals(meta2);
+    }
+    private static Class CraftMetaItemClass;
+    private static Field enchantmentField;
+    private static Field loreField;
+    private static boolean hasFailedCraftMetaItem;
+    private static void initCraftMetaItemReflection(Class metaClass){
+        try{
+            var field=ReflectUtils.getDeclaredFieldsRecursively(metaClass,"enchantments");
+            CraftMetaItemClass=field.getSecondValue();
+            enchantmentField=field.getFirstValue();
+            field=ReflectUtils.getDeclaredFieldsRecursively(metaClass,"lore");
+            assert  CraftMetaItemClass==field.getSecondValue();
+            loreField=field.getFirstValue();
+        }catch (Throwable e){
+            Networks.getInstance().getLogger().severe(()->"Unexpected ERROR occured while initializing CraftMetaItem Reflection,please contact the author");
+            e.printStackTrace();
+            hasFailedCraftMetaItem=true;
+        }
+    }
+    public static boolean matchEnchantments(ItemMeta meta1,ItemMeta meta2){
+        if(!hasFailedCraftMetaItem){
+            try{
+                if(CraftMetaItemClass==null){
+                    initCraftMetaItemReflection(meta1.getClass());
+                }
+                return Objects.equals(enchantmentField.get(meta1),enchantmentField.get(meta2));
+            }catch (Throwable e){
+                hasFailedCraftMetaItem=true;
+            }
+        }
+        return meta1.getEnchants().equals(meta2.getEnchants());
     }
 
 

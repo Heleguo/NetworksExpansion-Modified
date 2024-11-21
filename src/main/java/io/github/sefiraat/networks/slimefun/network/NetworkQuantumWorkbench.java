@@ -47,7 +47,8 @@ public class NetworkQuantumWorkbench extends SlimefunItem {
     public static final RecipeType TYPE = new RecipeType(
             Keys.newKey("quantum-workbench"),
             Icon.RECIPE_TYPE_ITEMSTACK_QUANTUM_WORKBENCH,
-            NetworkQuantumWorkbench::addRecipe
+            NetworkQuantumWorkbench::addRecipe,
+            NetworkQuantumWorkbench::removeRecipe
     );
 
     @ParametersAreNonnullByDefault
@@ -57,6 +58,10 @@ public class NetworkQuantumWorkbench extends SlimefunItem {
 
     public static void addRecipe(ItemStack[] input, ItemStack output) {
         RECIPES.put(input, output);
+    }
+
+    public static void removeRecipe(ItemStack[] input,ItemStack output){
+        RECIPES.remove(input,output);
     }
 
     @Override

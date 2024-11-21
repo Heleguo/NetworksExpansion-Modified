@@ -539,6 +539,7 @@ public class NetworkRoot extends NetworkNode {
         return new NetworkStorage(
                 blockMenu.getLocation(),
                 clone,
+                cache,
                 storedInt
         );
     }
@@ -789,11 +790,12 @@ public class NetworkRoot extends NetworkNode {
 
         return stackToReturn;
     }
-
+    //will not change the request's amount
+    //todo need cache
     public boolean contains(@Nonnull ItemRequest request) {
 
         long found = 0;
-
+        int requestAmount=request.getAmount();
         // Barrels
         for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
             final ItemStack itemStack = barrelIdentity.getItemStack();
@@ -811,7 +813,7 @@ public class NetworkRoot extends NetworkNode {
             }
 
             // Escape if found all we need
-            if (found >= request.getAmount()) {
+            if (found >= requestAmount) {
                 return true;
             }
         }
@@ -831,7 +833,7 @@ public class NetworkRoot extends NetworkNode {
                 found += itemStack.getAmount();
 
                 // Escape if found all we need
-                if (found >= request.getAmount()) {
+                if (found >= requestAmount) {
                     return true;
                 }
             }
@@ -854,7 +856,7 @@ public class NetworkRoot extends NetworkNode {
 
 
                 // Escape if found all we need
-                if (found >= request.getAmount()) {
+                if (found >= requestAmount) {
                     return true;
                 }
             }
@@ -874,7 +876,7 @@ public class NetworkRoot extends NetworkNode {
                 found += itemStack.getAmount();
 
                 // Escape if found all we need
-                if (found >= request.getAmount()) {
+                if (found >= requestAmount) {
                     return true;
                 }
             }
@@ -894,7 +896,7 @@ public class NetworkRoot extends NetworkNode {
             found += itemStack.getAmount();
 
             // Escape if found all we need
-            if (found >= request.getAmount()) {
+            if (found >= requestAmount) {
                 return true;
             }
         }
@@ -914,7 +916,7 @@ public class NetworkRoot extends NetworkNode {
                 found += itemStack.getAmount();
 
                 // Escape if found all we need
-                if (found >= request.getAmount()) {
+                if (found >= requestAmount) {
                     return true;
                 }
             }
@@ -1380,21 +1382,25 @@ public class NetworkRoot extends NetworkNode {
         this.outputAbleCargoStorageUnitDatas = dataSet;
         return dataSet;
     }
-
-    public boolean refreshRootItems() {
+    public void resetRootItems(){
         this.barrels = null;
         this.cargoStorageUnitDatas = null;
         this.inputAbleBarrels = null;
         this.outputAbleBarrels = null;
         this.inputAbleCargoStorageUnitDatas = null;
         this.outputAbleCargoStorageUnitDatas = null;
-
+    }
+    public void initRootItems(){
         getBarrels();
         getCargoStorageUnitDatas();
         getInputAbleBarrels();
         getOutputAbleBarrels();
         getInputAbleCargoStorageUnitDatas();
         getOutputAbleCargoStorageUnitDatas();
+    }
+    public boolean refreshRootItems() {
+        resetRootItems();
+        initRootItems();
         return true;
     }
 }

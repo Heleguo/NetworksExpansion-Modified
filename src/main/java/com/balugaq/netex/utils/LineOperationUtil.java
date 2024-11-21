@@ -50,6 +50,20 @@ public class LineOperationUtil {
             doOperationOrdinal(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
         }
     }
+    public static void doOperation(Location startLocation, BlockFace direction, int limit, boolean skipNoMenu,Predicate<Location> stopLocation, Consumer<Location> consumer) {
+        doOperation(startLocation, direction, limit, skipNoMenu, true,stopLocation, consumer);
+    }
+    public static void doOperation(Location startLocation, BlockFace direction, int limit, boolean skipNoMenu, boolean optimizeExperience, Predicate<Location> stopLocation, Consumer<Location> consumer) {
+        doOperation(startLocation, direction, limit, skipNoMenu, optimizeExperience, false,stopLocation, consumer);
+    }
+    public static void doOperation(Location startLocation, BlockFace direction, int limit,boolean skipNotPass, boolean optimizeExperience,boolean parallel,Predicate<Location> stopLocation, Consumer<Location> consumer) {
+//        if(false&&parallel&&ExperimentalFeatureManager.getInstance().isEnableParallelLineOperation()){
+//            //doOperationParallel(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
+//        }else {
+            doOperationOrdinal(startLocation, direction, limit,skipNotPass,optimizeExperience,stopLocation, consumer);
+        //}
+    }
+    //menu operation
     public static void doOperationOrdinal(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer){
         Location location = startLocation.clone();
         int finalLimit = limit;
@@ -68,6 +82,27 @@ public class LineOperationUtil {
                 }
             }
             consumer.accept(blockMenu);
+        }
+    }
+    //just location
+    public static void doOperationOrdinal(Location startLocation,BlockFace direction,int limit,boolean skipNotPass,boolean optimizeExperience,Predicate<Location> stopLocation, Consumer<Location> consumer){
+        Location location = startLocation.clone();
+        int finalLimit = limit;
+        if (optimizeExperience) {
+            finalLimit += 1;
+        }
+        Vector directionVec = direction.getDirection();
+        for (int i = 0; i < finalLimit; i++) {
+            location.add(directionVec);
+            //final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
+            if (!stopLocation.test(location)) {
+                if (skipNotPass) {
+                    continue;
+                } else {
+                    return;
+                }
+            }
+            consumer.accept(location);
         }
     }
     public static void doOperationParallel(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer) {
@@ -331,45 +366,5 @@ public class LineOperationUtil {
         }
     }
 
-    public static void outPower(@Nonnull Location location, @Nonnull NetworkRoot root, int rate) {
-        var blockData = StorageCacheUtils.getBlock(location);
-        if (blockData == null) {
-            return;
-        }
 
-        if (!blockData.isDataLoaded()) {
-            StorageCacheUtils.requestLoad(blockData);
-            return;
-        }
-
-        final SlimefunItem slimefunItem = SlimefunItem.getById(blockData.getSfId());
-        if (!(slimefunItem instanceof EnergyNetComponent component) || slimefunItem instanceof NetworkObject) {
-            return;
-        }
-
-        final String charge = blockData.getData("energy-charge");
-        int chargeInt = 0;
-        if (charge != null) {
-            chargeInt = Integer.parseInt(charge);
-        }
-
-        final int capacity = component.getCapacity();
-        final int space = capacity - chargeInt;
-
-        if (space <= 0) {
-            return;
-        }
-
-        final int possibleGeneration = Math.min(rate, space);
-        final long power = root.getRootPower();
-
-        if (power <= 0) {
-            return;
-        }
-
-        final int gen = power < possibleGeneration ? (int) power : possibleGeneration;
-
-        component.addCharge(location, gen);
-        root.removeRootPower(gen);
-    }
 }

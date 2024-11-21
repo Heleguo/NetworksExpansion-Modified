@@ -3,6 +3,7 @@ package io.github.sefiraat.networks.slimefun.network;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
+import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkNode;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class NetworkController extends NetworkObject {
 
@@ -57,7 +59,11 @@ public class NetworkController extends NetworkObject {
                         addToRegistry(block);
                         NetworkRoot networkRoot = NetworkRoot.newInstance(block.getLocation(), NodeType.CONTROLLER, maxNodes.getValue());
                         networkRoot.addAllChildren();
-
+                        if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItems()){
+                            networkRoot.initRootItems();
+                        }else if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItemsAsync()){
+                            CompletableFuture.runAsync(networkRoot::initRootItems);
+                        }
                         boolean crayon = CRAYONS.contains(block.getLocation());
                         if (crayon) {
                             networkRoot.setDisplayParticles(true);

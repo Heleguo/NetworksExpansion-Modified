@@ -1,6 +1,8 @@
 package io.github.sefiraat.networks.managers;
 
+import io.github.sefiraat.networks.Networks;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -9,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
@@ -28,20 +30,92 @@ public class ExperimentalFeatureManager implements TabExecutor {
             }
         }
     }
+    //已经使用
     @Getter
     private boolean enableParallelLineOperation=true;
+    //已经使用
     @Getter
     private boolean enableAsyncSafeNetworkRoot=true;
+
     @Getter
+    //需要进一步查看
     private boolean enableRootGetItemStackAsync=false;
+
     @Getter
+    //已经使用
     private boolean enableRootAddItemStackAsync=true;
+
+//    @Getter
+//    //已经停用
+//    private boolean enableNetworkStorageBlacklist=false;
     @Getter
-    private boolean enableMatchDistinctiveItem=false;
-    @Getter
-    private boolean enableNetworkStorageBlacklist=false;
-    @Getter
+    //已经使用
     private boolean enableLineGrabberParallel=true;
+
+    @Getter
+    //已经使用
+    private boolean enableLineGrabberAsync=true;
+
+    @Getter
+    private boolean enableControllerPreviewItems=false;
+    @Getter
+    private boolean enableControllerPreviewItemsAsync=false;
+
+    @Getter
+    private boolean enableBreakPoint1=false;
+
+    @Getter
+    private boolean enableBreakPoint2=false;
+
+    @Getter
+    private boolean enableBreakPoint3=false;
+
+
+    @Getter
+    //已经启用
+    private boolean enableSnapShotOptimize=true;
+
+//    @Getter
+//    private boolean enableMetaDirectlyCompare=true;
+    //todo list
+    //add NetworksPusher slotAccess parallel
+    //check the safety of BlockMenuSnapShot
+    //check NetworkImport parallel execution
+    //check AdvancedImport parallel execution
+    //check SnapShot of AdvancedExport
+    public class Profiler{
+        boolean enabled=true;
+        public Profiler(boolean enabled ){
+            //what is this for?
+            this.enabled=enabled;
+        }
+    }
+    @Getter
+    @Setter
+    private boolean enableGlobalDebugFlag =false;
+
+    long lastTimeStamp=0L;
+    boolean isTiming=false;
+    public void startGlobalProfiler(){
+        if(enableGlobalDebugFlag &&!isTiming){
+            isTiming=true;
+            lastTimeStamp=System.nanoTime();
+        }
+    }
+    public void endGlobalProfiler(Supplier<String> message){
+        if(enableGlobalDebugFlag &&isTiming){
+            long time=System.nanoTime();
+            isTiming=false;
+            sendTimings(lastTimeStamp,time,message);
+            this.lastTimeStamp=0L;
+        }
+    }
+
+    public void sendTimings(long start, long end, Supplier<String> string){
+        if(enableGlobalDebugFlag){
+            Networks.getInstance().getLogger().info( String.format( string.get(),String.valueOf(end-start)));
+        }
+    }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length<2){
