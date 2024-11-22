@@ -134,7 +134,7 @@ public class NetworkRoot extends NetworkNode {
     private Map<StorageUnitData, Location> outputAbleCargoStorageUnitDatas = null;
 
     @Getter
-    private long rootPower = 0;
+    long rootPower = 0;
 
     @Getter
     private boolean displayParticles = false;
@@ -247,6 +247,8 @@ public class NetworkRoot extends NetworkNode {
         this.isOverburdened = overburdened;
     }
 
+    //public Map<ItemStack,Long>
+
     @Nonnull
     public Map<ItemStack, Long> getAllNetworkItemsLongType() {
         final Map<ItemStack, Long> itemStacks = new HashMap<>();
@@ -323,7 +325,7 @@ public class NetworkRoot extends NetworkNode {
         }
         return itemStacks;
     }
-
+    @Deprecated
     public Map<ItemStack, Integer> getAllNetworkItems() {
         final Map<ItemStack, Long> itemStacks = getAllNetworkItemsLongType();
         Map<ItemStack,Integer> itemStackMap = itemStacks.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,entry->{

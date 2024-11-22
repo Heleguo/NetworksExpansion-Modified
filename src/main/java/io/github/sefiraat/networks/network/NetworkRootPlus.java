@@ -2,6 +2,7 @@ package io.github.sefiraat.networks.network;
 
 import com.balugaq.netex.api.data.StorageUnitData;
 import com.balugaq.netex.utils.BlockMenuUtil;
+import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedGreedyBlock;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.barrel.InfinityBarrel;
@@ -9,7 +10,9 @@ import io.github.sefiraat.networks.network.stackcaches.BarrelIdentity;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.slimefun.network.NetworkGreedyBlock;
+import io.github.sefiraat.networks.slimefun.network.NetworkPowerNode;
 import io.github.sefiraat.networks.utils.StackUtils;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
 import org.bukkit.Location;
@@ -20,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 
 public class NetworkRootPlus extends NetworkRoot {
@@ -28,12 +32,11 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public ItemStack getItemStack(@Nonnull ItemRequest itemRequest) {
-        return getItemStackRewrite(itemRequest);
-//        if(enableGetAsync&& ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
-//            return getItemStackAsync(itemRequest);
-//        }else {
-//            return super.getItemStack(itemRequest);
-//        }
+        if(enableGetAsync&& ExperimentalFeatureManager.getInstance().isEnableRootGetItemStackAsync()){
+            return getItemStackAsync(itemRequest);
+        }else {
+            return getItemStackRewrite(itemRequest);
+        }
     }
     @Override
     public void addItemStack(ItemStack itemStack) {
@@ -44,9 +47,51 @@ public class NetworkRootPlus extends NetworkRoot {
         }
     }
     private byte[][] cellMenuSlotLock= IntStream.range(0,63).mapToObj(i->new byte[0]).toArray(byte[][]::new);
-    private static final boolean enableGetAsync=false;
+    private static final boolean enableGetAsync=true;
     private static final boolean enableAddAsync=true;
     private static Constructor<NetworkRoot> constructor;
+    //this method should be synchronized,otherwise adding inner sync locks will decrease performance
+    public void removeRootPower(long power){
+        if(ExperimentalFeatureManager.getInstance().isEnableAsyncRootPower()){
+            this.rootPower -= power;
+            CompletableFuture.runAsync(()->{
+                int removed = 0;
+                for (Location node : getPowerNodes()) {
+                    var blockData=StorageCacheUtils.getBlock(node);
+                    synchronized (blockData){
+                        if(blockData.isPendingRemove()){
+                            continue;
+                        }else if(!blockData.isDataLoaded()){
+                            StorageCacheUtils.requestLoad(blockData);
+                            continue;
+                        }else{
+                            try{
+                                String val=blockData.getData("energy-charge");
+                                if(val!=null){
+                                    int charge=Integer.parseInt(val);
+                                    if (charge <= 0) {
+                                        continue;
+                                    }
+                                    final int toRemove = (int) Math.min(power - removed, charge);
+                                    blockData.setData("energy-charge",String.valueOf(charge-toRemove));
+                                    removed = removed + toRemove;
+                                }
+                            }catch (NumberFormatException e){
+                            }
+                            if (removed >= power) {
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+        }else {
+            super.removeRootPower(power);
+        }
+    }
+    public synchronized ItemStack getItemStackAsync(@Nonnull ItemRequest itemRequest) {
+        return getItemStackRewrite(itemRequest);
+    }
     public ItemStack getItemStackRewrite(@Nonnull ItemRequest request) {
 
         if (request.getAmount() <= 0) {

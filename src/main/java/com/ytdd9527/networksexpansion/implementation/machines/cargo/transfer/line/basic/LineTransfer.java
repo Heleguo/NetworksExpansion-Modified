@@ -211,6 +211,7 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
                 maxDistance,
                 false,
                 false,
+                ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),
                 (targetMenu) -> {
                     LineOperationUtil.pushItem(root, targetMenu, templates, TransportMode.FIRST_STOP, 64);
                 });

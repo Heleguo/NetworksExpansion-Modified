@@ -31,7 +31,7 @@ public class TransportUtil {
         limit -= sendedAmount;
         return limit;
     }
-    public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch, int... slots) {
+    public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch,boolean breakWhenNoMatch, int... slots){
         int freeSpace = 0;
         int maxStackSize=itemRequest.getMaxStackSize();
         if(maxStackSize<=0)return;
@@ -43,8 +43,12 @@ public class TransportUtil {
                 freeSpace += match;
                 matchedSlots.add(slot);
                 if(breakAfterFirstMatch) {
+                    //first stop mode
                     break;
                 }
+            }else if(breakWhenNoMatch) {
+                //if match Amount<=0 in this slot,then next slots probably no match
+                break;
             }
             if(freeSpace >= limit){
                 break;
@@ -60,6 +64,9 @@ public class TransportUtil {
             //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
             BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, matchedSlots);
         }
+    }
+    public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch, int... slots) {
+        fetchItemAndPush(root, blockMenu, itemRequest, matchAmount, limit, breakAfterFirstMatch, false, slots);
     }
     public static void fetchItemAndPushSnapShot(NetworkRoot root, BlockMenuUtil.BlockMenuSnapShot snapShot, ItemRequest itemRequest, ToIntFunction<ItemStackCache> matchAmount, int limit, boolean breakAfterFirstMatch,int... slots) {
         //long start=System.nanoTime();

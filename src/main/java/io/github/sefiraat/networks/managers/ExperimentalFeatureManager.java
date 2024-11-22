@@ -37,9 +37,7 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
     private boolean enableAsyncSafeNetworkRoot=true;
 
-    @Getter
-    //需要进一步查看
-    private boolean enableRootGetItemStackAsync=false;
+
 
     @Getter
     //已经使用
@@ -52,9 +50,14 @@ public class ExperimentalFeatureManager implements TabExecutor {
     //已经使用
     private boolean enableLineGrabberParallel=true;
 
-    @Getter
+    //经过测试 能显著提升性能
     //已经使用
-    private boolean enableLineGrabberAsync=true;
+    @Getter
+    private boolean enableLinePusherParallel=true;
+    //经过测试 对非并发情况下的性能影响几乎为0
+    //已经使用
+    @Getter
+    private boolean enableRootGetItemStackAsync=true;
 
     @Getter
     private boolean enableControllerPreviewItems=false;
@@ -74,7 +77,8 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
     //已经启用
     private boolean enableSnapShotOptimize=true;
-
+    @Getter
+    private boolean enableAsyncRootPower=true;
 //    @Getter
 //    private boolean enableMetaDirectlyCompare=true;
     //todo list
@@ -94,6 +98,8 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Setter
     private boolean enableGlobalDebugFlag =false;
 
+    @Getter
+    private boolean enableGlobalDebugOutput =false;
     long lastTimeStamp=0L;
     boolean isTiming=false;
     public void startGlobalProfiler(){
@@ -106,7 +112,9 @@ public class ExperimentalFeatureManager implements TabExecutor {
         if(enableGlobalDebugFlag &&isTiming){
             long time=System.nanoTime();
             isTiming=false;
-            sendTimings(lastTimeStamp,time,message);
+            if(enableGlobalDebugOutput){
+                sendTimings(lastTimeStamp,time,message);
+            }
             this.lastTimeStamp=0L;
         }
     }

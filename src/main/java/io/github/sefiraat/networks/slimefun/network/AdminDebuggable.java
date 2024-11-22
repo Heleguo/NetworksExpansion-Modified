@@ -34,7 +34,7 @@ public interface AdminDebuggable {
         }
     }
 
-    default void sendDebugMessage(@Nonnull Location location, @Nonnull Supplier<String> string) {
+    default void sendDebugMessage0(@Nonnull Location location, @Nonnull Supplier<String> string) {
         if (isDebug(location)) {
             final String locationString = "W[" + location.getWorld().getName() + "] " +
                     "X[" + location.getBlockX() + "] " +
@@ -47,6 +47,13 @@ public interface AdminDebuggable {
                 } else {
                     removeViewer(player);
                 }
+            }
+        }
+    }
+    default void sendDebugMessage(@Nonnull Location location, @Nonnull Supplier<String>... string) {
+        if(isDebug(location)) {
+            for (Supplier<String> stringSupplier : string) {
+                sendDebugMessage0(location, stringSupplier);
             }
         }
     }

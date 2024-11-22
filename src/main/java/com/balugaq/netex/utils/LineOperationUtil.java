@@ -223,6 +223,26 @@ public class LineOperationUtil {
                     }
                 }
             }
+            case GREEDY -> {
+                for (int slot : slots) {
+                    final ItemStack item = blockMenu.getItemInSlot(slot);
+                    if (item != null && item.getType() != Material.AIR) {
+                        //final int exceptedReceive = Math.min(item.getAmount(), limit);
+                        int oldLimit = limit;
+                        limit=sendLimitedItemToRoot(root, item, limit);
+                        if(limit==oldLimit){
+                            //this slot pushes nothing, then next slot probably pushes nothing
+                            break;
+                        }
+                        if (limit <= 0) {
+                            break;
+                        }
+                    }else{
+                        //this slot pushes nothing, then next slot probably pushes nothing
+                        break;
+                    }
+                }
+            }
         }
         return;
     }
@@ -362,6 +382,21 @@ public class LineOperationUtil {
                         },limitQuantity,false,slots);
                     }
                 }
+            }
+            case GREEDY -> {
+                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                    if (itemStack == null || itemStack.getType() == Material.AIR) {
+                        return maxStackSize;
+                    } else {
+                        if (itemStack.getAmount() >= maxStackSize) {
+                            return 0;
+                        }
+                        if (StackUtils.itemsMatch(itemRequest, itemStack)) {
+                            return maxStackSize - itemStack.getAmount();
+                        }
+                        return 0;
+                    }
+                },limitQuantity,false,true,slots);
             }
         }
     }

@@ -544,8 +544,10 @@ public abstract class AdvancedDirectional extends NetworkDirectional {
 
     public void updateTransportModeIcon(Location location) {
         ItemMeta itemMeta = this.transportModeIconClone.getItemMeta();
-        List<String> lore = new ArrayList<>(itemMeta.getLore());
-        lore.set(0, String.format(Networks.getLocalizationService().getString("messages.normal-operation.directional.transport_mode"), getCurrentTransportMode(location).getName()));
+        List<String> lore = new ArrayList<>();
+        TransportMode mode=getCurrentTransportMode(location);
+        lore.add( String.format(Networks.getLocalizationService().getString("messages.normal-operation.directional.transport_mode"), mode.getName()));
+        lore.addAll(mode.getDescription());
         itemMeta.setLore(lore);
         this.transportModeIconClone.setItemMeta(itemMeta);
 
