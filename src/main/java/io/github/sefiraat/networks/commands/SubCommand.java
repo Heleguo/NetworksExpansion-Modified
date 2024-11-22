@@ -1,17 +1,35 @@
-package me.testserver.Debugger.utils.commandClass;
+package io.github.sefiraat.networks.commands;
 
 import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
 import lombok.Getter;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Supplier;
 
 
-public class SubCommand implements CommandExecutor {
+public class SubCommand implements TabExecutor {
+    @Nullable
+    @Override
+    public List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] elseArg) {
+        if(executor!=this){
+            return executor.onTabComplete(commandSender, command, s, elseArg);
+        }else {
+            List<String> tab=this.parseInput(elseArg).getFirstValue().getTabComplete();
+            if(tab!=null){
+                return tab;
+            }else {
+                return List.of();
+            }
+        }
+    }
+
     public interface SubCommandCaller{
         public void registerSub(SubCommand command);
     }
@@ -21,7 +39,7 @@ public class SubCommand implements CommandExecutor {
     @Getter
     String name;
     @Getter
-    CommandExecutor executor=this;
+    TabExecutor executor=this;
     public boolean onCommand(CommandSender var1, Command var2,String var3, String[] var4){
         return true;
     }
@@ -30,6 +48,10 @@ public class SubCommand implements CommandExecutor {
         this.template=argsTemplate;
         this.help = help;
     }
+    public SubCommand(String name,SimpleCommandArgs argsTemplate,List<String> help){
+        this(name,argsTemplate,help.toArray(String[]::new));
+    }
+
     public SubCommand register(SubCommandCaller caller){
         caller.registerSub(this);
         return this;
@@ -46,7 +68,7 @@ public class SubCommand implements CommandExecutor {
         this.template.setTabCompletor(arg,completions);
         return this;
     }
-    public SubCommand setCommandExecutor(CommandExecutor executor){
+    public SubCommand setCommandExecutor(TabExecutor executor){
         this.executor=executor;
         return this;
     }

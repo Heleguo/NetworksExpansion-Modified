@@ -1,9 +1,9 @@
-package me.testserver.Debugger.utils.commandClass;
+package io.github.sefiraat.networks.commands;
 
 import io.github.thebusybiscuit.slimefun4.libraries.commons.lang.Validate;
+import io.github.thebusybiscuit.slimefun4.utils.ChatUtils;
 import lombok.Getter;
-import me.testserver.Debugger.utils.Debug;
-import me.testserver.Debugger.utils.Utils;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -14,24 +14,30 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.logging.Logger;
 
 public abstract class AbstractMainCommand implements ComplexCommandExecutor {
     @Getter
     private LinkedHashSet<SubCommand> subCommands = new LinkedHashSet<>();
     private SubCommand mainInternal;
     private boolean registered = false;
+    private Logger Debug;
     @Getter
     private Plugin plugin;
+    void sendMessage(CommandSender sender, String message) {
+        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+    }
     public <T extends AbstractMainCommand> T registerCommand(Plugin plugin){
-        Validate.isTrue(!registered, "ItemRegister functional have already been registered!");
+        Validate.isTrue(!registered, "Command have already been registered!");
         this.plugin = plugin;
+        this.Debug = plugin.getLogger();
         plugin.getServer().getPluginCommand(getMainName()).setExecutor(this);
         plugin.getServer().getPluginCommand(getMainName()).setTabCompleter(this);
         this.registered=true;
         return (T)this;
     }
     public <T extends AbstractMainCommand> T unregisterCommand(){
-        Validate.isTrue(registered, "ItemRegister functional havem't been unregistered!");
+        Validate.isTrue(registered, "Command functional havem't been unregistered!");
         plugin.getServer().getPluginCommand(getMainName()).setExecutor(null);
         plugin.getServer().getPluginCommand(getMainName()).setTabCompleter(null);
         this.registered=false;
@@ -39,7 +45,7 @@ public abstract class AbstractMainCommand implements ComplexCommandExecutor {
     }
     public SubCommand getSubCommand(String name) {
         for(SubCommand command:subCommands){
-            if(command.getName().equals(name)){
+            if(command.getName().equalsIgnoreCase(name)){
                 return command;
             }
         }return null;
@@ -55,7 +61,7 @@ public abstract class AbstractMainCommand implements ComplexCommandExecutor {
                 field.setAccessible(true);
                 mainInternal=(SubCommand)field.get(this);
             }catch (Throwable e){
-                Debug.info("Error in ",this.getClass().getName(),": main Command Not Found");
+                Debug.info("Error in "+this.getClass().getName()+": main Command Not Found");
                 e.printStackTrace();
             }
         }
@@ -68,7 +74,7 @@ public abstract class AbstractMainCommand implements ComplexCommandExecutor {
         return getMainInternal().getName();
     }
     public boolean onCommand(CommandSender var1, Command var2, String var3, String[] var4){
-        if(var1.hasPermission(permissionRequired())){
+        if(permissionRequired()==null|| var1.hasPermission(permissionRequired())){
             if(var4.length>=1){
                 SubCommand command=getSubCommand(var4[0]);
                 if(command!=null){
@@ -78,17 +84,20 @@ public abstract class AbstractMainCommand implements ComplexCommandExecutor {
             }
             showHelpCommand(var1);
         }else{
-            Utils.sendMessage(var1,"&c你没有权限使用该指令!");
+            noPermission(var1);
         }
         return true;
     }
+    public void noPermission(CommandSender var1){
+        sendMessage(var1,"&c你没有权限使用该指令!");
+    }
     public abstract String permissionRequired();
 
-    private void showHelpCommand(CommandSender sender){
-        Utils.sendMessage(sender,"&a/%s 全部指令大全".formatted(getMainName()));
+    void showHelpCommand(CommandSender sender){
+        sendMessage(sender,"&a/%s 全部指令大全".formatted(getMainName()));
         for(SubCommand cmd:subCommands){
             for (String help:cmd.getHelp()){
-                Utils.sendMessage(sender,"&a"+help);
+                sendMessage(sender,"&a"+help);
             }
         }
     }
@@ -101,20 +110,17 @@ public abstract class AbstractMainCommand implements ComplexCommandExecutor {
             SubCommand subCommand= getSubCommand(re.getFirstValue().nextArg());
             if(subCommand!=null){
                 String[] elseArg=re.getSecondValue();
-                List<String> tab= subCommand.parseInput(elseArg).getFirstValue().getTabComplete();
-                if(tab!=null){
-                    return tab;
-                }
+               return subCommand.onTabComplete(var1,var2,var3,elseArg);
             }
         }
         return new ArrayList<>();
     }
-    private Player isPlayer(CommandSender sender, boolean sendMessage){
+    public Player isPlayer(CommandSender sender, boolean sendMessage){
         if(sender instanceof Player player){
             return player;
         }else {
             if(sendMessage){
-                Utils.sendMessage(sender,"&c该指令只能在游戏内执行!");
+                sendMessage(sender,"&c该指令只能在游戏内执行!");
             }
             return null;
         }

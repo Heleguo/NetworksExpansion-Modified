@@ -1,4 +1,4 @@
-package me.testserver.Debugger.utils.commandClass;
+package io.github.sefiraat.networks.commands;
 
 import javax.annotation.Nullable;
 import java.util.List;

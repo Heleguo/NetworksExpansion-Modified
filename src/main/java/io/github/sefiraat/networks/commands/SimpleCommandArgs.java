@@ -1,7 +1,7 @@
-package me.testserver.Debugger.utils.commandClass;
+package io.github.sefiraat.networks.commands;
 
 import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
-import me.testserver.Debugger.utils.commandClass.SimpleCommandInputStream;
+
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -106,7 +106,9 @@ public class SimpleCommandArgs {
                             return null;
                         }
                         final int index=i-1;
-                        return args[index].tabCompletor.get().stream().filter(s->s.startsWith(argsMap.get(args[index]))).toList();
+                        List<String> tablist=args[index].tabCompletor.get();
+                        tablist=tablist==null?List.of():tablist;
+                        return tablist.stream().filter(s->s.startsWith(argsMap.get(args[index]))).toList();
                     }
                 }
                 return null;

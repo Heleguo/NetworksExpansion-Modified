@@ -3,6 +3,7 @@ package com.ytdd9527.networksexpansion.implementation.tools;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.commands.NetworksMain;
+import io.github.sefiraat.networks.commands.WorldEditMain;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
@@ -29,7 +30,7 @@ public class NetworksExpansionWorldEditAxe extends SpecialSlimefunItem {
                     final Optional<Block> optional = e.getClickedBlock();
                     if (optional.isPresent()) {
                         final Location location = optional.get().getLocation();
-                        NetworksMain.worldeditPos2(player, location);
+                        WorldEditMain.worldeditPos2(player, location);
                     }
                     e.cancel();
                 },
@@ -41,7 +42,7 @@ public class NetworksExpansionWorldEditAxe extends SpecialSlimefunItem {
                     }
 
                     final Location location = e.getBlock().getLocation();
-                    NetworksMain.worldeditPos1(player, location);
+                    WorldEditMain.worldeditPos1(player, location);
 
                     e.setCancelled(true);
                 }

@@ -1,6 +1,8 @@
 package io.github.sefiraat.networks.managers;
 
+import com.balugaq.netex.api.enums.ErrorType;
 import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.commands.NetworksMain;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.command.Command;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class ExperimentalFeatureManager implements TabExecutor {
+
     @Getter
     private static ExperimentalFeatureManager instance=new ExperimentalFeatureManager();
     private HashMap<String, Field> features=new HashMap<>();
@@ -126,6 +129,10 @@ public class ExperimentalFeatureManager implements TabExecutor {
     }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.hasPermission("networks.admin") && !sender.hasPermission("networks.commands.experimental")) {
+            sender. sendMessage(NetworksMain.getErrorMessage(ErrorType.NO_PERMISSION));
+            return true;
+        }
         if(args.length<2){
             sender.sendMessage("Usage: /experimental <feature> true|false");
             return true;
