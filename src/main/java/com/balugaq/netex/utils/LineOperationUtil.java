@@ -44,7 +44,7 @@ public class LineOperationUtil {
         doOperation(startLocation, direction, limit, skipNoMenu, optimizeExperience, false, consumer);
     }
     public static void doOperation(Location startLocation, BlockFace direction, int limit, boolean skipNoMenu, boolean optimizeExperience,boolean parallel, Consumer<BlockMenu> consumer) {
-        if(parallel&&ExperimentalFeatureManager.getInstance().isEnableParallelLineOperation()){
+        if(parallel){
             doOperationParallel(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);
         }else {
             doOperationOrdinal(startLocation, direction, limit, skipNoMenu, optimizeExperience, consumer);

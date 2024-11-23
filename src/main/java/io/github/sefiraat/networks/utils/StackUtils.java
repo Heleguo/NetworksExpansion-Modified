@@ -4,6 +4,8 @@ import com.balugaq.netex.api.enums.MCVersion;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
+import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
@@ -246,11 +248,11 @@ public class StackUtils {
                 //these shits should be compared in Distinctive Items,but we do these comparasion for them,
                 //should put data in pdc
                 ||
-                //(!ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem() &&
+                (!ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem() &&
                 ( itemType == Material.PLAYER_HEAD // Fix Soul jars in SoulJars & Number Components in MomoTech
                 || itemType == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
                 || itemType == Material.SUGAR )// Fix Symbols in MomoTech
-                //)
+                )
         ) {
             final boolean hasLore1= itemMeta.hasLore();
             final boolean hasLore2 = cachedMeta.hasLore();
@@ -271,17 +273,17 @@ public class StackUtils {
         }
         if (optionalStackId1.isPresent()) {
 
-//            if(ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem()){
-//                final String stackId1 = optionalStackId1.get();
-//                //when pdc equals, id value should equals
-//                SlimefunItem item=SlimefunItem.getById(stackId1);
-//                //compare distinctives
-//                if(item instanceof DistinctiveItem distinctiveItem){
-//                    if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
-//                        return false;
-//                    }
-//                }
-//            }
+            if(ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem()){
+                final String stackId1 = optionalStackId1.get();
+                //when pdc equals, id value should equals
+                SlimefunItem item=SlimefunItem.getById(stackId1);
+                //compare distinctives
+                if(item instanceof DistinctiveItem distinctiveItem){
+                    if(!distinctiveItem.canStack(itemMeta, cachedMeta)){
+                        return false;
+                    }
+                }
+            }
             //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"meta All matched sf %s");
             //SlimefunItem matched
             return true;

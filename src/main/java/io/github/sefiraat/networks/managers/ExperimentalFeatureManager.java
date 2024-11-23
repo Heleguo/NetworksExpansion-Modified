@@ -33,18 +33,10 @@ public class ExperimentalFeatureManager implements TabExecutor {
             }
         }
     }
-    //已经使用
-    @Getter
-    private boolean enableParallelLineOperation=true;
+
     //已经使用
     @Getter
     private boolean enableAsyncSafeNetworkRoot=true;
-
-
-
-    @Getter
-    //已经使用
-    private boolean enableRootAddItemStackAsync=true;
 
 //    @Getter
 //    //已经停用
@@ -61,25 +53,12 @@ public class ExperimentalFeatureManager implements TabExecutor {
     //已经使用
     @Getter
     private boolean enableRootGetItemStackAsync=true;
-
     @Getter
     private boolean enableControllerPreviewItems=false;
     @Getter
     private boolean enableControllerPreviewItemsAsync=false;
-
     @Getter
-    private boolean enableBreakPoint1=false;
-
-    @Getter
-    private boolean enableBreakPoint2=false;
-
-    @Getter
-    private boolean enableBreakPoint3=false;
-
-
-    @Getter
-    //已经启用
-    private boolean enableSnapShotOptimize=true;
+    private boolean enableMatchDistinctiveItem=true;
     @Getter
     private boolean enableAsyncRootPower=true;
 //    @Getter
@@ -100,6 +79,15 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
     @Setter
     private boolean enableGlobalDebugFlag =false;
+
+    @Getter
+    private boolean enableBreakPoint1=false;
+
+    @Getter
+    private boolean enableBreakPoint2=false;
+
+    @Getter
+    private boolean enableBreakPoint3=false;
 
     @Getter
     private boolean enableGlobalDebugOutput =false;

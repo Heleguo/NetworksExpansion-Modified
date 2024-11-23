@@ -40,7 +40,7 @@ public class NetworkRootPlus extends NetworkRoot {
     }
     @Override
     public void addItemStack(ItemStack itemStack) {
-        if(enableAddAsync&&ExperimentalFeatureManager.getInstance().isEnableRootAddItemStackAsync()){
+        if(enableAddAsync){
             addItemStackAsync(itemStack);
         }else {
             super.addItemStack(itemStack);
