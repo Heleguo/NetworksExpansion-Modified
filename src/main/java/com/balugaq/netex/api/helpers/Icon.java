@@ -237,5 +237,17 @@ public class Icon {
             "craft-button-new-style",
             Material.CRAFTING_TABLE
     );
+    public static final ItemStack DISMANT_BUTTON = Networks.getLocalizationService().getIcon(
+            "dismant-table.dismant-button",
+            Material.ORANGE_STAINED_GLASS_PANE
+    );
+    public static final ItemStack RESET_SIMPLE=Networks.getLocalizationService().getIcon(
+            "resetter.reset-simple",
+            Material.ORANGE_STAINED_GLASS_PANE
+    );
+    public static final ItemStack RESET_STORAGE=Networks.getLocalizationService().getIcon(
+            "resetter.reset-storage",
+            Material.ORANGE_STAINED_GLASS_PANE
+    );
 
 }

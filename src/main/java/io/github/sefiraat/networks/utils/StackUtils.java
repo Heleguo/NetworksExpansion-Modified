@@ -184,15 +184,6 @@ public class StackUtils {
         if (!itemMeta.getClass().equals(cachedMeta.getClass())) {
             return false;
         }
-
-        // Quick meta-extension escapes
-        if (canQuickEscapeMetaVariant(itemMeta, cachedMeta)) {
-            return false;
-        }
-        if(!checkVersionedFeatures(itemMeta, cachedMeta)){
-            return false;
-        }
-
         if (checkCustomModelId) {
             // Custom model data is different, no match
             final boolean hasCustomOne = itemMeta.hasCustomModelData();
@@ -205,13 +196,23 @@ public class StackUtils {
                 return false;
             }
         }
-
-//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta basic match %s");
-//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // PDCs don't match
         if (!itemMeta.getPersistentDataContainer().equals(cachedMeta.getPersistentDataContainer())) {
             return false;
         }
+        //this means slimefun id matchs
+        // 99.999% of items can be judged to not match
+
+        // Quick meta-extension escapes
+        if (canQuickEscapeMetaVariant(itemMeta, cachedMeta)) {
+            return false;
+        }
+        if(!checkVersionedFeatures(itemMeta, cachedMeta)){
+            return false;
+        }
+//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta basic match %s");
+//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
+
 
 //        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta pdc match %s");
 //        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
@@ -495,14 +496,15 @@ public class StackUtils {
 
         // Skull
         //too many skull items in slimefun
-        if (metaOne instanceof SkullMeta instanceOne && metaTwo instanceof SkullMeta instanceTwo) {
-            if (instanceOne.hasOwner() != instanceTwo.hasOwner()) {
-                return true;
-            }
-            if (!Objects.equals(instanceOne.getOwningPlayer(), instanceTwo.getOwningPlayer())) {
-                return true;
-            }
-        }
+        //only head-cutter heads can be stack in this way
+//        if (metaOne instanceof SkullMeta instanceOne && metaTwo instanceof SkullMeta instanceTwo) {
+//            if (instanceOne.hasOwner() != instanceTwo.hasOwner()) {
+//                return true;
+//            }
+//            if (!Objects.equals(instanceOne.getOwningPlayer(), instanceTwo.getOwningPlayer())) {
+//                return true;
+//            }
+//        }
 
         // Stew
         if (metaOne instanceof SuspiciousStewMeta instanceOne && metaTwo instanceof SuspiciousStewMeta instanceTwo) {

@@ -1,5 +1,6 @@
 package com.balugaq.netex.utils;
 
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
@@ -9,6 +10,7 @@ import io.github.sefiraat.networks.slimefun.network.NetworkObject;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.core.attributes.EnergyNetComponent;
+import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,6 +20,9 @@ import org.checkerframework.checker.units.qual.N;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 
 public class TransportUtil {
@@ -32,13 +37,29 @@ public class TransportUtil {
         return limit;
     }
     public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch,boolean breakWhenNoMatch, int... slots){
+
+        var re=calFetchItem(root, blockMenu::getItemInSlot, itemRequest, matchAmount, limit, breakAfterFirstMatch, breakWhenNoMatch, slots);
+        if(re==null){
+            return;
+        }
+        int space=re.getFirstValue();
+        itemRequest.setAmount(space);
+
+        final ItemStack retrieved = root.getItemStack(itemRequest);
+        if (retrieved != null && retrieved.getType() != Material.AIR) {
+            //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
+
+            BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, re.getSecondValue());
+        }
+    }
+    public static <T extends Object> Pair<Integer,List<Integer>> calFetchItem(NetworkRoot root, IntFunction<T> indexer, ItemRequest itemRequest, ToIntFunction<T> matchAmount, int limit, boolean breakAfterFirstMatch, boolean breakWhenNoMatch, int... slots){
         int freeSpace = 0;
         int maxStackSize=itemRequest.getMaxStackSize();
-        if(maxStackSize<=0)return;
+        if(maxStackSize<=0)return null;
         limit=Math.min(limit,breakAfterFirstMatch?maxStackSize:(slots.length*maxStackSize));
         List<Integer> matchedSlots=new ArrayList<>(slots.length);
         for (int slot : slots) {
-            int match=matchAmount.applyAsInt(blockMenu.getItemInSlot(slot));
+            int match=matchAmount.applyAsInt(indexer.apply(slot));
             if (match > 0) {
                 freeSpace += match;
                 matchedSlots.add(slot);
@@ -55,45 +76,27 @@ public class TransportUtil {
             }
         }
         if (freeSpace <= 0||matchedSlots.isEmpty()) {
-            return;
+            return null;
         }
-        itemRequest.setAmount(Math.min(freeSpace, limit));
-
-        final ItemStack retrieved = root.getItemStack(itemRequest);
-        if (retrieved != null && retrieved.getType() != Material.AIR) {
-            //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
-            BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, matchedSlots);
-        }
+        return new Pair<>(Math.min(freeSpace, limit), matchedSlots);
+//        itemRequest.setAmount(Math.min(freeSpace, limit));
+//
+//        final ItemStack retrieved = root.getItemStack(itemRequest);
+//        if (retrieved != null && retrieved.getType() != Material.AIR) {
+//            //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
+//            BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, matchedSlots);
+//        }
     }
     public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch, int... slots) {
         fetchItemAndPush(root, blockMenu, itemRequest, matchAmount, limit, breakAfterFirstMatch, false, slots);
     }
     public static void fetchItemAndPushSnapShot(NetworkRoot root, BlockMenuUtil.BlockMenuSnapShot snapShot, ItemRequest itemRequest, ToIntFunction<ItemStackCache> matchAmount, int limit, boolean breakAfterFirstMatch,int... slots) {
         //long start=System.nanoTime();
-        int freeSpace = 0;
-        int maxStackSize=itemRequest.getMaxStackSize();
-        if(maxStackSize<=0)return;
-        limit=Math.min(limit,breakAfterFirstMatch?maxStackSize:(slots.length*maxStackSize));
-        List<Integer> matchedSlots=new ArrayList<>(slots.length);
-        for (int slot : slots) {
-            int match=matchAmount.applyAsInt(snapShot.getItemInSlot(slot));
-            if (match > 0) {
-                freeSpace += match;
-                matchedSlots.add(slot);
-                if(breakAfterFirstMatch) {
-                    break;
-                }
-            }
-            if(freeSpace >= limit){
-                break;
-            }
-        }
-        //long end=System.nanoTime();
-        //ExperimentalFeatureManager.getInstance().sendTimings(start,end,()->"TransportUtils:match slots %s");
-        if (freeSpace <= 0||matchedSlots.isEmpty()) {
+        var re=calFetchItem(root,snapShot::getItemInSlot,itemRequest,matchAmount,limit,breakAfterFirstMatch,false,slots);
+        if(re==null){
             return;
         }
-        itemRequest.setAmount(Math.min(freeSpace, limit));
+        itemRequest.setAmount(re.getFirstValue());
         //long a=System.nanoTime();
         final ItemStack retrieved = root.getItemStack(itemRequest);
         //long d=System.nanoTime();
@@ -101,11 +104,12 @@ public class TransportUtil {
         if (retrieved != null && retrieved.getType() != Material.AIR) {
             //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
             //a=System.nanoTime();
-            snapShot.pushItemAlreadyMatched(retrieved, matchedSlots);
+            snapShot.pushItemAlreadyMatched(retrieved, re.getSecondValue());
             //d=System.nanoTime();
             //ExperimentalFeatureManager.getInstance().sendTimings(a,d,()->"TransportUtils:pushItemMatched %s");
         }
     }
+
     public static int commonMatch(ItemStack itemStack,ItemRequest itemRequest){
         int maxStackSize=itemRequest.getMaxStackSize();
         if (itemStack == null || itemStack.getType() == Material.AIR) {
@@ -135,7 +139,15 @@ public class TransportUtil {
         }
     }
     public static void outPower(@Nonnull Location targetLocation, @Nonnull NetworkRoot root, int rate) {
-        final SlimefunItem slimefunItem = StorageCacheUtils.getSfItem(targetLocation);
+        SlimefunBlockData data=StorageCacheUtils.getBlock(targetLocation);
+        if(data==null){
+            return;
+        }
+        if(!data.isDataLoaded()){
+            StorageCacheUtils.requestLoad(data);
+            return;
+        }
+        final SlimefunItem slimefunItem = SlimefunItem.getById(data.getSfId());
         if (!(slimefunItem instanceof EnergyNetComponent component) || slimefunItem instanceof NetworkObject) {
             return;
         }

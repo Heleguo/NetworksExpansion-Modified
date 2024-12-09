@@ -133,6 +133,8 @@ public class SetupUtil {
                 ExpansionItems.LINE_POWER_OUTLET_11.registerThis(),
                 ExpansionItems.DUE_MACHINE.registerThis(),
                 ExpansionItems.OFFSETTER.registerThis(),
+                ExpansionItems.DISMANTLING_TABLE.registerThis(),
+                ExpansionItems.RESETTER.registerThis(),
                 ExpansionItems.BETTER_GRABBER.registerThis()
         );
         ExpansionItemsMenus.SUB_MENU_BRIDGE.addTo(

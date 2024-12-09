@@ -221,6 +221,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             }
         }
         dataContainer.setItemStack(0,null);
+        sendDebugMessage(blockMenu.getLocation(), ()->"blueprint instance set in cache");
     }
     private boolean tryCraft(@Nonnull BlockMenu blockMenu, @Nonnull BlueprintInstance instance, @Nonnull NetworkRoot root,int craftAmount) {
         // Get the recipe input

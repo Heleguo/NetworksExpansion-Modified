@@ -36,5 +36,7 @@ public enum NodeType {
     INPUT_ONLY_MONITOR,
     OUTPUT_ONLY_MONITOR,
     DECODER,
-    LINE_POWER_OUTLET
+    LINE_POWER_OUTLET,
+    CUSTOM
+
 }

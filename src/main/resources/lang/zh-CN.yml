@@ -303,6 +303,15 @@ messages:
       output_slot_full: "<warning>需要清空输出烂"
     grid:
       may_duping: "Player \"%s\" attempted to use network grid from a invalid node at %s，the player may trying to cheat or duplicate items."
+    dismant-table:
+      no_power: "<warning>网络中的电力不足，无法完成该任务"
+      null_input: "<warning>输入槽物品为空"
+    resetter:
+      no_power: "<warning>网络中的电力不足，无法完成该任务"
+      null_input: "<warning>输入槽物品为空"
+      output_slot_full: "<warning>需要清空输出烂"
+      invalid_storage: "<warning>无效的存储!"
+      input_not_allowed: "<warning>不允许输入该物品!"
   super-head:
     - "#########################################################################"
     - "███╗   ██╗███████╗████████╗██╗    ██╗ ██████╗ ██████╗ ██╗  ██╗           "
@@ -770,6 +779,21 @@ icons:
       name: "网络量子工作台"
       lore:
         - "在量子工作台中制作"
+  dismant-table:
+    dismant-button:
+      name: "&6点击拆解"
+      lore:
+        - "&7> 只能拆解本附属的3x3合成台物品!"
+  resetter:
+    reset-storage:
+      name: "&6点击重置存储内部物品"
+      lore:
+        - "&7> 需要放入量子存储或者物品转移棒"
+    reset-simple:
+      name: "&6点击重置物品"
+      lore:
+        - "&7> 当放入量子存储或者存储转移棒时,删除存储的数据"
+        - "&7> 不能重置网络抽屉!"
 items:
   # DO NOT TRANSLATE, CHANGE OR DELETE THESE ANNOUNCEMENTS
   NTW_EXPANSION_ANNOUNCE_1:
@@ -2683,7 +2707,21 @@ items:
     lore:
       - "&8传输对应槽位"
       - "&8调整偏移值以决定对应"
-  
+  NTW_EXPANSION_DISMANTLING_TABLE:
+    name: "&b网络物品拆解台"
+    lore:
+      - "&7拆解网络物品"
+      - "&7消耗网络电力 1000J/个"
+      - "&7当合成错物品或者机器降级时使用它"
+
+  NTW_EXPANSION_RESETTER:
+    name: "网络物品重置机"
+    lore:
+      - "&7重置因为网络版本变更而无法堆叠的物品"
+      - "&7当放入量子存储/物品转移棒时"
+      - "&7可选择重置内部存储的物品"
+      - "&7消耗网络电力 1000J/次"
+
   NTW_EXPANSION_BETTER_GRABBER:
     name: "更好的网络抓取器"
     lore:

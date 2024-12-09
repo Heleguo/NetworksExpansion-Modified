@@ -708,6 +708,14 @@ public class ExpansionItemStacks {
             Networks.getLocalizationService().getItem("NTW_EXPANSION_OFFSETTER", Material.GRINDSTONE),
             Theme.MACHINE
     );
+    public static final SlimefunItemStack DISMANTLING_TABLE=Theme.themedSlimefunItemStack(
+            Networks.getLocalizationService().getItem("NTW_EXPANSION_DISMANTLING_TABLE",Material.BAMBOO_MOSAIC),
+            Theme.MACHINE
+    );
+    public static final SlimefunItemStack RESETTER=Theme.themedSlimefunItemStack(
+            Networks.getLocalizationService().getItem("NTW_EXPANSION_RESETTER",Material.SEA_LANTERN),
+            Theme.MACHINE
+    );
     public static final SlimefunItemStack BETTER_GRABBER = Theme.themedSlimefunItemStack(
             Networks.getLocalizationService().getItem("NTW_EXPANSION_BETTER_GRABBER", Material.PINK_STAINED_GLASS),
             Theme.MACHINE

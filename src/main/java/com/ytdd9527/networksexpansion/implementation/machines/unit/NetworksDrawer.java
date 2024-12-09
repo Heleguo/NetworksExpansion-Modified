@@ -640,10 +640,10 @@ public class NetworksDrawer extends SpecialSlimefunItem implements DistinctiveIt
         Location l = e.getBlock().getLocation();
         ItemStack itemInHand = e.getItemInHand();
         Player p = e.getPlayer();
-        if (!(p.hasPermission("slimefun.inventory.bypass") || (canUse(p, false) && Slimefun.getProtectionManager().hasPermission(p, e.getBlock(), Interaction.INTERACT_BLOCK)))) {
-            e.setCancelled(true);
-            return;
-        }
+//        if (!(p.hasPermission("slimefun.inventory.bypass") || (canUse(p, false) && Slimefun.getProtectionManager().hasPermission(p, e.getBlock(), Interaction.INTERACT_BLOCK)))) {
+//            e.setCancelled(true);
+//            return;
+//        }
         boolean a = false;
         boolean b = false;
         int id = getBoundId(itemInHand);

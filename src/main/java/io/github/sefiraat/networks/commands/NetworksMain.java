@@ -243,7 +243,7 @@ public class NetworksMain extends AbstractMainCommand {
             return true;
         }
     }
-            .setTabCompletor("num",()->List.of("1","64","1919810","1145141919","2147483647"))
+            .setTabCompletor("id",()->List.of("1","64","1919810","1145141919","2147483647"))
             .register(this);
 
     private SubCommand helpCommand=new SubCommand("help",new SimpleCommandArgs("mainCommand"),Networks.getLocalizationService().getStringList("messages.commands.example.help")){

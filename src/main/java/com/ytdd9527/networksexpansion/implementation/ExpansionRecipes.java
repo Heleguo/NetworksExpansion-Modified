@@ -1,6 +1,8 @@
 package com.ytdd9527.networksexpansion.implementation;
 
+import io.github.sefiraat.networks.slimefun.NetworkSlimefunItems;
 import io.github.sefiraat.networks.slimefun.NetworksSlimefunItemStacks;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -956,6 +958,17 @@ public class ExpansionRecipes {
             OPTIC_STAR.getItem(), OPTIC_CABLE.getItem(), OPTIC_STAR.getItem(),
             OPTIC_CABLE.getItem(), ExpansionItemStacks.TRANSFER, OPTIC_CABLE.getItem(),
             OPTIC_STAR.getItem(), OPTIC_CABLE.getItem(), OPTIC_STAR.getItem()
+    };
+
+    public static final ItemStack[] DISMANTLING_TABLE=new ItemStack[]{
+            INTERDIMENSIONAL_PRESENCE.getItem(), NetworksSlimefunItemStacks.NETWORK_QUANTUM_WORKBENCH,INTERDIMENSIONAL_PRESENCE.getItem(),
+            SHRINKING_BASE.getItem(),ExpansionItemStacks.NETWORKS_EXPANSION_WORKBENCH,SHRINKING_BASE.getItem(),
+            SlimefunItems.BOOSTED_URANIUM,ExpansionItemStacks.STORAGE_UNIT_UPGRADE_TABLE,SlimefunItems.BOOSTED_URANIUM
+    };
+    public static final ItemStack[] RESETTER=new ItemStack[]{
+            SHRINKING_BASE.getItem(),OPTIC_STAR.getItem(),SHRINKING_BASE.getItem(),
+            new ItemStack(Material.CRAFTING_TABLE), SlimefunItems.PORTABLE_DUSTBIN,new ItemStack(Material.CRAFTING_TABLE),
+            SHRINKING_BASE.getItem(),RADIOACTIVE_OPTIC_STAR.getItem(),SHRINKING_BASE.getItem(),
     };
 
     public static final ItemStack[] BETTER_GRABBER = new ItemStack[]{

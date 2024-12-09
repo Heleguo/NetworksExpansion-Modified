@@ -68,20 +68,7 @@ import com.ytdd9527.networksexpansion.implementation.machines.encoders.SmelteryE
 import com.ytdd9527.networksexpansion.implementation.machines.manual.Expansion6x6Workbench;
 import com.ytdd9527.networksexpansion.implementation.machines.manual.ExpansionWorkbench;
 import com.ytdd9527.networksexpansion.implementation.machines.manual.StorageUnitUpgradeTable;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedExport;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedGreedyBlock;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedImport;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedPurger;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.BetterGrabber;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.DueMachine;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.NetworkBlueprintDecoder;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.NetworkCraftingGridNewStyle;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.NetworkGridNewStyle;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.NetworkInputOnlyMonitor;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.NetworkOutputOnlyMonitor;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.Offsetter;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.SmartGrabber;
-import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.SmartPusher;
+import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.*;
 import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawer;
 import com.ytdd9527.networksexpansion.implementation.tools.CargoNodeQuickTool;
 import com.ytdd9527.networksexpansion.implementation.tools.DueMachineConfigurator;
@@ -1383,7 +1370,18 @@ public class ExpansionItems {
             ExpansionWorkbench.TYPE,
             ExpansionRecipes.OFFSETTER
     );
-
+    public static final NetworkDismantlingTable DISMANTLING_TABLE=new NetworkDismantlingTable(
+            ExpansionItemsMenus.MENU_FUNCTIONAL_MACHINE,
+            ExpansionItemStacks.DISMANTLING_TABLE,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.DISMANTLING_TABLE
+    );
+    public static final NetworkResetter RESETTER=new NetworkResetter(
+            ExpansionItemsMenus.MENU_FUNCTIONAL_MACHINE,
+            ExpansionItemStacks.RESETTER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.RESETTER
+    );
     public static final BetterGrabber BETTER_GRABBER = new BetterGrabber(
             ExpansionItemsMenus.MENU_FUNCTIONAL_MACHINE,
             ExpansionItemStacks.BETTER_GRABBER,

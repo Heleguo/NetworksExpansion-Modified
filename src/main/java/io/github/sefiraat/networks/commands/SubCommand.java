@@ -21,9 +21,9 @@ public class SubCommand implements TabExecutor {
         if(executor!=this){
             return executor.onTabComplete(commandSender, command, s, elseArg);
         }else {
-            List<String> tab=this.parseInput(elseArg).getFirstValue().getTabComplete();
+            var tab=this.parseInput(elseArg).getFirstValue();
             if(tab!=null){
-                return tab;
+                return tab.getTabComplete();
             }else {
                 return List.of();
             }

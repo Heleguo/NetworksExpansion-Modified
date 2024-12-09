@@ -24,6 +24,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("deprecation")
@@ -76,20 +78,21 @@ public class NetworkImport extends NetworkObject {
         if (definition.getNode() == null) {
             return;
         }
-        CompletableFuture<?>[] threads=new CompletableFuture[INPUT_SLOTS.length];
+        List<CompletableFuture<?>> threads=new ArrayList<>();
         final NetworkRoot root=definition.getNode().getRoot();
         for (int i=0;i<INPUT_SLOTS.length;i++) {
             int inputSlot = INPUT_SLOTS[i];
-            threads[i]=CompletableFuture.runAsync(() -> {
-                final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
-
-                if (itemStack == null || itemStack.getType() == Material.AIR) {
-                    return;
-                }
+            final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
+            if (itemStack == null || itemStack.getType() == Material.AIR) {
+                continue;
+            }
+            threads.add( CompletableFuture.runAsync(() -> {
                 root.addItemStack(itemStack);
-            });
+            }));
         }
-        CompletableFuture.allOf(threads).join();
+        if(!threads.isEmpty()){
+            CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();
+        }
     }
 
     @Override

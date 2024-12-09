@@ -205,16 +205,17 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
         }
 
         final boolean drawParticle = blockMenu.hasViewer();
-        LineOperationUtil.doOperation(
-                blockMenu.getLocation(),
-                direction,
-                maxDistance,
-                false,
-                false,
-                ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),
-                (targetMenu) -> {
-                    LineOperationUtil.pushItem(root, targetMenu, templates, TransportMode.FIRST_STOP, 64);
-                });
+        LineOperationUtil.linePushItemOperationParallel(root,blockMenu.getLocation(),direction,maxDistance,ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),false,false,templates,64,TransportMode.FIRST_STOP);
+//        LineOperationUtil.doOperation(
+//                blockMenu.getLocation(),
+//                direction,
+//                maxDistance,
+//                false,
+//                false,
+//                ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),
+//                (targetMenu) -> {
+//                    LineOperationUtil.pushItem(root, targetMenu, templates, TransportMode.FIRST_STOP, 64);
+//                });
 
         root.removeRootPower(requiredPower);
     }
