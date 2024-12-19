@@ -49,7 +49,9 @@ public class ItemStackCache implements Cloneable {
         this.metaCached = false;
         this.itemMeta = null;
     }
-
+    public boolean isItemMaxStacked() {
+        return this.itemStack.getAmount() >= this.itemStack.getMaxStackSize();
+    }
     @Nullable
     public ItemMeta getItemMeta() {
         if (this.itemMeta == null && !this.metaCached) {

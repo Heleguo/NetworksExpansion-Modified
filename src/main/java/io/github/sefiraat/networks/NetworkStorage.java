@@ -47,21 +47,21 @@ public class NetworkStorage {
     public static void registerNode(Location location, NodeDefinition nodeDefinition) {
         ALL_NETWORK_OBJECTS.put(location, nodeDefinition);
         ChunkPosition unionKey = new ChunkPosition(location);
-        Set<Location> locations = ALL_NETWORK_OBJECTS_BY_CHUNK.getOrDefault(unionKey, new HashSet<>());
+        Set<Location> locations = ALL_NETWORK_OBJECTS_BY_CHUNK.computeIfAbsent(unionKey,(k)-> new HashSet<>());
         locations.add(location);
-        ALL_NETWORK_OBJECTS_BY_CHUNK.put(unionKey, locations);
+        //ALL_NETWORK_OBJECTS_BY_CHUNK.put(unionKey, locations);
     }
 
     public static void unregisterChunk(Chunk chunk) {
         ChunkPosition chunkPosition = new ChunkPosition(chunk);
-        Set<Location> locations = ALL_NETWORK_OBJECTS_BY_CHUNK.get(chunkPosition);
+        Set<Location> locations = ALL_NETWORK_OBJECTS_BY_CHUNK.remove(chunkPosition);
         if (locations == null) {
             return;
         }
         for (Location location : locations) {
             removeNode(location);
         }
-        ALL_NETWORK_OBJECTS_BY_CHUNK.remove(chunkPosition);
+       // ALL_NETWORK_OBJECTS_BY_CHUNK.remove(chunkPosition);
     }
 
 }

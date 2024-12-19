@@ -22,6 +22,7 @@ public class BlockMenuUtil {
         int maxSize=stack.getMaxStackSize();
         int amount=stack.getAmount();
         if(amount<=0)return;
+        ItemStackCache cachedStack=ItemStackCache.of(stack);
         for (int slot : slots) {
             ItemStack slotItem=inv.getItemInSlot(slot);
 
@@ -31,7 +32,11 @@ public class BlockMenuUtil {
                 slotItem=inv.getItemInSlot(slot);
                 slotItem.setAmount(transfered);
                 amount-=transfered;
-            }else {
+            }else if(slotItem.getAmount()>=slotItem.getMaxStackSize()) {
+                continue;
+            }
+            //for Async safety,compare again
+            else if(StackUtils.itemsMatch(slotItem,cachedStack)){
                 int slotAmount=slotItem.getAmount();
                 int transfered=Math.min(amount,maxSize-slotAmount);
                 slotItem.setAmount(slotAmount+transfered);
@@ -150,6 +155,7 @@ public class BlockMenuUtil {
             int maxSize=stack.getMaxStackSize();
             int amount=stack.getAmount();
             if(amount<=0)return;
+            ItemStackCache cachedStack=ItemStackCache.of(stack);
             for (int slot : slots) {
                 ItemStackCache slotItem=getItemInSlot(slot);
 
@@ -157,7 +163,11 @@ public class BlockMenuUtil {
                     int transfered=Math.min(amount,maxSize);
                     replaceItemInSlot(slot,stack,transfered);
                     amount-=transfered;
-                }else {
+                }else if(slotItem.isItemMaxStacked()) {
+                    continue;
+                }
+                //for Async safety,compare again
+                else if(StackUtils.itemsMatch(cachedStack,slotItem)){
                     int slotAmount=slotItem.getItemAmount();
                     int transfered=Math.min(amount,maxSize-slotAmount);
                     slotItem.setItemAmount(slotAmount+transfered);
