@@ -31,29 +31,29 @@ public class ItemStackCache implements Cloneable {
     }
 
     @Nullable
-    public ItemStack getItemStack() {
+    public final ItemStack getItemStack() {
         return this.itemStack;
     }
 
-    public int getItemAmount(){
+    public final int getItemAmount(){
         return this.itemStack.getAmount();
     }
-    public void setItemAmount(int amount){
+    public final void setItemAmount(int amount){
         this.itemStack.setAmount(amount);
     }
 
-    public void setItemStack(ItemStack itemStack) {
+    public final void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
 
         // refresh meta here
         this.metaCached = false;
         this.itemMeta = null;
     }
-    public boolean isItemMaxStacked() {
+    public final boolean isItemMaxStacked() {
         return this.itemStack.getAmount() >= this.itemStack.getMaxStackSize();
     }
     @Nullable
-    public ItemMeta getItemMeta() {
+    public final ItemMeta getItemMeta() {
         if (this.itemMeta == null && !this.metaCached) {
             this.itemMeta = itemStack.hasItemMeta() ? itemStack.getItemMeta() : null;
             this.metaCached = !this.metaCached;
@@ -66,7 +66,7 @@ public class ItemStackCache implements Cloneable {
     }
 
     @Nonnull
-    public Material getItemType() {
+    public final Material getItemType() {
         return this.itemStack.getType();
     }
 

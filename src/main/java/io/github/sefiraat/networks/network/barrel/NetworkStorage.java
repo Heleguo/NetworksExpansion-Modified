@@ -1,11 +1,9 @@
 package io.github.sefiraat.networks.network.barrel;
 
-import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.network.stackcaches.BarrelIdentity;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.QuantumCache;
 import io.github.sefiraat.networks.slimefun.network.NetworkQuantumStorage;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 
@@ -17,6 +15,8 @@ public class NetworkStorage extends BarrelIdentity {
     public NetworkStorage(Location location, ItemStack itemStack,QuantumCache storedCache, long amount) {
         super(location, itemStack, amount, BarrelType.NETWORKS);
         this.cacheReference = storedCache;
+        this.id=storedCache.getOptionalId();
+        this.initializedId.set(true);
     }
 
     @Override

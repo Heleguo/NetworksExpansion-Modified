@@ -1,26 +1,34 @@
 package com.balugaq.netex.api.data;
 
+import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
+import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
+import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.utils.itemstack.ItemStackWrapper;
 import lombok.Getter;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-@Getter
-public class ItemContainer {
+import java.util.concurrent.atomic.AtomicBoolean;
 
+
+public class ItemContainer extends ItemStackCache implements OptionalSfItemCache {
+    @Getter
     private final int id;
     private final ItemStack sample;
-    @Getter
-    private final ItemStackWrapper wrapper;
+    //@Getter
+    //private final ItemStackWrapper wrapper;
     @Getter
     private int amount;
 
     public ItemContainer(int id, ItemStack item, int amount) {
+        super(item);
         this.id = id;
         this.sample = item.clone();
         sample.setAmount(1);
-        this.wrapper = ItemStackWrapper.wrap(sample);
+        //this.wrapper = ItemStackWrapper.wrap(sample);
         this.amount = amount;
+
     }
 
     public ItemStack getSample() {
@@ -28,7 +36,10 @@ public class ItemContainer {
     }
 
     public boolean isSimilar(ItemStack other) {
-        return StackUtils.itemsMatch(wrapper, other);
+        return StackUtils.itemsMatch(this, other);
+    }
+    public boolean isSimilar(ItemStackCache other) {
+        return StackUtils.itemsMatch(this, other);
     }
 
     public void addAmount(int amount) {
@@ -60,8 +71,18 @@ public class ItemContainer {
         return "ItemContainer{" +
                 "id=" + id +
                 ", sample=" + sample +
-                ", wrapper=" + wrapper +
+                ", wrapper=" + (ItemStackCache)this +
                 ", amount=" + amount +
                 '}';
+    }
+
+    private String cacheId;
+    private final AtomicBoolean initializedId=new AtomicBoolean(false);
+    public final String getOptionalId(){
+        if(initializedId.compareAndSet(false,true)){
+            ItemMeta meta = getItemMeta();
+            cacheId= meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
+        }
+        return cacheId;
     }
 }

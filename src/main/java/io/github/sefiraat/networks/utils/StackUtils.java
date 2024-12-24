@@ -3,14 +3,15 @@ package io.github.sefiraat.networks.utils;
 import com.balugaq.netex.api.enums.MCVersion;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
+import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
+import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
 import org.bukkit.Material;
-import org.bukkit.Tag;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ArmorMeta;
@@ -35,7 +36,6 @@ import org.bukkit.inventory.meta.OminousBottleMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.inventory.meta.ShieldMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.WritableBookMeta;
@@ -142,14 +142,21 @@ public class StackUtils {
         if (type != cache.getItemType()) {
             return false;
         }
-        //todo remove
-        if (Tag.SHULKER_BOXES.isTagged(type)) {
-            return false;
+        //check cached id first,if OptionalSfItemCache,if id not match ,break earlier
+        if(cache instanceof OptionalSfItemCache sfcache1&&cache2 instanceof OptionalSfItemCache sfcache2){
+            if(!Objects.equals(sfcache1.getOptionalId(),sfcache2.getOptionalId())){
+//                Networks.getInstance().getLogger().info("not match "+sfcache1.getOptionalId()+" "+sfcache2.getOptionalId()+" "+sfcache1.getClass()+" "+((ItemStackCache) sfcache1).getItemStack());
+                return false;
+            }
         }
-
-        if (cache2.getItemType() == Material.BUNDLE) {
-            return false;
-        }
+//        //todo remove
+//        if (Tag.SHULKER_BOXES.isTagged(type)) {
+//            return false;
+//        }
+//
+//        if (cache2.getItemType() == Material.BUNDLE) {
+//            return false;
+//        }
 
         // If amounts do not match, then the items cannot possibly match
         if (checkAmount && cache2.getItemAmount() > cache.getItemAmount()) {
@@ -161,8 +168,10 @@ public class StackUtils {
 //            return itemStack.hasItemMeta() == cache.getItemStack().hasItemMeta();
 //        }
         //no use
+        //precheck sfid
 
         // Now we need to compare meta's directly - cache is already out, but let's fetch the 2nd meta also
+
         final ItemMeta itemMeta = cache2.getItemMeta();
         final ItemMeta cachedMeta = cache.getItemMeta();
         boolean result=metaMatchCore(type,itemMeta,cachedMeta,checkLore,checkCustomModelId);

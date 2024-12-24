@@ -58,6 +58,7 @@ public class NetworkRootPlus extends NetworkRoot {
                 int removed = 0;
                 for (Location node : getPowerNodes()) {
                     var blockData=StorageCacheUtils.getBlock(node);
+                    if(blockData==null)continue;
                     synchronized (blockData){
                         if(blockData.isPendingRemove()){
                             continue;
@@ -300,7 +301,8 @@ public class NetworkRootPlus extends NetworkRoot {
      * @param incoming
      */
     public void addItemStackAsync(@Nonnull ItemStack incoming) {
-        ItemStackCache incomingCache = ItemStackCache.of(incoming);
+        //incomingCache cached the meta of incoming,and the getAmount / setAmount is sync
+        ItemStackCache incomingCache = ItemRequest.of(incoming,0);
         for (BlockMenu blockMenu : getAdvancedGreedyBlockMenus()) {
 
             final ItemStack template = blockMenu.getItemInSlot(AdvancedGreedyBlock.TEMPLATE_SLOT);
@@ -343,7 +345,7 @@ public class NetworkRootPlus extends NetworkRoot {
 
         for (StorageUnitData cache : getInputAbleCargoStorageUnitDatas().keySet()) {
             //storageUnitData should realize multi-thread safe somehow
-            cache.depositItemStack(incoming, true);
+            cache.depositItemStack(incomingCache, true);
             if (incoming.getAmount() == 0) {
                 return;
             }

@@ -1,13 +1,18 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
+import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
+import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Getter
-public class ItemRequest extends ItemStackCache {
+public class ItemRequest extends ItemStackCache implements OptionalSfItemCache {
 
     private int amount;
     @Getter
@@ -20,12 +25,16 @@ public class ItemRequest extends ItemStackCache {
         super.init(itemStack);
         this.amount = amount;
         this.maxStackSize = itemStack.getMaxStackSize();
+        this.id=null;
+        this.initializedId=new AtomicBoolean(false);
         return this;
     }
     public ItemRequest(@Nonnull ItemStack itemStack, int amount) {
         super(itemStack);
         this.amount = amount;
         this.maxStackSize = itemStack.getMaxStackSize();
+        this.id=null;
+        this.initializedId=new AtomicBoolean(false);
     }
 
 
@@ -46,4 +55,15 @@ public class ItemRequest extends ItemStackCache {
     public ItemRequest clone() {
         return (ItemRequest) super.clone();
     }
+
+    private String id;
+    private AtomicBoolean initializedId;
+    public final String getOptionalId(){
+        if(initializedId.compareAndSet(false,true)){
+            ItemMeta meta = getItemMeta();
+            id= meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
+        }
+        return id;
+    }
+
 }

@@ -2,6 +2,8 @@ package io.github.sefiraat.networks.network.stackcaches;
 
 import com.balugaq.netex.api.helpers.ItemStackHelper;
 import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
+import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.inventory.ItemStack;
@@ -12,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class QuantumCache extends ItemStackCache {
+public class QuantumCache extends ItemStackCache implements OptionalSfItemCache {
 
     @Nullable
     private final ItemMeta storedItemMeta;
@@ -28,6 +30,15 @@ public class QuantumCache extends ItemStackCache {
     //lock for saving thread
     @Getter
     private final AtomicBoolean saving = new AtomicBoolean(false);
+    private String id;
+    private final AtomicBoolean initializedId=new AtomicBoolean(false);
+    public final String getOptionalId(){
+        if(initializedId.compareAndSet(false,true)){
+            ItemMeta meta = getItemMeta();
+            id= meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
+        }
+        return id;
+    }
     /**
      * pendingMove must be set true when removed from CACHES
      */

@@ -4,6 +4,7 @@ import com.balugaq.netex.api.enums.StorageUnitType;
 import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawer;
 import com.ytdd9527.networksexpansion.utils.databases.DataStorage;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
+import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
 import lombok.ToString;
 import org.bukkit.Bukkit;
@@ -20,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 @ToString
@@ -98,8 +98,10 @@ public class StorageUnitData {
      * @param amount: amount will be added
      * @return the amount actual added
      */
-
-    public int addStoredItem(ItemStack item, int amount, boolean contentLocked, boolean force) {
+    public int addStoredItem(ItemStack item, int amount, boolean contentLocked, boolean force){
+        return addStoredItem(ItemStackCache.of(item),amount,contentLocked,force);
+    }
+    public int addStoredItem(ItemStackCache item, int amount, boolean contentLocked, boolean force) {
         int add = 0;
         boolean isVoidExcess = NetworksDrawer.isVoidExcess(getLastLocation());
         int index=0;
@@ -112,7 +114,8 @@ public class StorageUnitData {
                         each.addAmount(add);
                         DataStorage.setStoredAmount(id, each.getId(), each.getAmount());
                     } else {
-                        item.setAmount(0);
+                        //force voidExcess
+                        item.setItemAmount(0);
                         return add;
                     }
                     return add;
@@ -130,8 +133,8 @@ public class StorageUnitData {
             if (storedItems.size() < sizeType.getMaxItemCount()) {
                 add = Math.min(amount, sizeType.getEachMaxSize());
                 synchronized (containerLock[index]) {
-                    int itemId = DataStorage.getItemId(item);
-                    storedItems.put(itemId, new ItemContainer(itemId, item, add));
+                    int itemId = DataStorage.getItemId(item.getItemStack());
+                    storedItems.put(itemId, new ItemContainer(itemId, item.getItemStack(), add));
                     DataStorage.addStoredItem(id, itemId, add);
                     return add;
                 }
@@ -255,7 +258,7 @@ public class StorageUnitData {
         int amount = itemRequest.getAmount();
         for (ItemContainer itemContainer : getStoredItemArray()) {
             int containerAmount = itemContainer.getAmount();
-            if (StackUtils.itemsMatch(itemContainer.getSample(), item)) {
+            if (itemContainer.isSimilar(itemRequest)) {
                 int take = Math.min(amount, containerAmount);
                 if (take <= 0) {
                     break;
@@ -283,7 +286,16 @@ public class StorageUnitData {
         int actualAdded = addStoredItem(itemsToDeposit, itemsToDeposit.getAmount(), contentLocked, force);
         itemsToDeposit.setAmount(itemsToDeposit.getAmount() - actualAdded);
     }
-
+    public void depositItemStack(ItemStackCache itemsToDeposit, boolean contentLocked, boolean force){
+        if(itemsToDeposit.getItemStack()==null||isBlacklisted(itemsToDeposit.getItemStack())){
+            return;
+        }
+        int actualAdded=addStoredItem(itemsToDeposit,itemsToDeposit.getItemAmount(),contentLocked,force);
+        itemsToDeposit.setItemAmount(itemsToDeposit.getItemAmount() - actualAdded);
+    }
+    public void depositItemStack(ItemStackCache item, boolean contentLocked) {
+        depositItemStack(item, contentLocked, false);
+    }
     public void depositItemStack(ItemStack item, boolean contentLocked) {
         depositItemStack(item, contentLocked, false);
     }
