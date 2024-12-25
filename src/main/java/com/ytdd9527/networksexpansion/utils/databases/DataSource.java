@@ -252,8 +252,8 @@ public class DataSource {
     }
 
     @Nonnull
-    private Map<Integer, ItemContainer> getStoredItem(int id) {
-        Map<Integer, ItemContainer> re = new HashMap<>();
+    private StorageUnitData.SyncedHashMap<Integer, ItemContainer> getStoredItem(int id) {
+        StorageUnitData.SyncedHashMap<Integer, ItemContainer> re = new StorageUnitData.SyncedHashMap<>();
 
         // Schedule query
         Networks.getQueryQueue().scheduleQuery(new QueuedTask() {

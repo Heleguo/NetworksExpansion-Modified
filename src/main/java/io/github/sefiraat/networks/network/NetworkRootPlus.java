@@ -411,7 +411,7 @@ public class NetworkRootPlus extends NetworkRoot {
             }
         }
     }
-    HashMap<BlockMenu,byte[][]> cellMenuSlotLock=new HashMap<>();
+    ConcurrentHashMap<BlockMenu,byte[][]> cellMenuSlotLock=new ConcurrentHashMap<>();
     public void pushCellAsync(BlockMenu cellMenu,ItemStackCache item){
         Material material = item.getItemType();
         int maxSize=material.getMaxStackSize();

@@ -7,6 +7,7 @@ import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
+import it.unimi.dsi.fastutil.Hash;
 import lombok.ToString;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -18,6 +19,9 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 @ToString
@@ -25,7 +29,7 @@ public class StorageUnitData {
 
     private final int id;
     private final OfflinePlayer owner;
-    private final Map<Integer, ItemContainer> storedItems;
+    private final SyncedHashMap<Integer, ItemContainer> storedItems;
     //a view of storedItems using Material as filter
     private final Map<Material, Set<ItemContainer>> material2Containers;
     private boolean isPlaced;
@@ -34,14 +38,33 @@ public class StorageUnitData {
     private final byte[] mapLock=new byte[0];
     //private byte[][] containerLock= IntStream.range(0,54).mapToObj(i->new byte[0]).toArray(byte[][]::new);
     public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation) {
-        this(id, Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)), sizeType, isPlaced, lastLocation, new HashMap<>());
+        this(id, Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)), sizeType, isPlaced, lastLocation, new SyncedHashMap<>());
+    }
+    public static class SyncedHashMap<T,W> extends HashMap<T,W>{
+        BiConsumer<T,W> putListener=(w,r)->{};
+        BiConsumer<Object,W> removeListener=(o,r)->{};
+        public void setSynced(BiConsumer<T,W> putListener, BiConsumer<Object,W> removeListener){
+            this.putListener = putListener;
+            this.removeListener = removeListener;
+        }
+        @Override
+        public W put(T key, W value) {
+            this.putListener.accept(key, value);
+            return super.put(key, value);
+        }
+        public W remove(Object key) {
+            var removed=super.remove(key);
+            removeListener.accept(key, removed);
+            return removed;
+        }
+
     }
 
-    public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation, Map<Integer, ItemContainer> storedItems) {
+    public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation, SyncedHashMap<Integer, ItemContainer> storedItems) {
         this(id, Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)), sizeType, isPlaced, lastLocation, storedItems);
     }
 
-    public StorageUnitData(int id, OfflinePlayer owner, StorageUnitType sizeType, boolean isPlaced, Location lastLocation, Map<Integer, ItemContainer> storedItems) {
+    public StorageUnitData(int id, OfflinePlayer owner, StorageUnitType sizeType, boolean isPlaced, Location lastLocation, SyncedHashMap<Integer, ItemContainer> storedItems) {
         this.id = id;
         this.owner = owner;
         this.sizeType = sizeType;
@@ -49,9 +72,25 @@ public class StorageUnitData {
         this.lastLocation = lastLocation;
         this.storedItems = storedItems;
         this.material2Containers = new EnumMap<>(Material.class);
+        this.storedItems.setSynced((key,value)->{
+            this.material2Containers.computeIfAbsent(value.getItemType(),k -> new HashSet<>()).add(value);
+        },(key,value)->{
+            if (value != null) {
+                var material=value.getItemType();
+                var sets= material2Containers.get(material);
+                if(sets != null) {
+                    sets.removeIf(i->i.getId()==value.getId());
+                    if(sets.isEmpty()){
+                        material2Containers.remove(material);
+                    }
+                }
+
+            }
+        });
         for(ItemContainer container : storedItems.values()) {
             material2Containers.computeIfAbsent(container.getItemType(), k -> new HashSet<>()).add(container);
         }
+
     }
 
     public static boolean isBlacklisted(@Nonnull ItemStack itemStack) {
@@ -190,14 +229,8 @@ public class StorageUnitData {
 
     public void removeItem(int itemId) {
         synchronized (mapLock){
-            var container = storedItems.remove(itemId);
-            if (container != null) {
-                var sets= material2Containers.get(container.getItemType());
-                if(sets != null) {
-                    sets.removeIf(i->i.getId()==container.getId());
-                }
-                DataStorage.deleteStoredItem(id, itemId);
-            }
+            storedItems.remove(itemId);
+            DataStorage.deleteStoredItem(id, itemId);
         }
     }
 
@@ -259,6 +292,7 @@ public class StorageUnitData {
     public Set<ItemContainer> viewStoredItemByMaterial(Material material){
         synchronized (mapLock){
 //            Networks.getInstance().getLogger().info(material2Containers.toString());
+//            Networks.getInstance().getLogger().info(storedItems.toString());
             return material2Containers.get(material);
         }
     }

@@ -282,7 +282,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 }
             }));
         }
-        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenRun(()->{
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenRunAsync(()->{
             if(!amountMatched.get()){
                 final ItemRequest[] requestFinal=request;
                 sendDebugMessage(blockMenu.getLocation(),
