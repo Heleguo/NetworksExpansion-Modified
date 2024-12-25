@@ -37,13 +37,7 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -125,9 +119,9 @@ public class NetworkRoot extends NetworkNode {
     @Getter
     private int maxNodes;
     private boolean isOverburdened = false;
-    private Set<BarrelIdentity> barrels = null;
-    private Set<BarrelIdentity> inputAbleBarrels = null;
-    private Set<BarrelIdentity> outputAbleBarrels = null;
+    private Map< Material,Set<BarrelIdentity>> barrels = null;
+    private Map< Material,Set<BarrelIdentity>> inputAbleBarrels = null;
+    private Map< Material,Set<BarrelIdentity>> outputAbleBarrels = null;
 
     private Map<StorageUnitData, Location> cargoStorageUnitDatas = null;
     private Map<StorageUnitData, Location> inputAbleCargoStorageUnitDatas = null;
@@ -254,21 +248,23 @@ public class NetworkRoot extends NetworkNode {
         final Map<ItemStack, Long> itemStacks = new HashMap<>();
 
         // Barrels
-        for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-            itemStacks.compute(barrelIdentity.getItemStack(),(i,num)->num==null?(long)barrelIdentity.getAmount():(long)num+barrelIdentity.getAmount() );
-//            final Long currentAmount = itemStacks.get(barrelIdentity.getItemStack());
-//            final long newAmount;
-//            if (currentAmount == null) {
-//                newAmount = barrelIdentity.getAmount();
-//            } else {
-//                long newLong = currentAmount + barrelIdentity.getAmount();
-//                if (newLong < 0) {
-//                    newAmount = 0;
-//                } else {
-//                    newAmount = currentAmount + barrelIdentity.getAmount();
-//                }
-//            }
-//            itemStacks.put(barrelIdentity.getItemStack(), newAmount);
+        for(var barrels:getOutputAbleBarrels().values()){
+            for (BarrelIdentity barrelIdentity : barrels) {
+                itemStacks.compute(barrelIdentity.getItemStack(),(i,num)->num==null?(long)barrelIdentity.getAmount():(long)num+barrelIdentity.getAmount() );
+    //            final Long currentAmount = itemStacks.get(barrelIdentity.getItemStack());
+    //            final long newAmount;
+    //            if (currentAmount == null) {
+    //                newAmount = barrelIdentity.getAmount();
+    //            } else {
+    //                long newLong = currentAmount + barrelIdentity.getAmount();
+    //                if (newLong < 0) {
+    //                    newAmount = 0;
+    //                } else {
+    //                    newAmount = currentAmount + barrelIdentity.getAmount();
+    //                }
+    //            }
+    //            itemStacks.put(barrelIdentity.getItemStack(), newAmount);
+            }
         }
 
         // Cargo storage units
@@ -344,14 +340,14 @@ public class NetworkRoot extends NetworkNode {
     }
 
     @Nonnull
-    public synchronized Set<BarrelIdentity> getBarrels() {
+    protected synchronized Map<Material,Set<BarrelIdentity>> getBarrels() {
 
         if (this.barrels != null) {
             return this.barrels;
         }
 
         final Set<Location> addedLocations = ConcurrentHashMap.newKeySet();
-        final Set<BarrelIdentity> barrelSet = ConcurrentHashMap.newKeySet();
+        final Map<Material,Set<BarrelIdentity>> barrelSet =new EnumMap<>(Material.class);
 
         for (Location cellLocation : this.monitors) {
             final BlockFace face = NetworkDirectional.getSelectedFace(cellLocation);
@@ -369,36 +365,36 @@ public class NetworkRoot extends NetworkNode {
             }
 
             final SlimefunItem slimefunItem = StorageCacheUtils.getSfItem(testLocation);
-
-            if (Networks.getSupportedPluginManager()
-                    .isInfinityExpansion() && slimefunItem instanceof StorageUnit unit) {
+            if (Networks.getSupportedPluginManager().isInfinityExpansion() && slimefunItem instanceof StorageUnit unit) {
                 final BlockMenu menu = StorageCacheUtils.getMenu(testLocation);
                 if (menu == null) {
                     continue;
                 }
                 final InfinityBarrel infinityBarrel = getInfinityBarrel(menu, unit);
                 if (infinityBarrel != null) {
-                    barrelSet.add(infinityBarrel);
+                    barrelSet.computeIfAbsent(infinityBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(infinityBarrel);
                 }
                 continue;
-            } else if (Networks.getSupportedPluginManager().isFluffyMachines() && slimefunItem instanceof Barrel barrel) {
+            }
+            if (Networks.getSupportedPluginManager().isFluffyMachines() && slimefunItem instanceof Barrel barrel) {
                 final BlockMenu menu = StorageCacheUtils.getMenu(testLocation);
                 if (menu == null) {
                     continue;
                 }
                 final FluffyBarrel fluffyBarrel = getFluffyBarrel(menu, barrel);
                 if (fluffyBarrel != null) {
-                    barrelSet.add(fluffyBarrel);
+                    barrelSet.computeIfAbsent(fluffyBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(fluffyBarrel);
                 }
                 continue;
-            } else if (slimefunItem instanceof NetworkQuantumStorage) {
+            }
+            if (slimefunItem instanceof NetworkQuantumStorage) {
                 final BlockMenu menu = StorageCacheUtils.getMenu(testLocation);
                 if (menu == null) {
                     continue;
                 }
                 final NetworkStorage storage = getNetworkStorage(menu);
                 if (storage != null) {
-                    barrelSet.add(storage);
+                    barrelSet.computeIfAbsent(storage.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(storage);
                 }
             }
         }
@@ -612,35 +608,39 @@ public class NetworkRoot extends NetworkNode {
         }
 
         // Barrels first
-        for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-            if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
-                continue;
-            }
+        var barrels=getOutputAbleBarrels().get(request.getItemType());
+        if(barrels != null) {
+            for (BarrelIdentity barrelIdentity :barrels) {
+                if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
+                    continue;
+                }
 
-            boolean infinity = barrelIdentity instanceof InfinityBarrel;
-            final ItemStack fetched = barrelIdentity.requestItem(request);
-            if (fetched == null || fetched.getType() == Material.AIR || (infinity && fetched.getAmount() == 1)) {
-                continue;
-            }
+                boolean infinity = barrelIdentity instanceof InfinityBarrel;
+                final ItemStack fetched = barrelIdentity.requestItem(request);
+                if (fetched == null || fetched.getType() == Material.AIR || (infinity && fetched.getAmount() == 1)) {
+                    continue;
+                }
 
-            // Stack is null, so we can fill it here
-            if (stackToReturn == null) {
-                stackToReturn = fetched.clone();
-                stackToReturn.setAmount(0);
-            }
+                // Stack is null, so we can fill it here
+                if (stackToReturn == null) {
+                    stackToReturn = fetched.clone();
+                    stackToReturn.setAmount(0);
+                }
 
-            final int preserveAmount = infinity ? fetched.getAmount() - 1 : fetched.getAmount();
+                final int preserveAmount = infinity ? fetched.getAmount() - 1 : fetched.getAmount();
 
-            if (request.getAmount() <= preserveAmount) {
-                stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
-                fetched.setAmount(fetched.getAmount() - request.getAmount());
-                return stackToReturn;
-            } else {
-                stackToReturn.setAmount(stackToReturn.getAmount() + preserveAmount);
-                request.receiveAmount(preserveAmount);
-                fetched.setAmount(fetched.getAmount() - preserveAmount);
+                if (request.getAmount() <= preserveAmount) {
+                    stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
+                    fetched.setAmount(fetched.getAmount() - request.getAmount());
+                    return stackToReturn;
+                } else {
+                    stackToReturn.setAmount(stackToReturn.getAmount() + preserveAmount);
+                    request.receiveAmount(preserveAmount);
+                    fetched.setAmount(fetched.getAmount() - preserveAmount);
+                }
             }
         }
+
 
         // Units
         for (StorageUnitData cache : getOutputAbleCargoStorageUnitDatas().keySet()) {
@@ -799,24 +799,27 @@ public class NetworkRoot extends NetworkNode {
         long found = 0;
         int requestAmount=request.getAmount();
         // Barrels
-        for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-            final ItemStack itemStack = barrelIdentity.getItemStack();
+        var barrels=getOutputAbleBarrels().get(request.getItemType());
+        if(barrels!=null){
+            for (BarrelIdentity barrelIdentity : barrels) {
+                final ItemStack itemStack = barrelIdentity.getItemStack();
 
-            if (itemStack == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
-                continue;
-            }
-
-            if (barrelIdentity instanceof InfinityBarrel) {
-                if (itemStack.getMaxStackSize() > 1) {
-                    found += barrelIdentity.getAmount() - 2;
+                if (itemStack == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
+                    continue;
                 }
-            } else {
-                found += barrelIdentity.getAmount();
-            }
 
-            // Escape if found all we need
-            if (found >= requestAmount) {
-                return true;
+                if (barrelIdentity instanceof InfinityBarrel) {
+                    if (itemStack.getMaxStackSize() > 1) {
+                        found += barrelIdentity.getAmount() - 2;
+                    }
+                } else {
+                    found += barrelIdentity.getAmount();
+                }
+
+                // Escape if found all we need
+                if (found >= requestAmount) {
+                    return true;
+                }
             }
         }
 
@@ -947,12 +950,14 @@ public class NetworkRoot extends NetworkNode {
                 totalAmount += inputSlotItem.getAmount();
             }
         }
-
-        for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-            if (StackUtils.itemsMatch(barrelIdentity, itemStackCache)) {
-                totalAmount += barrelIdentity.getAmount();
-                if (barrelIdentity instanceof InfinityBarrel) {
-                    totalAmount -= 2;
+        var barrels=getOutputAbleBarrels().get(itemStack.getType());
+        if(barrels!=null){
+            for (BarrelIdentity barrelIdentity : barrels) {
+                if (StackUtils.itemsMatch(barrelIdentity, itemStackCache)) {
+                    totalAmount += barrelIdentity.getAmount();
+                    if (barrelIdentity instanceof InfinityBarrel) {
+                        totalAmount -= 2;
+                    }
                 }
             }
         }
@@ -1012,17 +1017,19 @@ public class NetworkRoot extends NetworkNode {
                 }
             }
         }
-
-        for (BarrelIdentity barrelIdentity : getOutputAbleBarrels()) {
-            for (ItemStackCache itemStack : itemStackCaches) {
-                if (StackUtils.itemsMatch(barrelIdentity, itemStack)) {
-                    long totalAmount = barrelIdentity.getAmount();
-                    if (barrelIdentity instanceof InfinityBarrel) {
-                        totalAmount -= 2;
+        for (var entry:getOutputAbleBarrels().entrySet()){
+            if(entry.getValue()==null||entry.getValue().isEmpty())continue;
+            for (BarrelIdentity barrelIdentity : entry.getValue()) {
+                for (ItemStackCache itemStack : itemStackCaches) {
+                    if (itemStack.getItemType()==entry.getKey()&& StackUtils.itemsMatch(barrelIdentity, itemStack)) {
+                        long totalAmount = barrelIdentity.getAmount();
+                        if (barrelIdentity instanceof InfinityBarrel) {
+                            totalAmount -= 2;
+                        }
+                        final long total=totalAmount;
+                        totalAmounts.compute(itemStack.getItemStack(),(i,oldValue)->oldValue==null?(long)total:oldValue+total);
+                       // totalAmounts.put(itemStack, totalAmounts.getOrDefault(itemStack, 0L) + totalAmount);
                     }
-                    final long total=totalAmount;
-                    totalAmounts.compute(itemStack.getItemStack(),(i,oldValue)->oldValue==null?(long)total:oldValue+total);
-                   // totalAmounts.put(itemStack, totalAmounts.getOrDefault(itemStack, 0L) + totalAmount);
                 }
             }
         }
@@ -1089,13 +1096,16 @@ public class NetworkRoot extends NetworkNode {
 
 
         // Run for matching barrels
-        for (BarrelIdentity barrelIdentity : getInputAbleBarrels()) {
-            if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {
-                barrelIdentity.depositItemStack(incoming);
+        var barrels=getInputAbleBarrels().get(incoming.getType());
+        if(barrels!=null){
+            for (BarrelIdentity barrelIdentity : barrels) {
+                if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {
+                    barrelIdentity.depositItemStack(incoming);
 
-                // All distributed, can escape
-                if (incoming.getAmount() == 0) {
-                    return;
+                    // All distributed, can escape
+                    if (incoming.getAmount() == 0) {
+                        return;
+                    }
                 }
             }
         }
@@ -1168,14 +1178,14 @@ public class NetworkRoot extends NetworkNode {
     }
 
     @Nonnull
-    public synchronized Set<BarrelIdentity> getInputAbleBarrels() {
+    protected synchronized Map<Material,Set<BarrelIdentity>> getInputAbleBarrels() {
 
         if (this.inputAbleBarrels != null) {
             return this.inputAbleBarrels;
         }
 
         final Set<Location> addedLocations = ConcurrentHashMap.newKeySet();
-        final Set<BarrelIdentity> barrelSet = ConcurrentHashMap.newKeySet();
+        final Map<Material,Set<BarrelIdentity>> barrelSet =new EnumMap<>(Material.class);
 
         final Set<Location> monitor = new HashSet<>();
         monitor.addAll(this.inputOnlyMonitors);
@@ -1204,7 +1214,7 @@ public class NetworkRoot extends NetworkNode {
                 }
                 final InfinityBarrel infinityBarrel = getInfinityBarrel(menu, unit);
                 if (infinityBarrel != null) {
-                    barrelSet.add(infinityBarrel);
+                    barrelSet.computeIfAbsent(infinityBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(infinityBarrel);
                 }
                 continue;
             }
@@ -1215,7 +1225,7 @@ public class NetworkRoot extends NetworkNode {
                 }
                 final FluffyBarrel fluffyBarrel = getFluffyBarrel(menu, barrel);
                 if (fluffyBarrel != null) {
-                    barrelSet.add(fluffyBarrel);
+                    barrelSet.computeIfAbsent(fluffyBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(fluffyBarrel);
                 }
                 continue;
             }
@@ -1226,7 +1236,7 @@ public class NetworkRoot extends NetworkNode {
                 }
                 final NetworkStorage storage = getNetworkStorage(menu);
                 if (storage != null) {
-                    barrelSet.add(storage);
+                    barrelSet.computeIfAbsent(storage.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(storage);
                 }
             }
         }
@@ -1236,14 +1246,14 @@ public class NetworkRoot extends NetworkNode {
     }
 
     @Nonnull
-    public synchronized Set<BarrelIdentity> getOutputAbleBarrels() {
+    protected synchronized Map<Material,Set<BarrelIdentity>> getOutputAbleBarrels() {
 
         if (this.outputAbleBarrels != null) {
             return this.outputAbleBarrels;
         }
 
         final Set<Location> addedLocations = ConcurrentHashMap.newKeySet();
-        final Set<BarrelIdentity> barrelSet = ConcurrentHashMap.newKeySet();
+        final Map<Material,Set<BarrelIdentity>> barrelSet = new EnumMap<>(Material.class);
 
         final Set<Location> monitor = new HashSet<>();
         monitor.addAll(this.outputOnlyMonitors);
@@ -1272,7 +1282,7 @@ public class NetworkRoot extends NetworkNode {
                 }
                 final InfinityBarrel infinityBarrel = getInfinityBarrel(menu, unit);
                 if (infinityBarrel != null) {
-                    barrelSet.add(infinityBarrel);
+                    barrelSet.computeIfAbsent(infinityBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(infinityBarrel);
                 }
                 continue;
             }
@@ -1283,7 +1293,7 @@ public class NetworkRoot extends NetworkNode {
                 }
                 final FluffyBarrel fluffyBarrel = getFluffyBarrel(menu, barrel);
                 if (fluffyBarrel != null) {
-                    barrelSet.add(fluffyBarrel);
+                    barrelSet.computeIfAbsent(fluffyBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(fluffyBarrel);
                 }
                 continue;
             }
@@ -1294,7 +1304,7 @@ public class NetworkRoot extends NetworkNode {
                 }
                 final NetworkStorage storage = getNetworkStorage(menu);
                 if (storage != null) {
-                    barrelSet.add(storage);
+                    barrelSet.computeIfAbsent(storage.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(storage);
                 }
             }
         }

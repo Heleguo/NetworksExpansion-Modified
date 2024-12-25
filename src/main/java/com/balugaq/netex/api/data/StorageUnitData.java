@@ -3,6 +3,7 @@ package com.balugaq.netex.api.data;
 import com.balugaq.netex.api.enums.StorageUnitType;
 import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawer;
 import com.ytdd9527.networksexpansion.utils.databases.DataStorage;
+import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
@@ -16,11 +17,7 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @ToString
@@ -29,11 +26,13 @@ public class StorageUnitData {
     private final int id;
     private final OfflinePlayer owner;
     private final Map<Integer, ItemContainer> storedItems;
+    //a view of storedItems using Material as filter
+    private final Map<Material, Set<ItemContainer>> material2Containers;
     private boolean isPlaced;
     private StorageUnitType sizeType;
     private Location lastLocation;
-    private byte[] mapLock=new byte[0];
-    private byte[][] containerLock= IntStream.range(0,54).mapToObj(i->new byte[0]).toArray(byte[][]::new);
+    private final byte[] mapLock=new byte[0];
+    //private byte[][] containerLock= IntStream.range(0,54).mapToObj(i->new byte[0]).toArray(byte[][]::new);
     public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation) {
         this(id, Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)), sizeType, isPlaced, lastLocation, new HashMap<>());
     }
@@ -49,6 +48,10 @@ public class StorageUnitData {
         this.isPlaced = isPlaced;
         this.lastLocation = lastLocation;
         this.storedItems = storedItems;
+        this.material2Containers = new EnumMap<>(Material.class);
+        for(ItemContainer container : storedItems.values()) {
+            material2Containers.computeIfAbsent(container.getItemType(), k -> new HashSet<>()).add(container);
+        }
     }
 
     public static boolean isBlacklisted(@Nonnull ItemStack itemStack) {
@@ -104,24 +107,29 @@ public class StorageUnitData {
     public int addStoredItem(ItemStackCache item, int amount, boolean contentLocked, boolean force) {
         int add = 0;
         boolean isVoidExcess = NetworksDrawer.isVoidExcess(getLastLocation());
-        int index=0;
-        for (ItemContainer each : getStoredItems()) {
-            if (each.isSimilar(item)) {
-                // Found existing one, add amount
-                synchronized (containerLock[index]) {
-                    add = Math.min(amount, sizeType.getEachMaxSize() - each.getAmount());
-                    if (add > 0||!isVoidExcess) {
-                        each.addAmount(add);
-                        DataStorage.setStoredAmount(id, each.getId(), each.getAmount());
-                    } else {
-                        //force voidExcess
-                        item.setItemAmount(0);
-                        return add;
+        var containers=viewStoredItemByMaterial(item.getItemType());
+        if(containers!=null){
+            for (ItemContainer each : containers) {
+                if (each.isSimilar(item)) {
+                    // Found existing one, add amount
+                    int eachAmount;
+                    synchronized (each) {
+                        eachAmount = each.getAmount();
+                        add = Math.min(amount, sizeType.getEachMaxSize() - eachAmount);
+                        if (add > 0||!isVoidExcess) {
+                            each.addAmount(add);
+                            eachAmount+=add;
+                        } else {
+                            //force voidExcess
+                            item.setItemAmount(0);
+                            return add;
+                        }
                     }
+                    DataStorage.setStoredAmount(id, each.getId(), eachAmount);
                     return add;
+
                 }
             }
-            index+=1;
         }
         // isforce?
         if (!force) {
@@ -132,12 +140,12 @@ public class StorageUnitData {
         synchronized (mapLock){
             if (storedItems.size() < sizeType.getMaxItemCount()) {
                 add = Math.min(amount, sizeType.getEachMaxSize());
-                synchronized (containerLock[index]) {
-                    int itemId = DataStorage.getItemId(item.getItemStack());
-                    storedItems.put(itemId, new ItemContainer(itemId, item.getItemStack(), add));
-                    DataStorage.addStoredItem(id, itemId, add);
-                    return add;
-                }
+                int itemId = DataStorage.getItemId(item.getItemStack());
+                var container = new ItemContainer(itemId, item.getItemStack(), add);
+                storedItems.put(itemId, container);
+                material2Containers.computeIfAbsent(container.getItemType(), k -> new HashSet<>()).add(container);
+                DataStorage.addStoredItem(id, itemId, add);
+                return add;
             }
         }
         return add;
@@ -182,7 +190,12 @@ public class StorageUnitData {
 
     public void removeItem(int itemId) {
         synchronized (mapLock){
-            if (storedItems.remove(itemId) != null) {
+            var container = storedItems.remove(itemId);
+            if (container != null) {
+                var sets= material2Containers.get(container.getItemType());
+                if(sets != null) {
+                    sets.removeIf(i->i.getId()==container.getId());
+                }
                 DataStorage.deleteStoredItem(id, itemId);
             }
         }
@@ -243,6 +256,12 @@ public class StorageUnitData {
             return storedItems.values().toArray(ItemContainer[]::new);
         }
     }
+    public Set<ItemContainer> viewStoredItemByMaterial(Material material){
+        synchronized (mapLock){
+//            Networks.getInstance().getLogger().info(material2Containers.toString());
+            return material2Containers.get(material);
+        }
+    }
 
     public OfflinePlayer getOwner() {
         return owner;
@@ -256,18 +275,26 @@ public class StorageUnitData {
         }
 
         int amount = itemRequest.getAmount();
-        for (ItemContainer itemContainer : getStoredItemArray()) {
-            int containerAmount = itemContainer.getAmount();
-            if (itemContainer.isSimilar(itemRequest)) {
-                int take = Math.min(amount, containerAmount);
-                if (take <= 0) {
-                    break;
+        var containers=viewStoredItemByMaterial(itemRequest.getItemType());
+        if(containers != null) {
+            for (ItemContainer itemContainer : containers) {
+                if (itemContainer.isSimilar(itemRequest)) {
+                    int containerAmount;
+                    int take;
+                    synchronized (itemContainer) {
+                        containerAmount = itemContainer.getAmount();
+                        take = Math.min(amount, containerAmount);
+                        if (take <= 0) {
+                            break;
+                        }
+                        itemContainer.removeAmount(take);
+                    }
+
+                    DataStorage.setStoredAmount(id, itemContainer.getId(), containerAmount-take);
+                    ItemStack clone = item.clone();
+                    clone.setAmount(take);
+                    return clone;
                 }
-                itemContainer.removeAmount(take);
-                DataStorage.setStoredAmount(id, itemContainer.getId(), itemContainer.getAmount());
-                ItemStack clone = item.clone();
-                clone.setAmount(take);
-                return clone;
             }
         }
         return null;

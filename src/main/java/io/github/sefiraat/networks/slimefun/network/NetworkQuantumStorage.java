@@ -51,7 +51,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressWarnings("deprecation")
 public class NetworkQuantumStorage extends SpecialSlimefunItem implements DistinctiveItem {
@@ -150,7 +152,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             return null;
         }
         return getItemStack(cache, blockMenu, cache.getItemStack().getMaxStackSize());
-    }
+    };
     @ParametersAreNonnullByDefault
     @Nullable
     public static ItemStack getItemStack(@Nonnull QuantumCache cache, @Nonnull Location location, int amount) {
@@ -160,6 +162,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             BlockMenu blockMenu=StorageCacheUtils.getMenu(location);
             if (blockMenu != null) {
                 //if lock required ,this part is locked by blockMenu
+
                 ItemStack output= blockMenu.getItemInSlot(OUTPUT_SLOT);
                 //actually we don't use these part frequently
                 if (output != null
@@ -181,6 +184,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
                         fetched.setAmount(fetched.getAmount() + additional);
                     }
                 }
+
             }
             syncBlock(location, cache);
             return fetched;
@@ -349,6 +353,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         }
 
         // Output items
+
         final ItemStack output = blockMenu.getItemInSlot(OUTPUT_SLOT);
         ItemStack fetched = null;
         if (output == null || output.getType() == Material.AIR) {

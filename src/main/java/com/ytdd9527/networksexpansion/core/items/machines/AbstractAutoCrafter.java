@@ -36,11 +36,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nonnull;
 import javax.xml.crypto.Data;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractAutoCrafter extends NetworkObject implements MenuWithData {
     private static final int[] BACKGROUND_SLOTS = new int[]{
@@ -97,12 +95,15 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             return;
         }
         final NetworkRoot root = definition.getNode().getRoot();
-        if (!this.withholding) {
-            final ItemStack stored = blockMenu.getItemInSlot(OUTPUT_SLOT);
-            if (stored != null && stored.getType() != Material.AIR) {
-                root.addItemStack(stored);
+        final ItemStack stored = blockMenu.getItemInSlot(OUTPUT_SLOT);
+        CompletableFuture<Void> future=CompletableFuture.runAsync(() -> {
+            if (!this.withholding) {
+                if (stored != null && stored.getType() != Material.AIR) {
+                    root.addItemStack(stored);
+                }
             }
-        }
+        });
+
         final long networkCharge = root.getRootPower();
         DataContainer container=getDataContainer(blockMenu);
         if (networkCharge > this.chargePerCraft) {
@@ -129,9 +130,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 return;
             }
             //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(true);
-            if (tryCraft(blockMenu, instance, root,craftAmount)) {
-                root.removeRootPower(this.chargePerCraft);
-            }
+            tryCraft(blockMenu, instance, root,craftAmount,future);
             //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"returned, %s");
             //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(false);
         }
@@ -223,7 +222,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
         dataContainer.setItemStack(0,null);
         sendDebugMessage(blockMenu.getLocation(), ()->"blueprint instance set in cache");
     }
-    private boolean tryCraft(@Nonnull BlockMenu blockMenu, @Nonnull BlueprintInstance instance, @Nonnull NetworkRoot root,int craftAmount) {
+    private void tryCraft(@Nonnull BlockMenu blockMenu, @Nonnull BlueprintInstance instance, @Nonnull NetworkRoot root,int craftAmount,CompletableFuture<Void> waitInput) {
         // Get the recipe input
         //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         DataContainer container=getDataContainer(blockMenu);
@@ -231,8 +230,8 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
          * Needs to be revisited as matching is happening stacks 2x when I should
          * only need the one
          */
-        ItemRequest[] request=container.getItemRequests(0);
-        if(request==null){
+        ItemRequest[] request0=container.getItemRequests(0);
+        if(request0==null){
             sendDebugMessage(blockMenu.getLocation(), ()->"cached request is null");
             HashMap<ItemStack, Integer> requiredItems = new HashMap<>();
             for (int i = 0; i < 9; i++) {
@@ -247,9 +246,10 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 }
             }
             //here we add craftAmount to multiply the request
-            request=requiredItems.entrySet().stream().map(e->ItemRequest.of(e.getKey(),e.getValue()*craftAmount)).toArray(ItemRequest[]::new);
-            container.setItemRequests(0,request);
+            request0=requiredItems.entrySet().stream().map(e->ItemRequest.of(e.getKey(),e.getValue()*craftAmount)).toArray(ItemRequest[]::new);
+            container.setItemRequests(0,request0);
         }
+        final ItemRequest[] request=request0;
         //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"fetch request ,%s");
         //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         //this is shit
@@ -257,111 +257,119 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             if (!root.contains(itemRequest)) {
                 final ItemRequest[] requests=request;
                 sendDebugMessage(blockMenu.getLocation(), ()->"Network does not have required items,%s".formatted(Arrays.toString(requests)));
-                return false;
+                return ;
             }
         }
         //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"contains ,%s");
         //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         final ItemStack[] fetch = new ItemStack[request.length];
         // Then fetch the actual items
-        boolean amountMatched=true;
+        AtomicBoolean amountMatched=new AtomicBoolean(true);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (int i=0;i<request.length;i++) {
-            final ItemRequest requested = request[i];
-            if (requested.getItemStack() != null) {
-                final ItemStack fetched = root.getItemStack(requested.clone());
-                if(fetched!=null&&fetched.getAmount()==requested.getAmount()){
-                    fetch[i] = fetched;
-                }else {
-                    amountMatched=false;
-                    break;
+            final int index=i;
+            final ItemRequest requested = request[index];
+            futures.add(CompletableFuture.runAsync(()->{
+                if (requested.getItemStack() != null&&amountMatched.get()) {
+                    final ItemStack fetched = root.getItemStack(requested.clone());
+                    if(fetched!=null&&fetched.getAmount()==requested.getAmount()){
+                        fetch[index] = fetched;
+                    }else {
+                        amountMatched.set(false);
+                    }
+                } else {
+                    fetch[index] = null;
                 }
-            } else {
-                fetch[i] = null;
+            }));
+        }
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenRun(()->{
+            if(!amountMatched.get()){
+                final ItemRequest[] requestFinal=request;
+                sendDebugMessage(blockMenu.getLocation(),
+                        ()->"Network does not fetch required items",
+                        ()->"expected-requests: " + Arrays.toString(requestFinal),
+                        ()->"actually-fetched: " + Arrays.toString(fetch)
+                );
+                returnItems(root,fetch);
+                return;
             }
-        }
-        if(!amountMatched){
-            final ItemRequest[] requestFinal=request;
-            sendDebugMessage(blockMenu.getLocation(),
-                    ()->"Network does not fetch required items",
-                    ()->"expected-requests: " + Arrays.toString(requestFinal),
-                    ()->"actually-fetched: " + Arrays.toString(fetch)
-            );
-            returnItems(root,fetch);
-            return false;
-        }
-        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"getItemStack ,%s");
-        //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
-        //item fetched ,now we assumed that they can be perfectly filled into the inputPattern of the BLUEPRINT_INSTANCE
-        //so we can use the inputPattern result cached
+            //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"getItemStack ,%s");
+            //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
+            //item fetched ,now we assumed that they can be perfectly filled into the inputPattern of the BLUEPRINT_INSTANCE
+            //so we can use the inputPattern result cached
 
-        // Go through each slimefun recipe, test and set the ItemStack if found
-        //they are done in updateMenu and cached in container ,if crafted = null, try again
-        ItemStack[] inputPattern=instance.getRecipeItems();
-        ItemStack crafted =container.getItemStack(0);
-        if(crafted==null){
-            sendDebugMessage(blockMenu.getLocation(), ()->"Network does not fetch required items");
-            for (Map.Entry<ItemStack[], ItemStack> entry : getRecipeEntries()) {
-                if (getRecipeTester(inputPattern, entry.getKey())) {
-                    //get A copy of matched recipeOutput
-                    crafted=new ItemStack( entry.getValue());
-                    container.setItemStack(0,crafted);
-                    break;
+            // Go through each slimefun recipe, test and set the ItemStack if found
+            //they are done in updateMenu and cached in container ,if crafted = null, try again
+            ItemStack[] inputPattern=instance.getRecipeItems();
+            ItemStack crafted =container.getItemStack(0);
+            if(crafted==null){
+                sendDebugMessage(blockMenu.getLocation(), ()->"Network does not fetch required items");
+                for (Map.Entry<ItemStack[], ItemStack> entry : getRecipeEntries()) {
+                    if (getRecipeTester(inputPattern, entry.getKey())) {
+                        //get A copy of matched recipeOutput
+                        crafted=new ItemStack( entry.getValue());
+                        container.setItemStack(0,crafted);
+                        break;
+                    }
                 }
             }
-        }
-        //else{
+            //else{
             //get A copy of cached itemOutput
             //sendDebugMessage(blockMenu.getLocation(), ()->"get Copy of cached crafted result");
 
-        //}
-        //this is cached in BluePrint Instance
-        if (crafted == null && canTestVanillaRecipe()) {
-            //sendDebugMessage(blockMenu.getLocation(), ()->"No slimefun recipe found, trying vanilla");
-            // If no slimefun recipe found, try a vanilla one
-            instance.generateVanillaRecipe(blockMenu.getLocation().getWorld());
-            if (instance.getRecipe() == null) {
-                returnItems(root, fetch);
-                sendDebugMessage(blockMenu.getLocation(), ()->"No vanilla recipe found");
-                return false;
-            } else  {
-                //setCache(blockMenu, instance);
-                crafted = instance.getRecipe().getResult();
+            //}
+            //this is cached in BluePrint Instance
+            if (crafted == null && canTestVanillaRecipe()) {
+                //sendDebugMessage(blockMenu.getLocation(), ()->"No slimefun recipe found, trying vanilla");
+                // If no slimefun recipe found, try a vanilla one
+                instance.generateVanillaRecipe(blockMenu.getLocation().getWorld());
+                if (instance.getRecipe() == null) {
+                    returnItems(root, fetch);
+                    sendDebugMessage(blockMenu.getLocation(), ()->"No vanilla recipe found");
+                    return;
+                } else  {
+                    //setCache(blockMenu, instance);
+                    crafted = instance.getRecipe().getResult();
+                }
             }
-        }
 
-        // If no item crafted OR result doesn't fit, escape
-        if (crafted == null || crafted.getType() == Material.AIR) {
-            sendDebugMessage(blockMenu.getLocation(),
-                    ()->"No valid recipe found",
-                    ()->"expected-inputs: " + Arrays.toString(inputPattern),
-                    ()->"actually-fetched: " + Arrays.toString(fetch)
-            );
-            returnItems(root, fetch);
-            return false;
-        }
-        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchRecipe ,%s");
-        //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
-        // Push item
-        //in this place ,we don't modify crafted,so nothing will change in cached crafted
-        ItemStack outputSlot=blockMenu.getItemInSlot(OUTPUT_SLOT);
-        if(outputSlot==null||outputSlot.getType()==Material.AIR){
-            blockMenu.replaceExistingItem(OUTPUT_SLOT,crafted,false);
-            if(craftAmount>1){
-                ItemStack pushed=blockMenu.getItemInSlot(OUTPUT_SLOT);
-                pushed.setAmount(craftAmount*crafted.getAmount());
+            // If no item crafted OR result doesn't fit, escape
+            if (crafted == null || crafted.getType() == Material.AIR) {
+                sendDebugMessage(blockMenu.getLocation(),
+                        ()->"No valid recipe found",
+                        ()->"expected-inputs: " + Arrays.toString(inputPattern),
+                        ()->"actually-fetched: " + Arrays.toString(fetch)
+                );
+                returnItems(root, fetch);
+                return;
             }
-        }else if(outputSlot.getAmount()<outputSlot.getMaxStackSize()&&StackUtils.itemsMatch(outputSlot,crafted)){
-            outputSlot.setAmount(outputSlot.getAmount()+crafted.getAmount()*craftAmount);
-        }else{
-            sendDebugMessage(blockMenu.getLocation(), ()->"Output slot item no space or hot fit");
-            returnItems(root, fetch);
-        }
-        if (root.isDisplayParticles()) {
-            final Location location = blockMenu.getLocation().clone().add(0.5, 1.1, 0.5);
-            location.getWorld().spawnParticle(Particle.WAX_OFF, location, 0, 0, 4, 0);
-        }
-        //blockMenu.pushItem(crafted, OUTPUT_SLOT);
-        return true;
+            //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchRecipe ,%s");
+            //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
+            // Push item
+            //in this place ,we don't modify crafted,so nothing will change in cached crafted
+            //wait input task end so we can safely modify outputSlot
+            waitInput.join();
+            ItemStack outputSlot=blockMenu.getItemInSlot(OUTPUT_SLOT);
+            if(outputSlot==null||outputSlot.getType()==Material.AIR){
+                blockMenu.replaceExistingItem(OUTPUT_SLOT,crafted,false);
+                if(craftAmount>1){
+                    ItemStack pushed=blockMenu.getItemInSlot(OUTPUT_SLOT);
+                    pushed.setAmount(craftAmount*crafted.getAmount());
+                }
+            }else if(outputSlot.getAmount()<outputSlot.getMaxStackSize()&&StackUtils.itemsMatch(outputSlot,crafted)){
+                outputSlot.setAmount(outputSlot.getAmount()+crafted.getAmount()*craftAmount);
+            }else{
+                sendDebugMessage(blockMenu.getLocation(), ()->"Output slot item no space or hot fit");
+                returnItems(root, fetch);
+            }
+            if (root.isDisplayParticles()) {
+                final Location location = blockMenu.getLocation().clone().add(0.5, 1.1, 0.5);
+                location.getWorld().spawnParticle(Particle.WAX_OFF, location, 0, 0, 4, 0);
+            }
+            //blockMenu.pushItem(crafted, OUTPUT_SLOT);
+            root.removeRootPower(this.chargePerCraft);
+            return;
+        });
     }
 
     private void returnItems(@Nonnull NetworkRoot root, @Nonnull ItemStack[] inputs) {

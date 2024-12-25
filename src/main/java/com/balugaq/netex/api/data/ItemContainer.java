@@ -15,24 +15,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ItemContainer extends ItemStackCache implements OptionalSfItemCache {
     @Getter
     private final int id;
-    private final ItemStack sample;
+    //private final ItemStack sample;
     //@Getter
     //private final ItemStackWrapper wrapper;
     @Getter
     private int amount;
 
     public ItemContainer(int id, ItemStack item, int amount) {
-        super(item);
+        super(StackUtils.getAsQuantity(item,1));
         this.id = id;
-        this.sample = item.clone();
-        sample.setAmount(1);
+        //this.sample = getItemStack();
         //this.wrapper = ItemStackWrapper.wrap(sample);
         this.amount = amount;
 
     }
 
     public ItemStack getSample() {
-        return sample.clone();
+        return getItemStack().clone();
     }
 
     public boolean isSimilar(ItemStack other) {
@@ -70,8 +69,8 @@ public class ItemContainer extends ItemStackCache implements OptionalSfItemCache
     public String toString() {
         return "ItemContainer{" +
                 "id=" + id +
-                ", sample=" + sample +
-                ", wrapper=" + (ItemStackCache)this +
+                ", sample=" + this.getItemStack() +
+                ", wrapper=(ItemStackCache)this" +
                 ", amount=" + amount +
                 '}';
     }

@@ -67,7 +67,7 @@ public class ItemStackCache implements Cloneable {
 
     @Nonnull
     public final Material getItemType() {
-        return this.itemStack.getType();
+        return this.itemStack==null?Material.AIR: this.itemStack.getType();
     }
 
     @Override
