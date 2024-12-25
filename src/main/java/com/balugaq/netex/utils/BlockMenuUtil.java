@@ -24,14 +24,20 @@ public class BlockMenuUtil {
         int amount=stack.getAmount();
         if(amount<=0)return;
         ItemStackCache cachedStack=ItemStackCache.of(stack);
+        ItemStack sample=null;
         for (int slot : slots) {
             ItemStack slotItem=inv.getItemInSlot(slot);
 
             if(slotItem==null||slotItem.getType()==Material.AIR) {
                 int transfered=Math.min(amount,maxSize);
-                inv.replaceExistingItem(slot,stack,false);
-                slotItem=inv.getItemInSlot(slot);
-                slotItem.setAmount(transfered);
+                if(sample==null){
+                    sample=StackUtils.getAsQuantity(stack,transfered);
+                }else {
+                    sample.setAmount(transfered);
+                }
+                inv.replaceExistingItem(slot,sample,false);
+//                slotItem=inv.getItemInSlot(slot);
+//                slotItem.setAmount(transfered);
                 amount-=transfered;
             }else if(slotItem.getAmount()>=slotItem.getMaxStackSize()) {
                 continue;
@@ -89,15 +95,6 @@ public class BlockMenuUtil {
         public ItemStackCache getItemInSlot(int slot){
             return items.get(slot);
         }
-        public void replaceItemInSlot(int slot,@Nullable ItemStack stack,int amount){
-            blockMenu.replaceExistingItem(slot, stack);
-            ItemStack existing = blockMenu.getItemInSlot(slot);
-            if(stack!=null){
-                existing.setAmount(amount);
-            }
-            //todo 同步更新invCache
-            getItemInSlot(slot).setItemStack(existing);
-        }
         @Override
         protected BlockMenuSnapShot clone() {
             try {
@@ -116,20 +113,23 @@ public class BlockMenuUtil {
             Material material = cache.getItemType();
             int maxSize=material.getMaxStackSize();
             int leftAmount = cache.getItemAmount();
+            ItemStack sample=null;
             for (int slot : slots) {
                 if (leftAmount <= 0) {
                     break;
                 }
                 ItemStackCache invCache=getItemInSlot(slot);
                 ItemStack existing = invCache.getItemStack();
-
                 if (existing == null || existing.getType() == Material.AIR) {
                     int received = Math.min(leftAmount, maxSize);
-                    blockMenu.replaceExistingItem(slot, cache.getItemStack());
-                    existing = blockMenu.getItemInSlot(slot);
-                    existing.setAmount(received);
-                    //todo 同步更新invCache
-                    invCache.setItemStack(existing);
+                    if(sample==null){
+                        sample=StackUtils.getAsQuantity(cache.getItemStack(),received);
+                    }else {
+                        sample.setAmount(received);
+                    }
+                    blockMenu.replaceExistingItem(slot, sample);
+//                    //todo 同步更新invCache
+                    invCache.setItemStack(blockMenu.getItemInSlot(slot));
                     leftAmount -= received;
                     // item.setItemAmount();
                 } else {
@@ -155,6 +155,7 @@ public class BlockMenuUtil {
         {
             int maxSize=stack.getMaxStackSize();
             int amount=stack.getAmount();
+            ItemStack sample=null;
             if(amount<=0)return;
             ItemStackCache cachedStack=ItemStackCache.of(stack);
             for (int slot : slots) {
@@ -162,7 +163,13 @@ public class BlockMenuUtil {
 
                 if(slotItem.getItemStack()==null|| slotItem.getItemType()==Material.AIR) {
                     int transfered=Math.min(amount,maxSize);
-                    replaceItemInSlot(slot,stack,transfered);
+                    if(sample==null){
+                        sample=StackUtils.getAsQuantity(stack,transfered);
+                    }else {
+                        sample.setAmount(transfered);
+                    }
+                    blockMenu.replaceExistingItem(slot, sample);
+                    slotItem.setItemStack(blockMenu.getItemInSlot(slot));
                     amount-=transfered;
                 }else if(slotItem.isItemMaxStacked()) {
                     continue;
