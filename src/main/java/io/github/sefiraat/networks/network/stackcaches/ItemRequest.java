@@ -50,10 +50,12 @@ public class ItemRequest extends ItemStackCache implements OptionalSfItemCache {
         return "ItemRequest{" +
                 "itemStack=" + getItemStack() +
                 ", amount=" + amount +
-                '}';
+                ", cachedId = "+(initializedId.get()?(id==null?"null":id):"") +"}";
     }
     public ItemRequest clone() {
-        return (ItemRequest) super.clone();
+        ItemRequest request= (ItemRequest) super.clone();
+        request.initializedId=new AtomicBoolean(this.initializedId.get());
+        return request;
     }
 
     private String id;

@@ -73,7 +73,9 @@ public class StorageUnitData {
         this.storedItems = storedItems;
         this.material2Containers = new EnumMap<>(Material.class);
         this.storedItems.setSynced((key,value)->{
-            this.material2Containers.computeIfAbsent(value.getItemType(),k -> new HashSet<>()).add(value);
+            synchronized(mapLock) {
+                this.material2Containers.computeIfAbsent(value.getItemType(),k -> new HashSet<>()).add(value);
+            }
         },(key,value)->{
             if (value != null) {
                 var material=value.getItemType();

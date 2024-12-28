@@ -416,7 +416,7 @@ public class NetworkRootPlus extends NetworkRoot {
         Material material = item.getItemType();
         int maxSize=material.getMaxStackSize();
         int leftAmount = item.getItemAmount();
-
+        ItemStack sample=null;
         for (int slot : CELL_AVAILABLE_SLOTS) {
             if (leftAmount <= 0) {
                 break;
@@ -431,10 +431,12 @@ public class NetworkRootPlus extends NetworkRoot {
 
                 if (existing == null || existing.getType() == Material.AIR) {
                     int received = Math.min(leftAmount, maxSize);
-
-                    cellMenu.replaceExistingItem(slot,item.getItemStack(),false);
-                    existing=cellMenu.getItemInSlot(slot);
-                    existing.setAmount(received);
+                    if(sample==null){
+                        sample=StackUtils.getAsQuantity(item.getItemStack(),received);
+                    }else {
+                        sample.setAmount(received);
+                    }
+                    cellMenu.replaceExistingItem(slot,sample,false);
                     leftAmount -= received;
                     // item.setItemAmount();
                 } else {

@@ -5,6 +5,7 @@ import com.balugaq.netex.utils.Algorithms.DataContainer;
 import com.balugaq.netex.utils.Algorithms.MenuWithData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import io.github.sefiraat.networks.NetworkStorage;
+import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -272,9 +273,8 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             futures.add(CompletableFuture.runAsync(()->{
                 if (requested.getItemStack() != null&&amountMatched.get()) {
                     final ItemStack fetched = root.getItemStack(requested.clone());
-                    if(fetched!=null&&fetched.getAmount()==requested.getAmount()){
-                        fetch[index] = fetched;
-                    }else {
+                    fetch[index] = fetched;
+                    if(fetched==null||fetched.getAmount()<requested.getAmount()){
                         amountMatched.set(false);
                     }
                 } else {
@@ -303,7 +303,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             ItemStack[] inputPattern=instance.getRecipeItems();
             ItemStack crafted =container.getItemStack(0);
             if(crafted==null){
-                sendDebugMessage(blockMenu.getLocation(), ()->"Network does not fetch required items");
+                sendDebugMessage(blockMenu.getLocation(), ()->"BluePrint do not cache a slimefun recipe");
                 for (Map.Entry<ItemStack[], ItemStack> entry : getRecipeEntries()) {
                     if (getRecipeTester(inputPattern, entry.getKey())) {
                         //get A copy of matched recipeOutput

@@ -43,6 +43,7 @@ public class BlockMenuUtil {
                 continue;
             }
             //for Async safety,compare again
+            //this part doesn't cost mush actually.compared to root.getItemStack()
             else if(StackUtils.itemsMatch(slotItem,cachedStack)){
                 int slotAmount=slotItem.getAmount();
                 int transfered=Math.min(amount,maxSize-slotAmount);

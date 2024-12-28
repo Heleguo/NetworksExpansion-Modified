@@ -28,13 +28,20 @@ import java.util.function.ToIntFunction;
 public class TransportUtil {
     public static int sendLimitedItemToRoot(NetworkRoot root, ItemStack item, int limit) {
         int itemAmount = item.getAmount();
-        ItemStack sample = StackUtils.getLimitedRequest(item, limit);
-        int expectedAmount = sample.getAmount();
-        root.addItemStack(sample);
-        int sendedAmount =expectedAmount - sample.getAmount();
-        item.setAmount(itemAmount - sendedAmount);
-        limit -= sendedAmount;
-        return limit;
+        if(itemAmount <= limit) {
+            root.addItemStack(item);
+            int left=item.getAmount();
+            return limit-itemAmount+left;
+        }else{
+            ItemStack sample = StackUtils.getLimitedRequest(item, limit);
+            item.setAmount(itemAmount-limit);
+            root.addItemStack(sample);
+            int left=sample.getAmount();
+            if(left>0){
+                item.setAmount(item.getAmount()+left);
+            }
+            return left;
+        }
     }
     public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch,boolean breakWhenNoMatch, int... slots){
 
