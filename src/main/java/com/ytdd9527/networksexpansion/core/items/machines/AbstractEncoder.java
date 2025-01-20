@@ -136,7 +136,7 @@ public abstract class AbstractEncoder extends NetworkObject {
 
         for (Map.Entry<ItemStack[], ItemStack> entry : getRecipeEntries()) {
             if (getRecipeTester(inputs, entry.getKey())) {
-                crafted = new ItemStack(entry.getValue().clone());
+                crafted = ItemStackUtil.getCleanItem(entry.getValue());
                 inp = entry.getKey().clone();
                 for (int k = 0; k < inp.length; k++) {
                     if (inp[k] != null) {

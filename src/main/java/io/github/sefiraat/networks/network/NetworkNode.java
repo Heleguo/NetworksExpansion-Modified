@@ -15,6 +15,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,22 +37,27 @@ public class NetworkNode {
     @Getter
     protected NetworkNode parent = null;
     protected NetworkRoot root = null;
+    protected NetworkRoot newRoot = null;
     protected Location nodePosition;
     protected NodeType nodeType;
     @Getter
     protected long power;
 
-    public NetworkNode(Location location, NodeType type) {
+    public NetworkNode(Location location, NodeType type,@Nullable NetworkRoot history) {
         this.nodePosition = location;
         this.nodeType = type;
         this.power = retrieveBlockCharge();
+        this.root = history;
     }
 
     public void addChild(@Nonnull NetworkNode child) {
         child.setParent(this);
-        child.setRoot(this.getRoot());
-        this.root.addRootPower(child.getPower());
-        this.root.registerNode(child.nodePosition, child.nodeType);
+        //if newRoot present. fetch new root ,register info into newRoot
+        NetworkRoot rootUpdate = this.getRootUpdateInternal();
+        //pass update to children
+        child.setRoot(rootUpdate);
+        rootUpdate.addRootPower(child.getPower());
+        rootUpdate.registerNode(child.nodePosition, child.nodeType);
         this.childrenNodes.add(child);
     }
 
@@ -65,27 +71,41 @@ public class NetworkNode {
         return nodeType;
     }
 
-    public boolean networkContains(@Nonnull NetworkNode networkNode) {
-        return networkContains(networkNode.nodePosition);
-    }
+//    public boolean networkContains(@Nonnull NetworkNode networkNode) {
+//        return networkContains(networkNode.nodePosition);
+//    }
 
-    public boolean networkContains(@Nonnull Location location) {
-        return this.root.getNodeLocations().contains(location);
-    }
-
+//    public boolean networkContains(@Nonnull Location location) {
+//        return this.getRoot().getNodeLocations().contains(location);
+//    }
+    //获取可靠的root,
     @Nonnull
     public NetworkRoot getRoot() {
+          if( (this.root == null) ||  (this.newRoot !=null && this.newRoot .isReady()) ) {
+            this.root = this.newRoot;
+            this.newRoot = null;
+            //we are sure that root.isReady is true
+        }
         return this.root;
     }
+    //获取最新版的root 可能是未完成的
+    @Nonnull
+    private NetworkRoot getRootUpdateInternal() {
+        return this.newRoot!=null? this.newRoot : this.root;
+    }
 
-    private void setRoot(NetworkRoot root) {
+    protected void setRootInternal(@Nonnull NetworkRoot root) {
         this.root = root;
+        this.newRoot = null;
+    }
+    private void setRoot(NetworkRoot root) {
+        this.newRoot = root;
     }
 
     private void setParent(NetworkNode parent) {
         this.parent = parent;
     }
-
+    //in building period, should use getRootUpdate
     public void addAllChildren() {
         // Loop through all possible locations
         for (BlockFace face : VALID_FACES) {
@@ -99,18 +119,25 @@ public class NetworkNode {
             final NodeType testType = testDefinition.getType();
 
             // Kill additional controllers if it isn't the root
-            if (testType == NodeType.CONTROLLER && !testLocation.equals(getRoot().nodePosition)) {
+            if (testType == NodeType.CONTROLLER && !testLocation.equals(getRootUpdateInternal() .nodePosition)) {
                 killAdditionalController(testLocation);
                 continue;
             }
 
             // Check if it's in the network already and, if not, create a child node and propagate further.
-            if (testType != NodeType.CONTROLLER && !this.networkContains(testLocation)) {
-                if (this.getRoot().getNodeCount() >= root.getMaxNodes()) {
-                    this.getRoot().setOverburdened(true);
+            NetworkRoot rootUpdate = this.getRootUpdateInternal();
+            if (testType != NodeType.CONTROLLER && !rootUpdate.getNodeLocations().contains(testLocation)) {
+                if (rootUpdate .getNodeCount() >= rootUpdate .getMaxNodes()) {
+                    rootUpdate .setOverburdened(true);
                     return;
                 }
-                final NetworkNode networkNode = new NetworkNode(testLocation, testType);
+                NetworkRoot historyRoot ;
+                if(testDefinition.getNode()!=null){
+                    historyRoot = testDefinition.getNode().getRoot();
+                }else{
+                    historyRoot = null;
+                }
+                final NetworkNode networkNode = new NetworkNode(testLocation, testType, historyRoot);
                 addChild(networkNode);
                 networkNode.addAllChildren();
                 testDefinition.setNode(networkNode);

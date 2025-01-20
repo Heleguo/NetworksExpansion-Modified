@@ -27,6 +27,7 @@ import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.ncbpfluffybear.fluffymachines.items.Barrel;
 import lombok.Getter;
+import lombok.Setter;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
 import org.bukkit.Location;
@@ -39,6 +40,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -126,6 +128,14 @@ public class NetworkRoot extends NetworkNode {
     private Map<StorageUnitData, Location> cargoStorageUnitDatas = null;
     private Map<StorageUnitData, Location> inputAbleCargoStorageUnitDatas = null;
     private Map<StorageUnitData, Location> outputAbleCargoStorageUnitDatas = null;
+    @Getter
+    @Setter
+    private boolean ready = false;
+    private static final ConcurrentHashMap<Location, AtomicInteger> rootCounters = new ConcurrentHashMap<>();
+    @Getter
+    private int locUniqueId;
+
+
 
     @Getter
     long rootPower = 0;
@@ -140,11 +150,12 @@ public class NetworkRoot extends NetworkNode {
         }
     }
     protected NetworkRoot(@Nonnull Location location, @Nonnull NodeType type, int maxNodes) {
-        super(location, type);
+        super(location, type,null);
         this.maxNodes = maxNodes;
-        this.root = this;
+        setRootInternal(this);
 
         registerNode(location, type);
+        locUniqueId = rootCounters.computeIfAbsent(location, k -> new AtomicInteger()).incrementAndGet();
     }
 
     public void registerNode(@Nonnull Location location, @Nonnull NodeType type) {
@@ -341,7 +352,10 @@ public class NetworkRoot extends NetworkNode {
 
     @Nonnull
     protected synchronized Map<Material,Set<BarrelIdentity>> getBarrels() {
-
+        if(!ready){
+            handleAsync();
+            return Map.of();
+        }
         if (this.barrels != null) {
             return this.barrels;
         }
@@ -405,6 +419,10 @@ public class NetworkRoot extends NetworkNode {
 
     @Nonnull
     public synchronized Map<StorageUnitData, Location> getCargoStorageUnitDatas() {
+        if(!ready){
+            handleAsync();
+            return Map.of();
+        }
         if (this.cargoStorageUnitDatas != null) {
             return this.cargoStorageUnitDatas;
         }
@@ -1179,7 +1197,10 @@ public class NetworkRoot extends NetworkNode {
 
     @Nonnull
     protected synchronized Map<Material,Set<BarrelIdentity>> getInputAbleBarrels() {
-
+        if(!ready){
+            handleAsync();
+            return Map.of();
+        }
         if (this.inputAbleBarrels != null) {
             return this.inputAbleBarrels;
         }
@@ -1247,10 +1268,15 @@ public class NetworkRoot extends NetworkNode {
 
     @Nonnull
     protected synchronized Map<Material,Set<BarrelIdentity>> getOutputAbleBarrels() {
-
+        if(!ready){
+            handleAsync();
+            return Map.of();
+        }
         if (this.outputAbleBarrels != null) {
             return this.outputAbleBarrels;
         }
+      //  Networks.getInstance().getLogger().info("Initialize "+nodePosition+" root output barrels uid "+locUniqueId+ " status "+ready);
+//        Preconditions.checkArgument(ready);
 
         final Set<Location> addedLocations = ConcurrentHashMap.newKeySet();
         final Map<Material,Set<BarrelIdentity>> barrelSet = new EnumMap<>(Material.class);
@@ -1258,6 +1284,7 @@ public class NetworkRoot extends NetworkNode {
         final Set<Location> monitor = new HashSet<>();
         monitor.addAll(this.outputOnlyMonitors);
         monitor.addAll(this.monitors);
+//        Networks.getInstance().getLogger().info("find "+nodePosition+" monitor "+monitor.size()+" "+locUniqueId);
         for (Location cellLocation : monitor) {
             final BlockFace face = NetworkDirectional.getSelectedFace(cellLocation);
 
@@ -1308,13 +1335,17 @@ public class NetworkRoot extends NetworkNode {
                 }
             }
         }
-
+//        Networks.getInstance().getLogger().info("Initialize "+nodePosition+" output barrels finish uid "+locUniqueId+" size "+barrelSet.size());
         this.outputAbleBarrels = barrelSet;
         return barrelSet;
     }
 
     @Nonnull
     public synchronized Map<StorageUnitData, Location> getInputAbleCargoStorageUnitDatas() {
+        if(!ready){
+            handleAsync();
+            return Map.of();
+        }
         if (this.inputAbleCargoStorageUnitDatas != null) {
             return this.inputAbleCargoStorageUnitDatas;
         }
@@ -1353,9 +1384,15 @@ public class NetworkRoot extends NetworkNode {
         this.inputAbleCargoStorageUnitDatas = dataSet;
         return dataSet;
     }
-
+    public void handleAsync(){
+        Networks.getInstance().getLogger().info("Network is not ready! ");
+    }
     @Nonnull
     public synchronized Map<StorageUnitData, Location> getOutputAbleCargoStorageUnitDatas() {
+        if(!ready){
+            handleAsync();
+            return Map.of();
+        }
         if (this.outputAbleCargoStorageUnitDatas != null) {
             return this.outputAbleCargoStorageUnitDatas;
         }

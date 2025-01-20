@@ -46,7 +46,7 @@ public final class ItemStackUtil {
      * @return a cloned #{@link ItemStack}
      */
     public static ItemStack cloneItem(@Nonnull ItemStack item) {
-        return item instanceof ItemStackWrapper ? new ItemStack(item) : item.clone();
+        return item instanceof ItemStackWrapper ?ItemStackUtil.getCleanItem (item) : item.clone();
     }
 
     public static ItemStack getCleanItem(@Nullable ItemStack item) {
@@ -54,11 +54,10 @@ public final class ItemStackUtil {
             return new ItemStack(Material.AIR);
         }
 
-        ItemStack cleanItem = new ItemStack(item.getType());
-        cleanItem.setAmount(item.getAmount());
-        if (item.hasItemMeta()) {
-            cleanItem.setItemMeta(item.getItemMeta());
-        }
+        ItemStack cleanItem = new ItemStack(item.getType(),item.getAmount());
+       // if (item.hasItemMeta()) {
+        cleanItem.setItemMeta(item.getItemMeta());
+       // }
 
         return cleanItem;
     }
@@ -70,11 +69,11 @@ public final class ItemStackUtil {
      * @param amount the amount of the result item
      * @return a cloned #{@link ItemStack}
      */
-    public static ItemStack cloneItem(@Nonnull ItemStack item, int amount) {
-        ItemStack itemStack = item instanceof ItemStackWrapper ? new ItemStack(item) : item.clone();
-        itemStack.setAmount(amount);
-        return itemStack;
-    }
+//    public static ItemStack cloneItem(@Nonnull ItemStack item, int amount) {
+//        ItemStack itemStack = item instanceof ItemStackWrapper ? new ItemStack(item) : item.clone();
+//        itemStack.setAmount(amount);
+//        return itemStack;
+//    }
 
     /**
      * @return Whether the item seems to be null
@@ -615,7 +614,7 @@ public final class ItemStackUtil {
         if (ItemStackUtil.isItemNull(item)) {
             return "null";
         }
-        item = new ItemStack(item);
+        item =ItemStackUtil.getCleanItem (item);
         if (item.hasItemMeta()) {
             ItemMeta itemMeta = item.getItemMeta();
             if (itemMeta.hasDisplayName()) {
@@ -901,10 +900,7 @@ public final class ItemStackUtil {
         if (itemStack == null) {
             return null;
         }
-        if (!itemStack.hasItemMeta()) {
-            return new ItemStack(itemStack);
-        }
-        ItemStack result = new ItemStack(itemStack);
+        ItemStack result = ItemStackUtil.getCleanItem(itemStack);
         ItemStackUtil.clearNBT(result);
         return result;
     }

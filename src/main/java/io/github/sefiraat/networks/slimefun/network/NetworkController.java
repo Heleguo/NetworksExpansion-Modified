@@ -59,6 +59,8 @@ public class NetworkController extends NetworkObject {
                         addToRegistry(block);
                         NetworkRoot networkRoot = NetworkRoot.newInstance(block.getLocation(), NodeType.CONTROLLER, maxNodes.getValue());
                         networkRoot.addAllChildren();
+                        //send update after all children add
+                        networkRoot.setReady(true);
                         if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItems()){
                             networkRoot.initRootItems();
                         }else if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItemsAsync()){

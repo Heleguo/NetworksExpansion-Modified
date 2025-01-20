@@ -115,14 +115,13 @@ public class ItemAmountWrapper extends ItemWrapper {
     public ItemAmountWrapper shallowClone() {
         return new ItemAmountWrapper(this.getItemStack(), this.getItemMeta(), this.amount);
     }
-
-    @Nonnull
-    @Override
-    public ItemAmountWrapper deepClone() {
-        ItemStack itemStack = ItemStackUtil.cloneItem(this.getItemStack());
-        itemStack.setAmount(this.getItemStack().getAmount());
-        return new ItemAmountWrapper(ItemStackUtil.cloneItem(this.getItemStack()), this.amount);
-    }
+//
+//    @Nonnull
+//    public ItemAmountWrapper deepClone() {
+//        ItemStack itemStack = ItemStackUtil.cloneItem(this.getItemStack());
+//        itemStack.setAmount(this.getItemStack().getAmount());
+//        return new ItemAmountWrapper(ItemStackUtil.cloneItem(this.getItemStack()), this.amount);
+//    }
 
     @Override
     public int hashCode() {

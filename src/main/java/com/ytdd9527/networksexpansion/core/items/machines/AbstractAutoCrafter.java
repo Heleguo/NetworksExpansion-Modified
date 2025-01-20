@@ -4,6 +4,7 @@ import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.Algorithms.DataContainer;
 import com.balugaq.netex.utils.Algorithms.MenuWithData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
+import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
@@ -216,7 +217,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
         //recipe should be fixed
         for (Map.Entry<ItemStack[], ItemStack> entry : getRecipeEntries()) {
             if (getRecipeTester(inputs, entry.getKey())) {
-                dataContainer.setItemStack(0,new ItemStack(entry.getValue()));
+                dataContainer.setItemStack(0, ItemStackUtil.getCleanItem(entry.getValue()));
                 break;
             }
         }
@@ -307,7 +308,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 for (Map.Entry<ItemStack[], ItemStack> entry : getRecipeEntries()) {
                     if (getRecipeTester(inputPattern, entry.getKey())) {
                         //get A copy of matched recipeOutput
-                        crafted=new ItemStack( entry.getValue());
+                        crafted= ItemStackUtil.getCleanItem(entry.getValue());
                         container.setItemStack(0,crafted);
                         break;
                     }

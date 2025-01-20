@@ -122,10 +122,10 @@ public class ItemWrapper {
         return new ItemWrapper(this.itemStack, this.itemMeta);
     }
 
-    @Nonnull
-    public ItemWrapper deepClone() {
-        return new ItemWrapper(new ItemStack(this.itemStack));
-    }
+//    @Nonnull
+//    public ItemWrapper deepClone() {
+//        return new ItemWrapper(new ItemStack(this.itemStack));
+//    }
 
     @Override
     public int hashCode() {
@@ -139,7 +139,7 @@ public class ItemWrapper {
     @Override
     public boolean equals(@Nonnull Object obj) {
         if (this.itemStack instanceof ItemStackWrapper) {
-            return new ItemStack(this.itemStack).equals(obj);
+            return ItemStackUtil.getCleanItem (this.itemStack).equals(obj);
         } else {
             return this.itemStack.equals(obj);
         }

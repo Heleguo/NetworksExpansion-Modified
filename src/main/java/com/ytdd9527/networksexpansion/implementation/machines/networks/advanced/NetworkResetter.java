@@ -7,6 +7,7 @@ import com.ytdd9527.networksexpansion.core.services.LocalizationService;
 import com.ytdd9527.networksexpansion.implementation.ExpansionItems;
 import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawer;
 import com.ytdd9527.networksexpansion.implementation.tools.ItemMover;
+import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.NetworkRoot;
@@ -222,7 +223,7 @@ public class NetworkResetter extends NetworkObject {
         if(sfitem==null){
             return origin;
         }
-        ItemStack stack=new ItemStack(sfitem.getItem());
+        ItemStack stack= ItemStackUtil.getCleanItem(sfitem.getItem());
         stack.setAmount(origin.getAmount());
         ItemMeta meta=stack.getItemMeta();
         ItemMeta originMeta=origin.getItemMeta();

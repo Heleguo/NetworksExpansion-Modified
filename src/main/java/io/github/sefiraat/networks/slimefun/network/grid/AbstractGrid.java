@@ -12,6 +12,7 @@ import io.github.sefiraat.networks.network.GridItemRequest;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
+import io.github.sefiraat.networks.slimefun.network.AdminDebuggable;
 import io.github.sefiraat.networks.slimefun.network.NetworkObject;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.sefiraat.networks.utils.Theme;
@@ -46,7 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @SuppressWarnings("deprecation")
-public abstract class AbstractGrid extends NetworkObject {
+public abstract class AbstractGrid extends NetworkObject  {
 
     public static final Comparator<Map.Entry<ItemStack, Long>> ALPHABETICAL_SORT = Comparator.comparing(
             itemStackIntegerEntry -> {
@@ -165,7 +166,9 @@ public abstract class AbstractGrid extends NetworkObject {
         final NetworkRoot root = definition.getNode().getRoot();
 
         final GridCache gridCache = getCacheMap().get(blockMenu.getLocation().clone());
+        sendDebugMessage(blockMenu.getLocation(),()->"update Display from root "+root.getLocUniqueId()+" root status "+root.isReady());
         final List<Map.Entry<ItemStack, Long>> entries = getEntries(root, gridCache);
+        sendDebugMessage(blockMenu.getLocation(),()->"update Display with size "+entries.size());
         final int pages = (int) Math.ceil(entries.size() / (double) getDisplaySlots().length) - 1;
 
         gridCache.setMaxPages(pages);

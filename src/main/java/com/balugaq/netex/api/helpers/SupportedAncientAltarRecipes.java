@@ -2,6 +2,7 @@ package com.balugaq.netex.api.helpers;
 
 import com.balugaq.netex.api.interfaces.CanTestRecipe;
 import com.balugaq.netex.api.interfaces.HasRecipes;
+import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
@@ -29,7 +30,7 @@ public final class SupportedAncientAltarRecipes implements HasRecipes, CanTestRe
                     if (itemStack == null) {
                         itemStacks[i] = null;
                     } else {
-                        itemStacks[i] = new ItemStack(itemStack.clone());
+                        itemStacks[i] = ItemStackUtil.getCleanItem(itemStack);
                     }
                     if (++i >= 9) {
                         break;
