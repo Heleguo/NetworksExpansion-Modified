@@ -135,7 +135,7 @@ public class LineOperationUtil {
                 }catch (Throwable e) {
                     e.printStackTrace();
                 }
-            }));
+            },NetworkAsyncUtil.getInstance().getParallelExecutor()));
         }
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
     }
@@ -439,7 +439,7 @@ public class LineOperationUtil {
                 sum.addAndGet(consumes[index]);
             };
             if(parallel){
-                futures.add(CompletableFuture.runAsync(task));
+                futures.add(CompletableFuture.runAsync(task,NetworkAsyncUtil.getInstance().getParallelExecutor()));
             }else {
                 task.run();
             }
@@ -463,7 +463,7 @@ public class LineOperationUtil {
                             BlockMenuUtil.pushItemAlreadyMatched(menus[index],pushed, pushSlots[index]);
                         };
                         if(parallel){
-                            future1.add(CompletableFuture.runAsync(task));
+                            future1.add(CompletableFuture.runAsync(task,NetworkAsyncUtil.getInstance().getParallelExecutor()));
                         }else {
                             task.run();
                         }

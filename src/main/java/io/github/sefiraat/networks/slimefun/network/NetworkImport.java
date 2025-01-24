@@ -90,7 +90,7 @@ public class NetworkImport extends NetworkObject {
                 }
                 threads.add( CompletableFuture.runAsync(() -> {
                     root.addItemStack(itemStack);
-                }));
+                },NetworkAsyncUtil.getInstance().getParallelExecutor()));
             }
             if(!threads.isEmpty()){
                 CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();

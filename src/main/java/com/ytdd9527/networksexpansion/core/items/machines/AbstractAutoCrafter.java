@@ -5,6 +5,7 @@ import com.balugaq.netex.utils.Algorithms.DataContainer;
 import com.balugaq.netex.utils.Algorithms.MenuWithData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
@@ -97,14 +98,15 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             return;
         }
         final NetworkRoot root = definition.getNode().getRoot();
-        final ItemStack stored = blockMenu.getItemInSlot(OUTPUT_SLOT);
+
         CompletableFuture<Void> future=CompletableFuture.runAsync(() -> {
             if (!this.withholding) {
+                final ItemStack stored = blockMenu.getItemInSlot(OUTPUT_SLOT);
                 if (stored != null && stored.getType() != Material.AIR) {
                     root.addItemStack(stored);
                 }
             }
-        });
+        }, NetworkAsyncUtil.getInstance().getParallelExecutor());
 
         final long networkCharge = root.getRootPower();
         DataContainer container=getDataContainer(blockMenu);
@@ -281,7 +283,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 } else {
                     fetch[index] = null;
                 }
-            }));
+            },NetworkAsyncUtil.getInstance().getParallelExecutor()));
         }
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenRunAsync(()->{
             if(!amountMatched.get()){

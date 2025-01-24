@@ -100,7 +100,7 @@ public class AdvancedImport extends NetworkObject implements RecipeDisplayItem {
                 threads.add( CompletableFuture.runAsync(() -> {
                     ItemStack item = blockMenu.getItemInSlot(inputSlot);
                     root.addItemStack(itemStack);
-                }));
+                },NetworkAsyncUtil.getInstance().getParallelExecutor()));
             }
             if(!threads.isEmpty()){
                 CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();

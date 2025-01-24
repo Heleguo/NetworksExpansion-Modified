@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks;
 
+import com.google.common.base.Preconditions;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.tasks.TickerTask;
@@ -55,6 +56,7 @@ public class NetworkAsyncUtil {
             }
 
         }
+        Preconditions.checkNotNull( getParallelExecutor());
         return this;
     }
     public void deconstruct() {
