@@ -2,6 +2,7 @@ package com.ytdd9527.networksexpansion.implementation.machines.networks.advanced
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.ytdd9527.networksexpansion.implementation.ExpansionItems;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.NetworkRoot;
@@ -30,6 +31,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class AdvancedImport extends NetworkObject implements RecipeDisplayItem {
     private static final int[] INPUT_SLOTS = new int[]{
@@ -88,19 +90,22 @@ public class AdvancedImport extends NetworkObject implements RecipeDisplayItem {
         }
         List<CompletableFuture<?>> threads=new ArrayList<>();
         final NetworkRoot root=definition.getNode().getRoot();
-        for (int i=0;i<INPUT_SLOTS.length;i++) {
-            int inputSlot = INPUT_SLOTS[i];
-            final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
-            if (itemStack == null || itemStack.getType() == Material.AIR) {
-                continue;
+        NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
+            for (int i=0;i<INPUT_SLOTS.length;i++) {
+                int inputSlot = INPUT_SLOTS[i];
+                final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
+                if (itemStack == null || itemStack.getType() == Material.AIR) {
+                    continue;
+                }
+                threads.add( CompletableFuture.runAsync(() -> {
+                    ItemStack item = blockMenu.getItemInSlot(inputSlot);
+                    root.addItemStack(itemStack);
+                }));
             }
-            threads.add( CompletableFuture.runAsync(() -> {
-                root.addItemStack(itemStack);
-            }));
-        }
-        if(!threads.isEmpty()){
-            CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();
-        }
+            if(!threads.isEmpty()){
+                CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();
+            }
+        });
     }
 
     @Override

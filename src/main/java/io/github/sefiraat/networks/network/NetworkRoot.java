@@ -149,11 +149,18 @@ public class NetworkRoot extends NetworkNode {
             return new NetworkRoot(location,type,maxNodes);
         }
     }
+    protected NetworkRoot getRootUpdateInternal() {
+        //for root
+        return this.root;
+    }
+    @Nonnull
+    public NetworkRoot getRoot(){
+        return this;
+    }
     protected NetworkRoot(@Nonnull Location location, @Nonnull NodeType type, int maxNodes) {
-        super(location, type,null);
+        super(location, type);
         this.maxNodes = maxNodes;
-        setRootInternal(this);
-
+        this.root = this;
         registerNode(location, type);
         locUniqueId = rootCounters.computeIfAbsent(location, k -> new AtomicInteger()).incrementAndGet();
     }
@@ -1385,7 +1392,7 @@ public class NetworkRoot extends NetworkNode {
         return dataSet;
     }
     public void handleAsync(){
-        Networks.getInstance().getLogger().info("Network is not ready! ");
+        //Networks.getInstance().getLogger().info("Network is not ready! ");
     }
     @Nonnull
     public synchronized Map<StorageUnitData, Location> getOutputAbleCargoStorageUnitDatas() {

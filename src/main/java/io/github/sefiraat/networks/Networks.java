@@ -67,7 +67,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
     private SupportedPluginManager supportedPluginManager;
     private LocalizationService localizationService;
     private long slimefunTickCount;
-
+    private NetworkAsyncUtil asyncUtil;
 
     public Networks() {
         this.username = "ytdd9527";
@@ -142,7 +142,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
 
         getLogger().info(getLocalizationService().getString("messages.startup.trying-auto-update"));
         tryUpdate();
-
+        this.asyncUtil = new NetworkAsyncUtil().init(this);
         this.supportedPluginManager = new SupportedPluginManager();
 
         // Try connect database
@@ -258,6 +258,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         }
         getLogger().info(getLocalizationService().getString("messages.shutdown.saved-all-data"));
         getLogger().info(getLocalizationService().getString("messages.shutdown.disabled-successfully"));
+        this.asyncUtil.deconstruct();
     }
 
     public void tryUpdate() {

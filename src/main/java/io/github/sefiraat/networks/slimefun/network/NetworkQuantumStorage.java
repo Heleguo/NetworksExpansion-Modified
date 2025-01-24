@@ -162,29 +162,29 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             BlockMenu blockMenu=StorageCacheUtils.getMenu(location);
             if (blockMenu != null) {
                 //if lock required ,this part is locked by blockMenu
-
-                ItemStack output= blockMenu.getItemInSlot(OUTPUT_SLOT);
-                //actually we don't use these part frequently
-                if (output != null
-                        && output.getType() != Material.AIR
-                        && StackUtils.itemsMatch(cache, output)
-                ) {
-                    // We have an output item we can use also
-                    if (fetched == null || fetched.getType() == Material.AIR) {
-                        // Storage is totally empty - just use output slot
-                        fetched = output.clone();
-                        if (fetched.getAmount() > amount) {
-                            fetched.setAmount(amount);
+                synchronized (blockMenu){
+                    ItemStack output= blockMenu.getItemInSlot(OUTPUT_SLOT);
+                    //actually we don't use these part frequently
+                    if (output != null
+                            && output.getType() != Material.AIR
+                            && StackUtils.itemsMatch(cache, output)
+                    ) {
+                        // We have an output item we can use also
+                        if (fetched == null || fetched.getType() == Material.AIR) {
+                            // Storage is totally empty - just use output slot
+                            fetched = output.clone();
+                            if (fetched.getAmount() > amount) {
+                                fetched.setAmount(amount);
+                            }
+                            output.setAmount(output.getAmount() - fetched.getAmount());
+                        } else {
+                            // Storage has content, lets add on top of it
+                            int additional = Math.min(amount - fetched.getAmount(), output.getAmount());
+                            output.setAmount(output.getAmount() - additional);
+                            fetched.setAmount(fetched.getAmount() + additional);
                         }
-                        output.setAmount(output.getAmount() - fetched.getAmount());
-                    } else {
-                        // Storage has content, lets add on top of it
-                        int additional = Math.min(amount - fetched.getAmount(), output.getAmount());
-                        output.setAmount(output.getAmount() - additional);
-                        fetched.setAmount(fetched.getAmount() + additional);
                     }
                 }
-
             }
             syncBlock(location, cache);
             return fetched;
@@ -334,42 +334,42 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             removeCache(block.getLocation());
             return;
         }
-
         final QuantumCache cache = CACHES.get(blockMenu.getLocation());
-
         if (cache == null) {
             return;
         }
-
         if (blockMenu.hasViewer()) {
             updateDisplayItem(blockMenu, cache);
         }
+        synchronized (blockMenu){
+            // Move items from the input slot into the card
+            final ItemStack input = blockMenu.getItemInSlot(INPUT_SLOT);
+            if (input != null && input.getType() != Material.AIR) {
+                tryInputItem(blockMenu.getLocation(), input, cache);
+                blockMenu.markDirty();
+            }
 
-        // Move items from the input slot into the card
-        final ItemStack input = blockMenu.getItemInSlot(INPUT_SLOT);
-        if (input != null && input.getType() != Material.AIR) {
-            tryInputItem(blockMenu.getLocation(), input, cache);
-            blockMenu.markDirty();
+            // Output items
+
+            final ItemStack output = blockMenu.getItemInSlot(OUTPUT_SLOT);
+            ItemStack fetched = null;
+            if (output == null || output.getType() == Material.AIR) {
+                // No item in output, try output
+                fetched = cache.withdrawItem();
+            } else if (output.getAmount() < output.getMaxStackSize() && StackUtils.itemsMatch(cache, output)) {
+                // There is an item, but it's not filled so lets top it up if we can
+                final int requestAmount = output.getMaxStackSize() - output.getAmount();
+                fetched = cache.withdrawItem(requestAmount);
+            }
+
+            if (fetched != null && fetched.getType() != Material.AIR) {
+                blockMenu.pushItem(fetched, OUTPUT_SLOT);
+                blockMenu.markDirty();
+                syncBlock(blockMenu.getLocation(), cache);
+            }
         }
 
-        // Output items
 
-        final ItemStack output = blockMenu.getItemInSlot(OUTPUT_SLOT);
-        ItemStack fetched = null;
-        if (output == null || output.getType() == Material.AIR) {
-            // No item in output, try output
-            fetched = cache.withdrawItem();
-        } else if (output.getAmount() < output.getMaxStackSize() && StackUtils.itemsMatch(cache, output)) {
-            // There is an item, but it's not filled so lets top it up if we can
-            final int requestAmount = output.getMaxStackSize() - output.getAmount();
-            fetched = cache.withdrawItem(requestAmount);
-        }
-
-        if (fetched != null && fetched.getType() != Material.AIR) {
-            blockMenu.pushItem(fetched, OUTPUT_SLOT);
-            blockMenu.markDirty();
-            syncBlock(blockMenu.getLocation(), cache);
-        }
 
         CACHES.put(blockMenu.getLocation().clone(), cache);
     }

@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.network;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -80,19 +81,21 @@ public class NetworkImport extends NetworkObject {
         }
         List<CompletableFuture<?>> threads=new ArrayList<>();
         final NetworkRoot root=definition.getNode().getRoot();
-        for (int i=0;i<INPUT_SLOTS.length;i++) {
-            int inputSlot = INPUT_SLOTS[i];
-            final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
-            if (itemStack == null || itemStack.getType() == Material.AIR) {
-                continue;
+        NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
+            for (int i=0;i<INPUT_SLOTS.length;i++) {
+                int inputSlot = INPUT_SLOTS[i];
+                final ItemStack itemStack = blockMenu.getItemInSlot(inputSlot);
+                if (itemStack == null || itemStack.getType() == Material.AIR) {
+                    continue;
+                }
+                threads.add( CompletableFuture.runAsync(() -> {
+                    root.addItemStack(itemStack);
+                }));
             }
-            threads.add( CompletableFuture.runAsync(() -> {
-                root.addItemStack(itemStack);
-            }));
-        }
-        if(!threads.isEmpty()){
-            CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();
-        }
+            if(!threads.isEmpty()){
+                CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();
+            }
+        });
     }
 
     @Override

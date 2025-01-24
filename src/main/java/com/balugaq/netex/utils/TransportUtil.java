@@ -2,6 +2,7 @@ package com.balugaq.netex.utils;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
@@ -22,26 +23,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 
 public class TransportUtil {
-    public static int sendLimitedItemToRoot(NetworkRoot root, ItemStack item, int limit) {
-        int itemAmount = item.getAmount();
-        if(itemAmount <= limit) {
-            root.addItemStack(item);
-            int left=item.getAmount();
-            return limit-itemAmount+left;
-        }else{
-            ItemStack sample = StackUtils.getLimitedRequest(item, limit);
-            item.setAmount(itemAmount-limit);
-            root.addItemStack(sample);
-            int left=sample.getAmount();
-            if(left>0){
-                item.setAmount(item.getAmount()+left);
+    public static int sendLimitedItemToRoot(NetworkRoot root, ItemStack item, int limit, ReentrantLock lock) {
+        return NetworkAsyncUtil.getInstance().ensureLock(lock,()->{
+            int itemAmount = item.getAmount();
+            if(itemAmount <= limit) {
+                root.addItemStack(item);
+                int left=item.getAmount();
+                return limit-itemAmount+left;
+            }else{
+                ItemStack sample = StackUtils.getLimitedRequest(item, limit);
+                item.setAmount(itemAmount-limit);
+                root.addItemStack(sample);
+                int left=sample.getAmount();
+                if(left>0){
+                    item.setAmount(item.getAmount()+left);
+                }
+                return left;
             }
-            return left;
-        }
+        });
     }
     public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch,boolean breakWhenNoMatch, int... slots){
 
@@ -55,8 +59,9 @@ public class TransportUtil {
         final ItemStack retrieved = root.getItemStack(itemRequest);
         if (retrieved != null && retrieved.getType() != Material.AIR) {
             //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
-
+            NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
             BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, re.getSecondValue());
+            });
         }
     }
     public static <T extends Object> Pair<Integer,List<Integer>> calFetchItem(NetworkRoot root, IntFunction<T> indexer, ItemRequest itemRequest, ToIntFunction<T> matchAmount, int limit, boolean breakAfterFirstMatch, boolean breakWhenNoMatch, int... slots){
@@ -111,7 +116,9 @@ public class TransportUtil {
         if (retrieved != null && retrieved.getType() != Material.AIR) {
             //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
             //a=System.nanoTime();
-            snapShot.pushItemAlreadyMatched(retrieved, re.getSecondValue());
+            NetworkAsyncUtil.getInstance().ensureLocation(snapShot.getBlockMenu().getLocation(),()->{
+                snapShot.pushItemAlreadyMatched(retrieved, re.getSecondValue());
+            });
             //d=System.nanoTime();
             //ExperimentalFeatureManager.getInstance().sendTimings(a,d,()->"TransportUtils:pushItemMatched %s");
         }

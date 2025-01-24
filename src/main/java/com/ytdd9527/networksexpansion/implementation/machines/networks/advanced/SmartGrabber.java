@@ -3,6 +3,7 @@ package com.ytdd9527.networksexpansion.implementation.machines.networks.advanced
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -121,23 +122,26 @@ public class SmartGrabber extends SpecialSlimefunItem implements AdminDebuggable
             if (targetMenu != null) {
                 final NetworkRoot root = definition.getNode().getRoot();
                 final int[] slots = targetMenu.getPreset().getSlotsAccessedByItemTransport(targetMenu, ItemTransportFlow.WITHDRAW, null);
-                int limit = getLimitQuantity();
+
                 if (slots.length > 0) {
                     final ItemStack delta = targetMenu.getItemInSlot(slots[0]);
                     if (delta != null && delta.getType() != Material.AIR) {
-                        for (int slot : slots) {
-                            ItemStack item = targetMenu.getItemInSlot(slot);
-                            if (item != null && item.getType() != Material.AIR) {
-                                final int exceptedReceive = Math.min(item.getAmount(), limit);
-                                final ItemStack clone = StackUtils.getAsQuantity(item, exceptedReceive);
-                                root.addItemStack(clone);
-                                item.setAmount(item.getAmount() - (exceptedReceive - clone.getAmount()));
-                                limit -= exceptedReceive - clone.getAmount();
-                                if (limit <= 0) {
-                                    break;
+                        NetworkAsyncUtil.getInstance().ensureLocation(targetMenu.getLocation(),()->{
+                            int limit = getLimitQuantity();
+                            for (int slot : slots) {
+                                ItemStack item = targetMenu.getItemInSlot(slot);
+                                if (item != null && item.getType() != Material.AIR) {
+                                    final int exceptedReceive = Math.min(item.getAmount(), limit);
+                                    final ItemStack clone = StackUtils.getAsQuantity(item, exceptedReceive);
+                                    root.addItemStack(clone);
+                                    item.setAmount(item.getAmount() - (exceptedReceive - clone.getAmount()));
+                                    limit -= exceptedReceive - clone.getAmount();
+                                    if (limit <= 0) {
+                                        break;
+                                    }
                                 }
                             }
-                        }
+                        });
                     }
                 }
             }

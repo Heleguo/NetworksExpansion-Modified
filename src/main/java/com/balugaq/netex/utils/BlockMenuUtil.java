@@ -3,6 +3,7 @@ package com.balugaq.netex.utils;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
 import com.balugaq.netex.utils.Algorithms.DynamicArray;
+import lombok.Getter;
 import lombok.experimental.UtilityClass;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Material;
@@ -82,6 +83,7 @@ public class BlockMenuUtil {
     }
     public class BlockMenuSnapShot implements Cloneable {
         private static BlockMenuSnapShot instance = new BlockMenuSnapShot();
+        @Getter
         private BlockMenu blockMenu;
         private DynamicArray<ItemStackCache> items;
         private BlockMenuSnapShot init(BlockMenu blockMenu){

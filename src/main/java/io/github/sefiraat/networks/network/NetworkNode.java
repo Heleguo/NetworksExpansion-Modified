@@ -36,18 +36,26 @@ public class NetworkNode {
     protected final Set<NetworkNode> childrenNodes = new HashSet<>();
     @Getter
     protected NetworkNode parent = null;
-    protected NetworkRoot root = null;
-    protected NetworkRoot newRoot = null;
+    protected NetworkRoot root ;
+    @Nonnull
+    protected NetworkRoot newRoot ;
     protected Location nodePosition;
     protected NodeType nodeType;
     @Getter
     protected long power;
-
-    public NetworkNode(Location location, NodeType type,@Nullable NetworkRoot history) {
+    //for child NetworkRoot
+    protected NetworkNode(Location location, NodeType type) {
+        this.nodePosition = location;
+        this.nodeType = type;
+        this.power = retrieveBlockCharge();
+        this.newRoot = null;
+    }
+    public NetworkNode(Location location, NodeType type,@Nullable NetworkRoot history,@Nonnull NetworkRoot rootUpdate) {
         this.nodePosition = location;
         this.nodeType = type;
         this.power = retrieveBlockCharge();
         this.root = history;
+        this.newRoot = rootUpdate;
     }
 
     public void addChild(@Nonnull NetworkNode child) {
@@ -55,7 +63,6 @@ public class NetworkNode {
         //if newRoot present. fetch new root ,register info into newRoot
         NetworkRoot rootUpdate = this.getRootUpdateInternal();
         //pass update to children
-        child.setRoot(rootUpdate);
         rootUpdate.addRootPower(child.getPower());
         rootUpdate.registerNode(child.nodePosition, child.nodeType);
         this.childrenNodes.add(child);
@@ -80,8 +87,8 @@ public class NetworkNode {
 //    }
     //获取可靠的root,
     @Nonnull
-    public NetworkRoot getRoot() {
-          if( (this.root == null) ||  (this.newRoot !=null && this.newRoot .isReady()) ) {
+    public synchronized NetworkRoot getRoot() {
+        if( (this.root == null) ||  (this.newRoot !=null && this.newRoot .isReady()) ) {
             this.root = this.newRoot;
             this.newRoot = null;
             //we are sure that root.isReady is true
@@ -90,17 +97,17 @@ public class NetworkNode {
     }
     //获取最新版的root 可能是未完成的
     @Nonnull
-    private NetworkRoot getRootUpdateInternal() {
-        return this.newRoot!=null? this.newRoot : this.root;
+    protected NetworkRoot getRootUpdateInternal() {
+        return this.newRoot;
     }
 
-    protected void setRootInternal(@Nonnull NetworkRoot root) {
-        this.root = root;
-        this.newRoot = null;
-    }
-    private void setRoot(NetworkRoot root) {
-        this.newRoot = root;
-    }
+//    protected void setRootInternal(@Nonnull NetworkRoot root) {
+//        this.root = root;
+//        this.newRoot = null;
+//    }
+//    private void setRoot(NetworkRoot root) {
+//        this.newRoot = root;
+//    }
 
     private void setParent(NetworkNode parent) {
         this.parent = parent;
@@ -137,7 +144,8 @@ public class NetworkNode {
                 }else{
                     historyRoot = null;
                 }
-                final NetworkNode networkNode = new NetworkNode(testLocation, testType, historyRoot);
+                //move the root set in addChild to <init>
+                final NetworkNode networkNode = new NetworkNode(testLocation, testType, historyRoot, rootUpdate);
                 addChild(networkNode);
                 networkNode.addAllChildren();
                 testDefinition.setNode(networkNode);

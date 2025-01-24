@@ -2,6 +2,7 @@ package com.balugaq.netex.utils;
 
 import com.balugaq.netex.api.enums.TransportMode;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
@@ -23,9 +24,11 @@ import org.bukkit.util.Vector;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -144,7 +147,7 @@ public class LineOperationUtil {
             int limitQuantity
     ) {
         final int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu, ItemTransportFlow.WITHDRAW, null);
-
+        ReentrantLock location = NetworkAsyncUtil.getInstance().getLocationLock(blockMenu.getLocation());
         int limit = limitQuantity;
         switch (transportMode) {
             case NONE, NONNULL_ONLY -> {
@@ -155,7 +158,7 @@ public class LineOperationUtil {
                     final ItemStack item = blockMenu.getItemInSlot(slot);
                     if (item != null && item.getType() != Material.AIR) {
                         //final int exceptedReceive = Math.min(item.getAmount(), limit);
-                        limit=sendLimitedItemToRoot(root, item, limit);
+                        limit=sendLimitedItemToRoot(root, item, limit, location);
                         if (limit <= 0) {
                             break;
                         }
@@ -174,7 +177,7 @@ public class LineOperationUtil {
                 if (slots.length > 0) {
                     final ItemStack item = blockMenu.getItemInSlot(slots[0]);
                     if (item != null && item.getType() != Material.AIR) {
-                        limit=sendLimitedItemToRoot(root, item, limit);
+                        limit=sendLimitedItemToRoot(root, item, limit, location);
                         if (limit <= 0) {
                             break;
                         }
@@ -188,7 +191,7 @@ public class LineOperationUtil {
                 if (slots.length > 0) {
                     final ItemStack item = blockMenu.getItemInSlot(slots[slots.length - 1]);
                     if (item != null && item.getType() != Material.AIR) {
-                        limit=sendLimitedItemToRoot(root, item, limit);
+                        limit=sendLimitedItemToRoot(root, item, limit, location);
                         if (limit <= 0) {
                             break;
                         }
@@ -202,7 +205,7 @@ public class LineOperationUtil {
                 for (int slot : slots) {
                     final ItemStack item = blockMenu.getItemInSlot(slot);
                     if (item != null && item.getType() != Material.AIR) {
-                        limit=sendLimitedItemToRoot(root, item, limit);
+                        limit=sendLimitedItemToRoot(root, item, limit, location);
                         break;
                     }
                 }
@@ -217,7 +220,7 @@ public class LineOperationUtil {
                         for (int slot : slots) {
                             ItemStack item = blockMenu.getItemInSlot(slot);
                             if (item != null && item.getType() != Material.AIR) {
-                                limit=sendLimitedItemToRoot(root, item, limit);
+                                limit=sendLimitedItemToRoot(root, item, limit, location);
                                 if (limit <= 0) {
                                     break;
                                 }
@@ -232,7 +235,7 @@ public class LineOperationUtil {
                     if (item != null && item.getType() != Material.AIR) {
                         //final int exceptedReceive = Math.min(item.getAmount(), limit);
                         int oldLimit = limit;
-                        limit=sendLimitedItemToRoot(root, item, limit);
+                        limit=sendLimitedItemToRoot(root, item, limit, location);
                         if(limit==oldLimit){
                             //this slot pushes nothing, then next slot probably pushes nothing
                             break;

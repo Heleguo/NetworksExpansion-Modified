@@ -2,6 +2,7 @@ package com.ytdd9527.networksexpansion.implementation.machines.networks.advanced
 
 import com.balugaq.netex.api.helpers.Icon;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
@@ -84,7 +85,10 @@ public class BetterGrabber extends NetworkDirectional {
                 for (ItemStack template : templates) {
                     if (StackUtils.itemsMatch(template, itemInSlot)) {
                         int before = itemInSlot.getAmount();
-                        definition.getNode().getRoot().addItemStack(itemInSlot);
+                        NetworkAsyncUtil.getInstance().ensureLocation(targetMenu.getLocation(),()->{
+                            ItemStack item = targetMenu.getItemInSlot(slot);
+                            definition.getNode().getRoot().addItemStack(item);
+                        });
                         if (definition.getNode().getRoot().isDisplayParticles() && itemInSlot.getAmount() < before) {
                             showParticle(blockMenu.getLocation(), direction);
                         }

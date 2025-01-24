@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.network;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
@@ -56,7 +57,12 @@ public class NetworkGrabber extends NetworkDirectional {
 
             if (itemStack != null && itemStack.getType() != Material.AIR) {
                 int before = itemStack.getAmount();
-                definition.getNode().getRoot().addItemStack(itemStack);
+                NetworkAsyncUtil.getInstance().ensureLocation(targetMenu.getLocation(),()->{
+                    ItemStack input = targetMenu.getItemInSlot(slot);
+                    if(input != null) {
+                        definition.getNode().getRoot().addItemStack(input);
+                    }
+                });
                 if (definition.getNode().getRoot().isDisplayParticles() && itemStack.getAmount() < before) {
                     showParticle(blockMenu.getLocation(), direction);
                 }

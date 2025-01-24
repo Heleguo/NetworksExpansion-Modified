@@ -91,6 +91,10 @@ public class ExperimentalFeatureManager implements TabExecutor {
 
     @Getter
     private boolean enableGlobalDebugOutput =false;
+    //whether or not the parallel operation wait till join
+    @Getter
+    private boolean enableNotWaitTillJoin=false;
+
     long lastTimeStamp=0L;
     boolean isTiming=false;
     public void startGlobalProfiler(){
