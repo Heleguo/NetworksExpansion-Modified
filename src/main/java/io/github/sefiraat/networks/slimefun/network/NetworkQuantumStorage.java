@@ -557,6 +557,9 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 
         ItemStack storedItem = cache.getItemStack();
         int stored = Math.toIntExact(cache.getAmount());
+        if(stored <= 0){
+            return;
+        }
         if (action.isShiftClicked() && action.isRightClicked()) {
             ItemStack extractedItem = cache.withdrawItem(64);
             if (extractedItem != null) {
@@ -573,7 +576,6 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 
             for (int i = 0; i < contents.length; i++) {
                 if (contents[i] == null || contents[i].getType() == Material.AIR) {
-                    if (stored == 0) break;
 
                     int amountToExtract = Math.min(stored, storedItem.getMaxStackSize());
                     ItemStack itemToInsert = storedItem.clone();
@@ -583,7 +585,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
                     cache.reduceAmount(amountToExtract);
                     stored -= amountToExtract;
 
-                    if (stored == 0) break;
+                    if (stored <= 0) break;
                 }
             }
 
@@ -657,15 +659,21 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         if (blockMenu != null) {
 
             final QuantumCache cache = removeCache(blockMenu.getLocation());
-            if (cache != null && cache.getAmount() > 0 && cache.getItemStack() != null) {
-                final ItemStack itemToDrop = this.getItem().clone();
-                final ItemMeta itemMeta = itemToDrop.getItemMeta();
+            if(cache != null){
+                if( cache.getAmount() > 0 && cache.getItemStack() != null){
+                    final ItemStack itemToDrop = this.getItem().clone();
+                    final ItemMeta itemMeta = itemToDrop.getItemMeta();
 
-                DataTypeMethods.setCustom(itemMeta, Keys.QUANTUM_STORAGE_INSTANCE, PersistentQuantumStorageType.TYPE, cache);
-                cache.addMetaLore(itemMeta);
-                itemToDrop.setItemMeta(itemMeta);
-                location.getWorld().dropItem(location.clone().add(0.5, 0.5, 0.5), itemToDrop);
-                event.setDropItems(false);
+                    DataTypeMethods.setCustom(itemMeta, Keys.QUANTUM_STORAGE_INSTANCE, PersistentQuantumStorageType.TYPE, cache);
+                    cache.addMetaLore(itemMeta);
+                    itemToDrop.setItemMeta(itemMeta);
+                    location.getWorld().dropItem(location.clone().add(0.5, 0.5, 0.5), itemToDrop);
+                    event.setDropItems(false);
+                }else if(cache.getAmount() < 0 && cache.getItemStack() != null){
+                    //not allowed to drop
+                    event.getPlayer().sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.quantum_storage.quantum_storage_negative"));
+                    event.setCancelled(true);
+                }
             }
 
             for (int i : this.slotsToDrop) {

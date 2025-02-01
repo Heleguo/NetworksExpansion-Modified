@@ -84,7 +84,7 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
                     return (int) (total - this.limit);
                 }
             } else {
-                this.amount = this.amount + amount;
+                this.amount = total;
             }
         }
         return 0;
@@ -112,6 +112,9 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
         }
         final ItemStack clone = this.getItemStack().clone();
         synchronized (lock) {
+            if(this.amount <= 0 ){
+                return null;
+            }
             clone.setAmount((int) Math.min(this.amount, amount));
             reduceAmount(clone.getAmount());
         }
@@ -120,7 +123,7 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
 
     @Nullable
     public ItemStack withdrawItem() {
-        if (this.getItemStack() == null) {
+        if (this.getItemStack() == null || this.amount <= 0) {
             return null;
         }
         return withdrawItem(this.getItemStack().getMaxStackSize());

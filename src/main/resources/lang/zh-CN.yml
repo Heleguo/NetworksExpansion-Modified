@@ -288,6 +288,7 @@ messages:
       grid_not_loaded: "<error>绑定的网格所在区块没有加载"
     quantum_storage:
       quantum_storage_not_empty: "<warning>量子存储必须为空才能更换物品"
+      quantum_storage_negative: "<warning>你不能打破一个负数数量的量子存储!你需要先填充它使得它为正数"
       custom_max_amount_not_supported: "<warning>这不是一个有效的高级量子存储"
       invalid_custom_max_amount: "<passive>[<gold>网络拓展<passive>] <error>网络高级量子存储必须为: 1 至 2147483647!"
     configurator:
