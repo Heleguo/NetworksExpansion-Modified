@@ -155,7 +155,7 @@ public class NetworkRoot extends NetworkNode {
 
 
     @Getter
-    private long rootPower = 0;
+    protected long rootPower = 0;
 
     @Getter
     private boolean displayParticles = false;

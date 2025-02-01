@@ -315,7 +315,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
     @Nullable
     @Override
     public String getBugTrackerURL() {
-        return MessageFormat.format("https://github.com/{0}/{1}/issues/", this.username, this.repo);
+        return "https://github.com/m1919810/NetworksExpansion-Modified/issues/";
     }
 
     @Nonnull
