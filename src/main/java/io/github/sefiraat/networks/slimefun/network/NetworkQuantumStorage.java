@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -334,10 +335,13 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             removeCache(block.getLocation());
             return;
         }
+
         final QuantumCache cache = CACHES.get(blockMenu.getLocation());
+
         if (cache == null) {
             return;
         }
+
         if (blockMenu.hasViewer()) {
             updateDisplayItem(blockMenu, cache);
         }
@@ -372,6 +376,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 
 
         CACHES.put(blockMenu.getLocation().clone(), cache);
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     private void toggleVoid(@Nonnull BlockMenu blockMenu) {

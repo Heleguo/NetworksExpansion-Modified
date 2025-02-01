@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.events.NetworkRootReadyEvent;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -16,6 +17,7 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.items.settings.IntRangeSetting;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -77,6 +79,8 @@ public class NetworkController extends NetworkObject {
                         if (definition != null) {
                             definition.setNode(networkRoot);
                         }
+                        NetworkRootReadyEvent event = new NetworkRootReadyEvent(networkRoot);
+                        Bukkit.getPluginManager().callEvent(event);
                     }
                 }
         );

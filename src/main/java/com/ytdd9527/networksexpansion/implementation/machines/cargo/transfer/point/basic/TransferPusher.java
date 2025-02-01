@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.interfaces.Configurable;
@@ -97,6 +98,7 @@ public class TransferPusher extends NetworkDirectional implements RecipeDisplayI
         super.onTick(blockMenu, block);
 
         if (blockMenu == null) {
+            sendFeedback(block.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
         final Location location = block.getLocation();
@@ -129,11 +131,13 @@ public class TransferPusher extends NetworkDirectional implements RecipeDisplayI
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = this.getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -150,6 +154,7 @@ public class TransferPusher extends NetworkDirectional implements RecipeDisplayI
         LineOperationUtil.doOperation(blockMenu.getLocation(), direction, 1, false, false, (targetMenu) -> {
             LineOperationUtil.pushItem(root, targetMenu, templates, TransportMode.FIRST_STOP, 64);
         });
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     @Nonnull

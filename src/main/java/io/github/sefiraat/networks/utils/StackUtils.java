@@ -1,6 +1,6 @@
 package io.github.sefiraat.networks.utils;
 
-import com.balugaq.netex.api.enums.MCVersion;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
@@ -50,9 +50,9 @@ import java.util.Optional;
 @UtilityClass
 @SuppressWarnings("deprecation")
 public class StackUtils {
-    private static final MCVersion MC_VERSION = Networks.getInstance().getMCVersion();
-    private static final boolean IS_1_20_5 = MC_VERSION.isAtLeast(MCVersion.MC1_20_5);
-    private static final boolean IS_1_21 = MC_VERSION.isAtLeast(MCVersion.MC1_21);
+    private static final MinecraftVersion MC_VERSION = Networks.getInstance().getMCVersion();
+    private static final boolean IS_1_20_5 = MC_VERSION.isAtLeast(MinecraftVersion.MC1_20_5);
+    private static final boolean IS_1_21 = MC_VERSION.isAtLeast(MinecraftVersion.MC1_21);
 
     @Nonnull
     public static ItemStack getAsQuantity(@Nullable ItemStack itemStack, int amount) {
@@ -742,7 +742,13 @@ public class StackUtils {
     public static boolean isOnCooldown(ItemStack itemStack) {
         ItemMeta itemMeta = itemStack.getItemMeta();
         if (itemMeta != null) {
-            long cooldownUntil = PersistentDataAPI.getLong(itemMeta, Keys.ON_COOLDOWN, 0);
+            long cooldownUntil = PersistentDataAPI.getLong(itemMeta, Keys.ON_COOLDOWN, -1);
+            if (cooldownUntil == -1) {
+                cooldownUntil = PersistentDataAPI.getLong(itemMeta, Keys.ON_COOLDOWN2, -1);
+            }
+            if (cooldownUntil == -1) {
+                cooldownUntil = PersistentDataAPI.getLong(itemMeta, Keys.ON_COOLDOWN3, 0);
+            }
             return System.currentTimeMillis() < cooldownUntil;
         }
         return false;

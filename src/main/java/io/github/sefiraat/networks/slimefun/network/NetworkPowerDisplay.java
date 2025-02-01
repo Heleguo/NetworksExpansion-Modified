@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
@@ -70,12 +71,14 @@ public class NetworkPowerDisplay extends NetworkObject {
 
             if (definition.getNode() == null) {
                 blockMenu.replaceExistingItem(DISPLAY_SLOT, Icon.POWER_DISPLAY_EMPTY);
+                sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
                 return;
             }
 
             final NetworkRoot root = definition.getNode().getRoot();
             final long networkCharge = root.getRootPower();
             blockMenu.replaceExistingItem(DISPLAY_SLOT, getChargeStack(networkCharge));
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         }
     }
 

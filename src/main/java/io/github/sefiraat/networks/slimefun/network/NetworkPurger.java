@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.NetworksVersionedParticle;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
@@ -86,12 +87,14 @@ public class NetworkPurger extends NetworkObject {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         ItemStack testItem = blockMenu.getItemInSlot(TEST_ITEM_SLOT);
 
         if (testItem == null || testItem.getType() == Material.AIR) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_ITEM_FOUND);
             return;
         }
         ItemStack clone = StackUtils.getAsQuantity(testItem, 1);
@@ -100,6 +103,7 @@ public class NetworkPurger extends NetworkObject {
         ItemStack retrieved = definition.getNode().getRoot().getItemStack(itemRequest);
         if (retrieved != null) {
             retrieved.setAmount(0);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
             Location location = blockMenu.getLocation().clone().add(0.5, 1.2, 0.5);
             if (definition.getNode().getRoot().isDisplayParticles()) {
                 location.getWorld().spawnParticle(NetworksVersionedParticle.SMOKE, location, 0, 0, 0.05, 0);

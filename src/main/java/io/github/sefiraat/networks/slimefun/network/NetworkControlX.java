@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import dev.sefiraat.sefilib.misc.ParticleUtils;
@@ -74,16 +75,19 @@ public class NetworkControlX extends NetworkDirectional {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         if (definition.getNode().getRoot().getRootPower() < REQUIRED_POWER) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_POWER);
             return;
         }
 
         final BlockFace direction = getCurrentDirection(blockMenu);
 
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -91,22 +95,26 @@ public class NetworkControlX extends NetworkDirectional {
         final BlockPosition targetPosition = new BlockPosition(targetBlock);
 
         if (this.blockCache.contains(targetPosition)) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_ALREADY_CUT);
             return;
         }
 
         final Material material = targetBlock.getType();
 
-        if (material.getHardness() < 0 || material == Material.AIR) {
+        if (material.getHardness() < 0 || material.isAir()) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_CUT);
             return;
         }
 
         if (SlimefunTag.CARGO_SUPPORTED_STORAGE_BLOCKS.isTagged(material)) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_CUT);
             return;
         }
 
         final SlimefunItem slimefunItem = StorageCacheUtils.getSfItem(targetBlock.getLocation());
 
         if (slimefunItem != null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_CUT);
             return;
         }
 
@@ -116,6 +124,7 @@ public class NetworkControlX extends NetworkDirectional {
         if ((mustMatch && (targetBlock.getType() != templateStack.getType()))
                 || (SlimefunItem.getByItem(templateStack) != null)
         ) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_NOT_MATCH_TEMPLATE);
             return;
         }
 
@@ -124,6 +133,7 @@ public class NetworkControlX extends NetworkDirectional {
 
         Bukkit.getScheduler().runTask(Networks.getInstance(), bukkitTask -> {
             if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.BREAK_BLOCK)) {
+                sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
                 return;
             }
 
@@ -137,6 +147,7 @@ public class NetworkControlX extends NetworkDirectional {
                 final BlockStateSnapshotResult blockState = PaperLib.getBlockState(targetBlock, true);
 
                 if (blockState.getState() instanceof InventoryHolder) {
+                    sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_CUT);
                     return;
                 }
 
@@ -148,6 +159,7 @@ public class NetworkControlX extends NetworkDirectional {
                         DUST_OPTIONS
                 );
                 definition.getNode().getRoot().removeRootPower(REQUIRED_POWER);
+                sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
             }
         });
     }

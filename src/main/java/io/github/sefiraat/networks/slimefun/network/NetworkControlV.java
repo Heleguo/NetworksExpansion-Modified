@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.gmail.nossr50.mcMMO;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -74,16 +75,19 @@ public class NetworkControlV extends NetworkDirectional {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         if (definition.getNode().getRoot().getRootPower() < REQUIRED_POWER) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_POWER);
             return;
         }
 
         final BlockFace direction = getCurrentDirection(blockMenu);
 
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -91,6 +95,7 @@ public class NetworkControlV extends NetworkDirectional {
         final BlockPosition targetPosition = new BlockPosition(targetBlock);
 
         if (this.blockCache.contains(targetPosition)) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_ALREADY_PASTED);
             return;
         }
 
@@ -98,12 +103,14 @@ public class NetworkControlV extends NetworkDirectional {
         final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
 
         if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.PLACE_BLOCK)) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
             return;
         }
 
         final Material material = targetBlock.getType();
 
         if (material != Material.AIR) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_AIR);
             return;
         }
 
@@ -116,12 +123,14 @@ public class NetworkControlV extends NetworkDirectional {
         final Material templateMaterial = templateStack.getType();
 
         if (!templateMaterial.isBlock() || SlimefunTag.SENSITIVE_MATERIALS.isTagged(templateMaterial)) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_TEMPLATE);
             return;
         }
 
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(templateStack);
 
         if (slimefunItem != null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_TEMPLATE);
             return;
         }
 
@@ -129,6 +138,7 @@ public class NetworkControlV extends NetworkDirectional {
         final ItemStack fetchedStack = definition.getNode().getRoot().getItemStack(request);
 
         if (fetchedStack == null || fetchedStack.getAmount() < 1) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_RESOURCES);
             return;
         }
 
@@ -136,7 +146,11 @@ public class NetworkControlV extends NetworkDirectional {
         Bukkit.getScheduler().runTask(Networks.getInstance(), bukkitTask -> {
             targetBlock.setType(fetchedStack.getType(), true);
             if (SupportedPluginManager.getInstance().isMcMMO()) {
-                mcMMO.getPlaceStore().setTrue(targetBlock);
+                try {
+                    mcMMO.getChunkManager().setTrue(targetBlock);
+                } catch (NoClassDefFoundError e) {
+                    mcMMO.getPlaceStore().setTrue(targetBlock);
+                }
             }
             ParticleUtils.displayParticleRandomly(
                     LocationUtils.centre(targetBlock.getLocation()),
@@ -144,6 +158,7 @@ public class NetworkControlV extends NetworkDirectional {
                     1,
                     5
             );
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         });
     }
 

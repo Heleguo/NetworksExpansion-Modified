@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -112,6 +113,7 @@ public class NetworkWirelessTransmitter extends NetworkObject {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -119,6 +121,7 @@ public class NetworkWirelessTransmitter extends NetworkObject {
         final Location linkedLocation = linkedLocations.get(location);
 
         if (linkedLocation == null) {
+            sendFeedback(location, FeedbackType.NO_LINKED_LOCATION_FOUND);
             return;
         }
 
@@ -131,6 +134,7 @@ public class NetworkWirelessTransmitter extends NetworkObject {
 
         final BlockMenu linkedBlockMenu = StorageCacheUtils.getMenu(linkedLocation);
         if (linkedBlockMenu == null) {
+            sendFeedback(location, FeedbackType.NO_LINKED_BLOCK_MENU_FOUND);
             return;
         }
 
@@ -140,10 +144,12 @@ public class NetworkWirelessTransmitter extends NetworkObject {
             final ItemStack templateStack = blockMenu.getItemInSlot(TEMPLATE_SLOT);
 
             if (templateStack == null || templateStack.getType() == Material.AIR) {
+                sendFeedback(location, FeedbackType.NO_TEMPLATE_FOUND);
                 return;
             }
 
             if (definition.getNode().getRoot().getRootPower() < REQUIRED_POWER) {
+                sendFeedback(location, FeedbackType.NOT_ENOUGH_POWER);
                 return;
             }
 
@@ -154,6 +160,7 @@ public class NetworkWirelessTransmitter extends NetworkObject {
             if (stackToPush != null) {
                 definition.getNode().getRoot().removeRootPower(REQUIRED_POWER);
                 linkedBlockMenu.pushItem(stackToPush, NetworkWirelessReceiver.RECEIVED_SLOT);
+                sendFeedback(location, FeedbackType.WORKING);
                 if (definition.getNode().getRoot().isDisplayParticles()) {
                     final Location particleLocation = blockMenu.getLocation().clone().add(0.5, 1.1, 0.5);
                     final Location particleLocation2 = linkedBlockMenu.getLocation().clone().add(0.5, 2.1, 0.5);

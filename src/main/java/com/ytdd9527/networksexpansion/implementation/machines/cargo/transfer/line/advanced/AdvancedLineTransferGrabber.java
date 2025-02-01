@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.balugaq.netex.utils.LineOperationUtil;
@@ -103,6 +104,7 @@ public class AdvancedLineTransferGrabber extends AdvancedDirectional implements 
     protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
         super.onTick(blockMenu, block);
         if (blockMenu == null) {
+            sendFeedback(block.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
         final Location location = block.getLocation();
@@ -136,11 +138,13 @@ public class AdvancedLineTransferGrabber extends AdvancedDirectional implements 
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -159,6 +163,7 @@ public class AdvancedLineTransferGrabber extends AdvancedDirectional implements 
                 (targetMenu) -> {
                     LineOperationUtil.grabItem(root, targetMenu, mode, limitQuantity);
                 });
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
 

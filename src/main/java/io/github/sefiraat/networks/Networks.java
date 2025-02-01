@@ -1,8 +1,6 @@
 package io.github.sefiraat.networks;
 
-import com.balugaq.netex.api.enums.MCVersion;
-import com.balugaq.netex.api.guide.CheatGuideImpl;
-import com.balugaq.netex.api.guide.SurvivalGuideImpl;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.managers.ConfigManager;
@@ -20,7 +18,6 @@ import io.github.sefiraat.networks.managers.SupportedPluginManager;
 import io.github.sefiraat.networks.slimefun.NetworksSlimefunItemStacks;
 import io.github.sefiraat.networks.slimefun.network.NetworkController;
 import io.github.sefiraat.networks.utils.NetworkUtils;
-import io.github.thebusybiscuit.slimefun4.api.MinecraftVersion;
 import io.github.thebusybiscuit.slimefun4.api.SlimefunAddon;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideImplementation;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode;
@@ -58,7 +55,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
     private static DataSource dataSource;
     private static QueryQueue queryQueue;
     private static BukkitRunnable autoSaveThread;
-    private static MCVersion mcVersion = MCVersion.UNKNOWN;
+    private static MinecraftVersion minecraftVersion = MinecraftVersion.UNKNOWN;
     private final String username;
     private final String repo;
     private final String branch;
@@ -209,29 +206,6 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
                         1,
                         Slimefun.getTickerTask().getTickRate());
 
-        final boolean survivalOverride = getConfig().getBoolean("integrations.guide.survival-override");
-        final boolean cheatOverride = getConfig().getBoolean("integrations.guide.cheat-override");
-        if (survivalOverride || cheatOverride) {
-            getLogger().info(getLocalizationService().getString("messages.startup.found-enabled-replacing-guide"));
-            getLogger().info(getLocalizationService().getString("messages.startup.replacing-guide"));
-            Field field = ReflectionUtil.getField(Slimefun.getRegistry().getClass(), "guides");
-            if (field != null) {
-                field.setAccessible(true);
-
-                Map<SlimefunGuideMode, SlimefunGuideImplementation> newGuides = new EnumMap<>(SlimefunGuideMode.class);
-                newGuides.put(SlimefunGuideMode.SURVIVAL_MODE, survivalOverride ? new SurvivalGuideImpl() : new SurvivalSlimefunGuide());
-                newGuides.put(SlimefunGuideMode.CHEAT_MODE, cheatOverride ? new CheatGuideImpl() : new CheatSheetSlimefunGuide());
-                try {
-                    field.set(Slimefun.getRegistry(), newGuides);
-                } catch (IllegalAccessException ignored) {
-
-                }
-            }
-            getLogger().info(survivalOverride ? getLocalizationService().getString("messages.startup.enabled-replacing-survival-guide") : getLocalizationService().getString("messages.startup.disabled-replacing-survival-guide"));
-            getLogger().info(cheatOverride ? getLocalizationService().getString("messages.startup.enabled-replacing-cheat-guide") : getLocalizationService().getString("messages.startup.disabled-replacing-cheat-guide"));
-            getLogger().info(getLocalizationService().getString("messages.startup.guide-risk-warning"));
-        }
-
 
         getLogger().info(getLocalizationService().getString("messages.startup.enabled-successfully"));
     }
@@ -281,19 +255,19 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
             return;
         }
         try {
-            mcVersion = Slimefun.getMinecraftVersion().isAtLeast(MinecraftVersion.MINECRAFT_1_20) ? MCVersion.of(20, 0) : MCVersion.UNKNOWN;
-            mcVersion = Slimefun.getMinecraftVersion().isAtLeast(MinecraftVersion.MINECRAFT_1_20_5) ? MCVersion.of(20, 5) : mcVersion;
-            mcVersion = Slimefun.getMinecraftVersion().isAtLeast(MinecraftVersion.MINECRAFT_1_21) ? MCVersion.of(21, 0) : mcVersion;
+            minecraftVersion = Slimefun.getMinecraftVersion().isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_20) ? MinecraftVersion.of(20, 0) : MinecraftVersion.UNKNOWN;
+            minecraftVersion = Slimefun.getMinecraftVersion().isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_20_5) ? MinecraftVersion.of(20, 5) : minecraftVersion;
+            minecraftVersion = Slimefun.getMinecraftVersion().isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_21) ? MinecraftVersion.of(21, 0) : minecraftVersion;
         } catch (NoClassDefFoundError | NoSuchFieldError e) {
             for (int i = 0; i < 20; i++) {
                 getLogger().severe(getLocalizationService().getString("messages.depend.suggest-download-newer-slimefun"));
             }
         }
 
-        if (mcVersion == MCVersion.UNKNOWN) {
+        if (minecraftVersion == MinecraftVersion.UNKNOWN) {
             final int major = PaperLib.getMinecraftVersion();
             final int minor = PaperLib.getMinecraftPatchVersion();
-            mcVersion = MCVersion.of(major, minor);
+            minecraftVersion = MinecraftVersion.of(major, minor);
         }
     }
 
@@ -316,8 +290,8 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         }
     }
 
-    public MCVersion getMCVersion() {
-        return mcVersion;
+    public MinecraftVersion getMCVersion() {
+        return minecraftVersion;
     }
 
     public void setupMetrics() {

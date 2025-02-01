@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.advanced;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.balugaq.netex.utils.LineOperationUtil;
@@ -99,6 +100,7 @@ public class AdvancedTransferGrabber extends AdvancedDirectional implements Reci
     protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
         super.onTick(blockMenu, block);
         if (blockMenu == null) {
+            sendFeedback(block.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
 
@@ -133,11 +135,13 @@ public class AdvancedTransferGrabber extends AdvancedDirectional implements Reci
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -148,6 +152,7 @@ public class AdvancedTransferGrabber extends AdvancedDirectional implements Reci
         LineOperationUtil.doOperation(blockMenu.getLocation(), direction, 1, true, false, (targetMenu) -> {
             LineOperationUtil.grabItem(root, targetMenu, mode, limitQuantity);
         });
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     @Override

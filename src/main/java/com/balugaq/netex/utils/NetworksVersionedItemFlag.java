@@ -1,6 +1,6 @@
 package com.balugaq.netex.utils;
 
-import com.balugaq.netex.api.enums.MCVersion;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import io.github.sefiraat.networks.Networks;
 import lombok.experimental.UtilityClass;
 import org.bukkit.inventory.ItemFlag;
@@ -14,8 +14,8 @@ public class NetworksVersionedItemFlag {
     public static final ItemFlag HIDE_ADDITIONAL_TOOLTIP;
 
     static {
-        MCVersion version = Networks.getInstance().getMCVersion();
-        HIDE_ADDITIONAL_TOOLTIP = version.isAtLeast(MCVersion.MC1_20_5) ? ItemFlag.HIDE_ADDITIONAL_TOOLTIP : getKey("HIDE_POTION_EFFECTS");
+        MinecraftVersion version = Networks.getInstance().getMCVersion();
+        HIDE_ADDITIONAL_TOOLTIP = version.isAtLeast(MinecraftVersion.MC1_20_5) ? ItemFlag.HIDE_ADDITIONAL_TOOLTIP : getKey("HIDE_POTION_EFFECTS");
 
     }
 

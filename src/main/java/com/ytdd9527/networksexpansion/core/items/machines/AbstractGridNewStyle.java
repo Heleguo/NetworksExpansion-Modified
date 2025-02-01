@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.core.items.machines;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.helpers.ItemStackHelper;
 import com.github.houbb.pinyin.constant.enums.PinyinStyleEnum;
@@ -28,6 +29,7 @@ import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
+import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -146,6 +148,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
     protected void updateDisplay(@Nonnull BlockMenu blockMenu) {
         // No viewer - lets not bother updating
         if (!blockMenu.hasViewer()) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.AFK);
             return;
         }
 
@@ -154,6 +157,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
         // No node located, weird
         if (definition == null || definition.getNode() == null) {
             clearDisplay(blockMenu);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -212,7 +216,10 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                     });
                 } else {
                     blockMenu.replaceExistingItem(getDisplaySlots()[i], getBlankSlotStack());
-                    blockMenu.addMenuClickHandler(getDisplaySlots()[i], (p, slot, item, action) -> false);
+                    blockMenu.addMenuClickHandler(getDisplaySlots()[i], (p, slot, item, action) -> {
+                        receiveItem(p, action, blockMenu);
+                        return false;
+                    });
                 }
             }
         } else {
@@ -266,10 +273,14 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                     });
                 } else {
                     blockMenu.replaceExistingItem(getDisplaySlots()[i], getBlankSlotStack());
-                    blockMenu.addMenuClickHandler(getDisplaySlots()[i], (p, slot, item, action) -> false);
+                    blockMenu.addMenuClickHandler(getDisplaySlots()[i], (p, slot, item, action) -> {
+                        receiveItem(p, action, blockMenu);
+                        return false;
+                    });
                 }
             }
         }
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     protected void clearDisplay(BlockMenu blockMenu) {
@@ -507,6 +518,21 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
             return Icon.DISPLAY_MODE_STACK;
         } else {
             return Icon.HISTORY_MODE_STACK;
+        }
+    }
+
+    public void receiveItem(Player player, ClickAction action, BlockMenu blockMenu) {
+        NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
+        if (definition == null || definition.getNode() == null) {
+            clearDisplay(blockMenu);
+            blockMenu.close();
+            Networks.getInstance().getLogger().warning(String.format(Networks.getLocalizationService().getString("messages.unsupported-operation.grid.may_duping"), player.getName(), blockMenu.getLocation()));
+            return;
+        }
+
+        ItemStack cursor = player.getItemOnCursor();
+        if (cursor != null && cursor.getType() != Material.AIR) {
+            definition.getNode().getRoot().addItemStack(cursor);
         }
     }
 }

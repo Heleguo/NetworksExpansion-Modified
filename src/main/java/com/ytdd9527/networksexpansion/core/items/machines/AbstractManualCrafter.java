@@ -1,6 +1,7 @@
 package com.ytdd9527.networksexpansion.core.items.machines;
 
 import com.balugaq.netex.api.data.SuperRecipe;
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
@@ -149,6 +150,7 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
         }
 
         if (!BlockMenuUtil.fits(blockMenu, recipe.getOutput(), getOutputSlots())) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_ENOUGH_SPACE);
             return false;
         }
 
@@ -167,12 +169,14 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
                 if (sfi != null) {
                     if (sfi.isDisabled() || sfi.isDisabledIn(world)) {
                         player.sendMessage(ChatColor.RED + "This item is disabled in this world.");
+                        sendFeedback(blockMenu.getLocation(), FeedbackType.DISABLED_OUTPUT);
                         continue;
                     }
                 }
                 ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackCache.of( ItemStackUtil.getCleanItem(item)),true, getOutputSlots());
                 if (left != null&&left.getAmount()>0 && left.getType() != Material.AIR) {
                     player.sendMessage(ChatColor.RED + "No enough space in output slots.");
+                    sendFeedback(blockMenu.getLocation(), FeedbackType.NO_ENOUGH_SPACE);
                     world.dropItem(blockMenu.getLocation(), left);
                 }
             }
@@ -182,9 +186,10 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
             removeCharge(blockMenu.getLocation(), recipe.getConsumeEnergy());
         }
         player.sendMessage(ChatColor.GREEN + "Successfully crafted.");
+        sendFeedback(blockMenu.getLocation(), FeedbackType.SUCCESS);
         return true;
     }
-
+    @Deprecated
     public boolean shapelessCraft(SuperRecipe recipe, Player player, BlockMenu blockMenu) {
         World world = blockMenu.getLocation().getWorld();
         if (world == null) {
@@ -227,6 +232,7 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
         }
 
         if (!BlockMenuUtil.fits(blockMenu, recipe.getOutput(), getOutputSlots())) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_ENOUGH_SPACE);
             return false;
         }
 
@@ -261,6 +267,7 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
                 if (sfi != null) {
                     if (sfi.isDisabled() || sfi.isDisabledIn(world)) {
                         player.sendMessage(ChatColor.RED + "This item is disabled in this world.");
+                        sendFeedback(blockMenu.getLocation(), FeedbackType.DISABLED_OUTPUT);
                         continue;
                     }
                 }

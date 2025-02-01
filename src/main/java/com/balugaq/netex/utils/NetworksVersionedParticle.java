@@ -1,6 +1,6 @@
 package com.balugaq.netex.utils;
 
-import com.balugaq.netex.api.enums.MCVersion;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import io.github.sefiraat.networks.Networks;
 import lombok.experimental.UtilityClass;
 import org.bukkit.Particle;
@@ -16,10 +16,10 @@ public class NetworksVersionedParticle {
     public static final Particle SMOKE;
 
     static {
-        MCVersion version = Networks.getInstance().getMCVersion();
-        DUST = version.isAtLeast(MCVersion.MC1_20_5) ? Particle.DUST : getKey("REDSTONE");
-        EXPLOSION = version.isAtLeast(MCVersion.MC1_20_5) ? Particle.EXPLOSION : getKey("EXPLOSION_LARGE");
-        SMOKE = version.isAtLeast(MCVersion.MC1_20_5) ? Particle.SMOKE : getKey("SMOKE_NORMAL");
+        MinecraftVersion version = Networks.getInstance().getMCVersion();
+        DUST = version.isAtLeast(MinecraftVersion.MC1_20_5) ? Particle.DUST : getKey("REDSTONE");
+        EXPLOSION = version.isAtLeast(MinecraftVersion.MC1_20_5) ? Particle.EXPLOSION : getKey("EXPLOSION_LARGE");
+        SMOKE = version.isAtLeast(MinecraftVersion.MC1_20_5) ? Particle.SMOKE : getKey("SMOKE_NORMAL");
     }
 
     @Nullable

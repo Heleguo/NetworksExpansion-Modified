@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.balugaq.netex.utils.LineOperationUtil;
@@ -83,6 +84,7 @@ public class TransferGrabber extends NetworkDirectional implements RecipeDisplay
         super.onTick(blockMenu, block);
 
         if (blockMenu == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
         final Location location = blockMenu.getLocation();
@@ -117,11 +119,13 @@ public class TransferGrabber extends NetworkDirectional implements RecipeDisplay
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = this.getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -130,6 +134,7 @@ public class TransferGrabber extends NetworkDirectional implements RecipeDisplay
         LineOperationUtil.doOperation(blockMenu.getLocation(), direction, 1, true, false, (targetMenu) -> {
             LineOperationUtil.grabItem(root, targetMenu, TransportMode.FIRST_STOP, 64);
         });
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     @Override

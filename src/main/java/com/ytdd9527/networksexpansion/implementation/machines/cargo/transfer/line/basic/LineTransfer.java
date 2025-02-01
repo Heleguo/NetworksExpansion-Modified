@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.interfaces.Configurable;
@@ -126,6 +127,7 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
         final Location location = block.getLocation();
 
         if (blockMenu == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
 
@@ -183,11 +185,13 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = this.getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
@@ -201,6 +205,7 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
 
         final NetworkRoot root = definition.getNode().getRoot();
         if (root.getRootPower() < requiredPower) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_POWER);
             return;
         }
 
@@ -218,22 +223,26 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
 //                });
 
         root.removeRootPower(requiredPower);
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     private void tryGrabItem(@Nonnull BlockMenu blockMenu) {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = this.getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
         final NetworkRoot root = definition.getNode().getRoot();
         if (root.getRootPower() < requiredPower) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_POWER);
             return;
         }
 
@@ -250,6 +259,7 @@ public class LineTransfer extends NetworkDirectional implements RecipeDisplayIte
                 });
 
         root.removeRootPower(requiredPower);
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     @Nonnull

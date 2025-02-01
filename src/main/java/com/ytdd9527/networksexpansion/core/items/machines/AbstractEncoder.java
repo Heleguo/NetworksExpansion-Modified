@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.core.items.machines;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -91,6 +92,7 @@ public abstract class AbstractEncoder extends NetworkObject {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -99,6 +101,7 @@ public abstract class AbstractEncoder extends NetworkObject {
 
         if (networkCharge < CHARGE_COST) {
             player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.not_enough_power"));
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_POWER);
             return;
         }
 
@@ -106,12 +109,14 @@ public abstract class AbstractEncoder extends NetworkObject {
 
         if (!isValidBlueprint(blueprint)) {
             player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.invalid_blueprint"));
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_BLUEPRINT);
             return;
         }
 
         SlimefunItem sfi = SlimefunItem.getByItem(blueprint);
         if (sfi != null && sfi.isDisabled()) {
             player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.disabled_blueprint"));
+            sendFeedback(blockMenu.getLocation(), FeedbackType.DISABLED_BLUEPRINT);
             return;
         }
 
@@ -151,6 +156,7 @@ public abstract class AbstractEncoder extends NetworkObject {
             final SlimefunItem sfi2 = SlimefunItem.getByItem(crafted);
             if (sfi2 != null && sfi2.isDisabled()) {
                 player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.disabled_output"));
+                sendFeedback(blockMenu.getLocation(), FeedbackType.DISABLED_OUTPUT);
                 return;
             }
         }
@@ -166,6 +172,7 @@ public abstract class AbstractEncoder extends NetworkObject {
 
         if (crafted == null || crafted.getType() == Material.AIR) {
             player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.invalid_recipe"));
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_RECIPE);
             return;
         }
 
@@ -183,8 +190,10 @@ public abstract class AbstractEncoder extends NetworkObject {
                 j++;
             }
             blockMenu.pushItem(blueprintClone, OUTPUT_SLOT);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.SUCCESS);
         } else {
             player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.output_full"));
+            sendFeedback(blockMenu.getLocation(), FeedbackType.OUTPUT_FULL);
             return;
         }
 

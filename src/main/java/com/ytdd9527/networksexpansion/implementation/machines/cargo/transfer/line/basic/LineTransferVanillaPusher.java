@@ -1,6 +1,7 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic;
 
-import com.balugaq.netex.api.enums.MCVersion;
+import com.balugaq.netex.api.enums.FeedbackType;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -90,6 +91,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         super.onTick(blockMenu, block);
 
         if (blockMenu == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
         final Location location = blockMenu.getLocation();
@@ -125,6 +127,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -135,6 +138,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         final Block block = blockMenu.getBlock();
         final String ownerUUID = StorageCacheUtils.getData(block.getLocation(), OWNER_KEY);
         if (ownerUUID == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_OWNER_FOUND);
             return;
         }
         final UUID uuid = UUID.fromString(ownerUUID);
@@ -143,18 +147,16 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         // dirty fix
         Block targetBlock = block.getRelative(direction);
         for (int d = 0; d <= maxDistance; d++) {
-            if (targetBlock.getType() == Material.AIR) {
-                break;
-            }
-
             final BlockState blockState = targetBlock.getState();
 
             if (!(blockState instanceof InventoryHolder holder)) {
+                sendFeedback(blockMenu.getLocation(), FeedbackType.NO_INVENTORY_FOUND);
                 return;
             }
 
-            if (Networks.getInstance().getMCVersion().isAtLeast(MCVersion.MC1_21)) {
+            if (Networks.getInstance().getMCVersion().isAtLeast(MinecraftVersion.MC1_21)) {
                 if (blockState instanceof CrafterInventory) {
+                    sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ALLOWED_BLOCK);
                     return;
                 }
             }
@@ -171,9 +173,11 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
                 // dirty fix
                 try {
                     if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+                        sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
                         return;
                     }
                 } catch (NullPointerException ex) {
+                    sendFeedback(blockMenu.getLocation(), FeedbackType.ERROR_OCCURRED);
                     return;
                 }
 
@@ -213,6 +217,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
             }
             targetBlock = targetBlock.getRelative(direction);
         }
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     private void handleFurnace(@Nonnull NetworkRoot root, @Nonnull ItemStack template, @Nonnull FurnaceInventory furnace) {

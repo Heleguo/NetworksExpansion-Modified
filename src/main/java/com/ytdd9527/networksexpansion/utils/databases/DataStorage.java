@@ -116,6 +116,7 @@ public class DataStorage {
             }
         }
         Networks.getInstance().getLogger().info(Networks.getLocalizationService().getString("messages.data-saving.saved-drawer"));
+        Networks.getInstance().debug(()->"Task amount: " + Networks.getQueryQueue().getTaskAmount());
     }
 
     public static boolean isContainerLoaded(int id) {

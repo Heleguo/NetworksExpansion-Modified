@@ -1,6 +1,6 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
-import com.balugaq.netex.api.helpers.ItemStackHelper;
+import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
@@ -21,7 +21,6 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
     private final boolean supportsCustomMaxAmount;
     @Getter
     private int limit;
-
     private long amount;
     private final byte[] lock=new byte[0];
 

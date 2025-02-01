@@ -60,7 +60,7 @@ public enum Transformations {
     public Transformation getTransformation(boolean itemDisplay) {
         // In 1.20+ the y axis of item displays are rotated by 180°
         // This corrects the visuals by rotating again
-        if (itemDisplay && Networks.getInstance().getMCVersion().isAtLeast(MCVersion.MC1_20)) {
+        if (itemDisplay && Networks.getInstance().getMCVersion().isAtLeast(MinecraftVersion.MC1_20)) {
             return new Transformation(transformation.getTranslation(),
                     transformation.getLeftRotation(),
                     transformation.getScale(),

@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network.pusher;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.balugaq.netex.utils.TransportUtil;
@@ -26,9 +27,6 @@ import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractNetworkPusher extends NetworkDirectional {
     private static final int NORTH_SLOT = 11;
@@ -57,6 +55,7 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -64,6 +63,7 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
         final BlockMenu targetMenu = StorageCacheUtils.getMenu(blockMenu.getBlock().getRelative(direction).getLocation());
 
         if (targetMenu == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_TARGET_BLOCK);
             return;
         }
         BlockMenuUtil.BlockMenuSnapShot snapShot=BlockMenuUtil.ofSnapShot(targetMenu);

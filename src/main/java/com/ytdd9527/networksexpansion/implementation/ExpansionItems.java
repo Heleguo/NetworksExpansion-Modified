@@ -41,18 +41,26 @@ import com.ytdd9527.networksexpansion.implementation.machines.autocrafters.basic
 import com.ytdd9527.networksexpansion.implementation.machines.autocrafters.basic.AutoSmeltery;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.power.power_outlet.line.LinePowerOutlet;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced.AdvancedLineTransfer;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced.AdvancedLineTransferBestPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced.AdvancedLineTransferGrabber;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced.AdvancedLineTransferMorePusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced.AdvancedLineTransferPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransfer;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransferBestPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransferGrabber;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransferMorePusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransferPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransferVanillaGrabber;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic.LineTransferVanillaPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.advanced.AdvancedTransfer;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.advanced.AdvancedTransferBestPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.advanced.AdvancedTransferGrabber;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.advanced.AdvancedTransferMorePusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.advanced.AdvancedTransferPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic.Transfer;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic.TransferBestPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic.TransferGrabber;
+import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic.TransferMorePusher;
 import com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.point.basic.TransferPusher;
 import com.ytdd9527.networksexpansion.implementation.machines.encoders.AncientAltarEncoder;
 import com.ytdd9527.networksexpansion.implementation.machines.encoders.ArmorForgeEncoder;
@@ -75,6 +83,7 @@ import com.ytdd9527.networksexpansion.implementation.tools.DueMachineConfigurato
 import com.ytdd9527.networksexpansion.implementation.tools.ItemMover;
 import com.ytdd9527.networksexpansion.implementation.tools.NetworksExpansionWorldEditAxe;
 import com.ytdd9527.networksexpansion.implementation.tools.NetworksInfoTool;
+import com.ytdd9527.networksexpansion.implementation.tools.StatusViewer;
 import io.github.sefiraat.networks.slimefun.network.NetworkBridge;
 import io.github.sefiraat.networks.slimefun.network.NetworkPowerNode;
 import io.github.sefiraat.networks.slimefun.network.NetworkQuantumStorage;
@@ -749,6 +758,20 @@ public class ExpansionItems {
             ExpansionRecipes.LINE_TRANSFER_PUSHER
     );
 
+    public static final LineTransferMorePusher LINE_TRANSFER_MORE_PUSHER = new LineTransferMorePusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.LINE_TRANSFER_MORE_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.LINE_TRANSFER_MORE_PUSHER
+    );
+
+    public static final LineTransferBestPusher LINE_TRANSFER_BEST_PUSHER = new LineTransferBestPusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.LINE_TRANSFER_BEST_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.LINE_TRANSFER_BEST_PUSHER
+    );
+
     public static final LineTransferGrabber LINE_TRANSFER_GRABBER = new LineTransferGrabber(
             ExpansionItemsMenus.MENU_CARGO_SYSTEM,
             ExpansionItemStacks.LINE_TRANSFER_GRABBER,
@@ -768,6 +791,21 @@ public class ExpansionItems {
             ExpansionWorkbench.TYPE,
             ExpansionRecipes.LINE_TRANSFER_PLUS_PUSHER
     );
+
+    public static final LineTransferMorePusher LINE_TRANSFER_PLUS_MORE_PUSHER = new LineTransferMorePusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.LINE_TRANSFER_PLUS_MORE_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.LINE_TRANSFER_PLUS_MORE_PUSHER
+    );
+
+    public static final LineTransferBestPusher LINE_TRANSFER_PLUS_BEST_PUSHER = new LineTransferBestPusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.LINE_TRANSFER_PLUS_BEST_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.LINE_TRANSFER_PLUS_BEST_PUSHER
+    );
+
     public static final LineTransferGrabber LINE_TRANSFER_PLUS_GRABBER = new LineTransferGrabber(
             ExpansionItemsMenus.MENU_CARGO_SYSTEM,
             ExpansionItemStacks.LINE_TRANSFER_PLUS_GRABBER,
@@ -802,6 +840,20 @@ public class ExpansionItems {
             ExpansionRecipes.ADVANCED_LINE_TRANSFER_PUSHER
     );
 
+    public static final AdvancedLineTransferMorePusher ADVANCED_LINE_TRANSFER_MORE_PUSHER = new AdvancedLineTransferMorePusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.ADVANCED_LINE_TRANSFER_MORE_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.ADVANCED_LINE_TRANSFER_MORE_PUSHER
+    );
+
+    public static final AdvancedLineTransferBestPusher ADVANCED_LINE_TRANSFER_BEST_PUSHER = new AdvancedLineTransferBestPusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.ADVANCED_LINE_TRANSFER_BEST_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.ADVANCED_LINE_TRANSFER_BEST_PUSHER
+    );
+
     public static final AdvancedLineTransferGrabber ADVANCED_LINE_TRANSFER_GRABBER = new AdvancedLineTransferGrabber(
             ExpansionItemsMenus.MENU_CARGO_SYSTEM,
             ExpansionItemStacks.ADVANCED_LINE_TRANSFER_GRABBER,
@@ -820,6 +872,20 @@ public class ExpansionItems {
             ExpansionItemStacks.ADVANCED_LINE_TRANSFER_PLUS_PUSHER,
             ExpansionWorkbench.TYPE,
             ExpansionRecipes.ADVANCED_LINE_TRANSFER_PLUS_PUSHER
+    );
+
+    public static final AdvancedLineTransferMorePusher ADVANCED_LINE_TRANSFER_PLUS_MORE_PUSHER = new AdvancedLineTransferMorePusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.ADVANCED_LINE_TRANSFER_PLUS_MORE_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.ADVANCED_LINE_TRANSFER_PLUS_MORE_PUSHER
+    );
+
+    public static final AdvancedLineTransferBestPusher ADVANCED_LINE_TRANSFER_PLUS_BEST_PUSHER = new AdvancedLineTransferBestPusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.ADVANCED_LINE_TRANSFER_PLUS_BEST_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.ADVANCED_LINE_TRANSFER_PLUS_BEST_PUSHER
     );
     public static final AdvancedLineTransferGrabber ADVANCED_LINE_TRANSFER_PLUS_GRABBER = new AdvancedLineTransferGrabber(
             ExpansionItemsMenus.MENU_CARGO_SYSTEM,
@@ -841,6 +907,22 @@ public class ExpansionItems {
             ExpansionRecipes.TRANSFER_PUSHER
     );
 
+    public static final TransferMorePusher TRANSFER_MORE_PUSHER = new TransferMorePusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.TRANSFER_MORE_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.TRANSFER_MORE_PUSHER
+    );
+
+    public static final TransferBestPusher TRANSFER_BEST_PUSHER = new TransferBestPusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.TRANSFER_BEST_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.TRANSFER_BEST_PUSHER
+    );
+
+
+
     public static final TransferGrabber TRANSFER_GRABBER = new TransferGrabber(
             ExpansionItemsMenus.MENU_CARGO_SYSTEM,
             ExpansionItemStacks.TRANSFER_GRABBER,
@@ -860,6 +942,20 @@ public class ExpansionItems {
             ExpansionItemStacks.ADVANCED_TRANSFER_PUSHER,
             ExpansionWorkbench.TYPE,
             ExpansionRecipes.ADVANCED_TRANSFER_PUSHER
+    );
+
+    public static final AdvancedTransferMorePusher ADVANCED_TRANSFER_MORE_PUSHER = new AdvancedTransferMorePusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.ADVANCED_TRANSFER_MORE_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.ADVANCED_TRANSFER_MORE_PUSHER
+    );
+
+    public static final AdvancedTransferBestPusher ADVANCED_TRANSFER_BEST_PUSHER = new AdvancedTransferBestPusher(
+            ExpansionItemsMenus.MENU_CARGO_SYSTEM,
+            ExpansionItemStacks.ADVANCED_TRANSFER_BEST_PUSHER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.ADVANCED_TRANSFER_BEST_PUSHER
     );
 
     public static final AdvancedTransferGrabber ADVANCED_TRANSFER_GRABBER = new AdvancedTransferGrabber(
@@ -1249,16 +1345,6 @@ public class ExpansionItems {
             ExpansionItemStacks.AUTHOR_TINALNESS
     );
 
-    public static final SpecialSlimefunItem NETWORKS_EXPANSION_SURVIVAL_GUIDE = new NetworksExpansionGuide(
-            ExpansionItemsMenus.MENU_ITEMS,
-            ExpansionItemStacks.NETWORKS_EXPANSION_SURVIVAL_GUIDE
-    );
-
-    public static final SpecialSlimefunItem NETWORKS_EXPANSION_CHEAT_GUIDE = new NetworksExpansionGuide(
-            ExpansionItemsMenus.MENU_ITEMS,
-            ExpansionItemStacks.NTW_EXPANSION_CREATIVE_GUIDE
-    );
-
     public static final DueMachineConfigurator DUE_MACHINE_CONFIGURATOR = new DueMachineConfigurator(
             ExpansionItemsMenus.MENU_ITEMS,
             ExpansionItemStacks.DUE_MACHINE_CONFIGURATOR,
@@ -1443,10 +1529,32 @@ public class ExpansionItems {
             RecipeType.NULL,
             ExpansionRecipes.NULL
     );
+
+    public static final UnusableSlimefunItem NTW_EXPANSION_ANNOUNCE_9 = new UnusableSlimefunItem(
+            ExpansionItemsMenus.MENU_TROPHY,
+            ExpansionItemStacks.NTW_EXPANSION_ANNOUNCE_9,
+            RecipeType.NULL,
+            ExpansionRecipes.NULL
+    );
+
+    public static final UnusableSlimefunItem NTW_EXPANSION_ANNOUNCE_10 = new UnusableSlimefunItem(
+            ExpansionItemsMenus.MENU_TROPHY,
+            ExpansionItemStacks.NTW_EXPANSION_ANNOUNCE_10,
+            RecipeType.NULL,
+            ExpansionRecipes.NULL
+    );
+
     public static final NetworkCraftingGridNewStyle NETWORK_CRAFTING_GRID_NEW_STYLE = new NetworkCraftingGridNewStyle(
             ExpansionItemsMenus.MENU_FUNCTIONAL_MACHINE,
             ExpansionItemStacks.NETWORK_CRAFTING_GRID_NEW_STYLE,
             ExpansionWorkbench.TYPE,
             ExpansionRecipes.NETWORK_CRAFTING_GRID_NEW_STYLE
+    );
+
+    public static final StatusViewer STATUS_VIEWER = new StatusViewer(
+            ExpansionItemsMenus.MENU_ITEMS,
+            ExpansionItemStacks.STATUS_VIEWER,
+            ExpansionWorkbench.TYPE,
+            ExpansionRecipes.STATUS_VIEWER
     );
 }

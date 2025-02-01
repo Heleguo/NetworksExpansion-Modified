@@ -27,7 +27,6 @@ public class ItemContainer extends ItemStackCache implements OptionalSfItemCache
         //this.sample = getItemStack();
         //this.wrapper = ItemStackWrapper.wrap(sample);
         this.amount = amount;
-
     }
 
     public ItemStack getSample() {

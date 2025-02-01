@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network.grid;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.helpers.ItemStackHelper;
 import com.github.houbb.pinyin.constant.enums.PinyinStyleEnum;
@@ -47,7 +48,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @SuppressWarnings("deprecation")
-public abstract class AbstractGrid extends NetworkObject  {
+public abstract class AbstractGrid extends NetworkObject {
 
     public static final Comparator<Map.Entry<ItemStack, Long>> ALPHABETICAL_SORT = Comparator.comparing(
             itemStackIntegerEntry -> {
@@ -151,6 +152,7 @@ public abstract class AbstractGrid extends NetworkObject  {
     protected void updateDisplay(@Nonnull BlockMenu blockMenu) {
         // No viewer - lets not bother updating
         if (!blockMenu.hasViewer()) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.AFK);
             return;
         }
 
@@ -159,6 +161,7 @@ public abstract class AbstractGrid extends NetworkObject  {
         // No node located, weird
         if (definition == null || definition.getNode() == null) {
             clearDisplay(blockMenu);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -215,9 +218,13 @@ public abstract class AbstractGrid extends NetworkObject  {
                 });
             } else {
                 blockMenu.replaceExistingItem(getDisplaySlots()[i], Icon.BLANK_SLOT_STACK);
-                blockMenu.addMenuClickHandler(getDisplaySlots()[i], (p, slot, item, action) -> false);
+                blockMenu.addMenuClickHandler(getDisplaySlots()[i], (p, slot, item, action) ->{
+                    receiveItem(p, action, blockMenu);
+                    return false;
+                });
             }
         }
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     protected void clearDisplay(BlockMenu blockMenu) {
@@ -419,5 +426,19 @@ public abstract class AbstractGrid extends NetworkObject  {
 
     protected ItemStack getFilterStack() {
         return Icon.FILTER_STACK;
+    }
+    public void receiveItem(Player player, ClickAction action, BlockMenu blockMenu) {
+        NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
+        if (definition == null || definition.getNode() == null) {
+            clearDisplay(blockMenu);
+            blockMenu.close();
+            Networks.getInstance().getLogger().warning(String.format(Networks.getLocalizationService().getString("messages.unsupported-operation.grid.may_duping"), player.getName(), blockMenu.getLocation()));
+            return;
+        }
+
+        ItemStack cursor = player.getItemOnCursor();
+        if (cursor != null && cursor.getType() != Material.AIR) {
+            definition.getNode().getRoot().addItemStack(cursor);
+        }
     }
 }

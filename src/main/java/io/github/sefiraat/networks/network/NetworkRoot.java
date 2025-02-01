@@ -2,6 +2,8 @@ package io.github.sefiraat.networks.network;
 
 import com.balugaq.netex.api.data.ItemContainer;
 import com.balugaq.netex.api.data.StorageUnitData;
+import com.balugaq.netex.api.enums.StorageType;
+import com.balugaq.netex.api.events.NetworkRootLocateStorageEvent;
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.balugaq.netex.utils.NetworksVersionedParticle;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -30,6 +32,7 @@ import lombok.Getter;
 import lombok.Setter;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -117,16 +120,30 @@ public class NetworkRoot extends NetworkNode {
     private final Set<Location> outputOnlyMonitors = ConcurrentHashMap.newKeySet();
     @Getter
     private Location controller = null;
+    @Deprecated
     private boolean progressing = false;
     @Getter
     private int maxNodes;
+    @Getter
     private boolean isOverburdened = false;
-    private Map< Material,Set<BarrelIdentity>> barrels = null;
-    private Map< Material,Set<BarrelIdentity>> inputAbleBarrels = null;
-    private Map< Material,Set<BarrelIdentity>> outputAbleBarrels = null;
+    @Deprecated
+    @Getter
+    private Set<BarrelIdentity> barrels = null;
+    @Getter
+    private Set<BarrelIdentity> inputAbleBarrels = null;
+    @Getter
+    private Set<BarrelIdentity> outputAbleBarrels = null;
 
+    private Map< Material,Set<BarrelIdentity>> material2Barrels = null;
+    private Map< Material,Set<BarrelIdentity>> material2InputAbleBarrels = null;
+    private Map< Material,Set<BarrelIdentity>> material2OutputAbleBarrels = null;
+
+    @Deprecated
+    @Getter
     private Map<StorageUnitData, Location> cargoStorageUnitDatas = null;
+    @Getter
     private Map<StorageUnitData, Location> inputAbleCargoStorageUnitDatas = null;
+    @Getter
     private Map<StorageUnitData, Location> outputAbleCargoStorageUnitDatas = null;
     @Getter
     @Setter
@@ -138,7 +155,7 @@ public class NetworkRoot extends NetworkNode {
 
 
     @Getter
-    long rootPower = 0;
+    private long rootPower = 0;
 
     @Getter
     private boolean displayParticles = false;
@@ -161,6 +178,7 @@ public class NetworkRoot extends NetworkNode {
         super(location, type);
         this.maxNodes = maxNodes;
         this.root = this;
+
         registerNode(location, type);
         locUniqueId = rootCounters.computeIfAbsent(location, k -> new AtomicInteger()).incrementAndGet();
     }
@@ -259,8 +277,6 @@ public class NetworkRoot extends NetworkNode {
         this.isOverburdened = overburdened;
     }
 
-    //public Map<ItemStack,Long>
-
     @Nonnull
     public Map<ItemStack, Long> getAllNetworkItemsLongType() {
         final Map<ItemStack, Long> itemStacks = new HashMap<>();
@@ -339,6 +355,7 @@ public class NetworkRoot extends NetworkNode {
         }
         return itemStacks;
     }
+
     @Deprecated
     public Map<ItemStack, Integer> getAllNetworkItems() {
         final Map<ItemStack, Long> itemStacks = getAllNetworkItemsLongType();
@@ -357,14 +374,15 @@ public class NetworkRoot extends NetworkNode {
 
     }
 
+    @Deprecated
     @Nonnull
     protected synchronized Map<Material,Set<BarrelIdentity>> getBarrels() {
         if(!ready){
             handleAsync();
             return Map.of();
         }
-        if (this.barrels != null) {
-            return this.barrels;
+        if (this.material2Barrels != null) {
+            return this.material2Barrels;
         }
 
         final Set<Location> addedLocations = ConcurrentHashMap.newKeySet();
@@ -386,7 +404,9 @@ public class NetworkRoot extends NetworkNode {
             }
 
             final SlimefunItem slimefunItem = StorageCacheUtils.getSfItem(testLocation);
-            if (Networks.getSupportedPluginManager().isInfinityExpansion() && slimefunItem instanceof StorageUnit unit) {
+
+            if (Networks.getSupportedPluginManager()
+                    .isInfinityExpansion() && slimefunItem instanceof StorageUnit unit) {
                 final BlockMenu menu = StorageCacheUtils.getMenu(testLocation);
                 if (menu == null) {
                     continue;
@@ -396,8 +416,7 @@ public class NetworkRoot extends NetworkNode {
                     barrelSet.computeIfAbsent(infinityBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(infinityBarrel);
                 }
                 continue;
-            }
-            if (Networks.getSupportedPluginManager().isFluffyMachines() && slimefunItem instanceof Barrel barrel) {
+            } else if (Networks.getSupportedPluginManager().isFluffyMachines() && slimefunItem instanceof Barrel barrel) {
                 final BlockMenu menu = StorageCacheUtils.getMenu(testLocation);
                 if (menu == null) {
                     continue;
@@ -407,8 +426,7 @@ public class NetworkRoot extends NetworkNode {
                     barrelSet.computeIfAbsent(fluffyBarrel.getItemType(),(i)->ConcurrentHashMap.newKeySet()).add(fluffyBarrel);
                 }
                 continue;
-            }
-            if (slimefunItem instanceof NetworkQuantumStorage) {
+            } else if (slimefunItem instanceof NetworkQuantumStorage) {
                 final BlockMenu menu = StorageCacheUtils.getMenu(testLocation);
                 if (menu == null) {
                     continue;
@@ -420,10 +438,16 @@ public class NetworkRoot extends NetworkNode {
             }
         }
 
-        this.barrels = barrelSet;
+        this.material2Barrels = barrelSet;
+        Set<BarrelIdentity> barrels = ConcurrentHashMap.newKeySet();
+        barrelSet.forEach((key,value)->barrels.addAll(value));
+        this.barrels = barrels;
+        NetworkRootLocateStorageEvent event = new NetworkRootLocateStorageEvent(this, StorageType.BARREL, true, true, Bukkit.isPrimaryThread());
+        Bukkit.getPluginManager().callEvent(event);
         return barrelSet;
     }
 
+    @Deprecated
     @Nonnull
     public synchronized Map<StorageUnitData, Location> getCargoStorageUnitDatas() {
         if(!ready){
@@ -463,6 +487,8 @@ public class NetworkRoot extends NetworkNode {
         }
 
         this.cargoStorageUnitDatas = dataSet;
+        NetworkRootLocateStorageEvent event = new NetworkRootLocateStorageEvent(this, StorageType.DRAWER, true, true, Bukkit.isPrimaryThread());
+        Bukkit.getPluginManager().callEvent(event);
         return dataSet;
     }
 
@@ -1208,8 +1234,8 @@ public class NetworkRoot extends NetworkNode {
             handleAsync();
             return Map.of();
         }
-        if (this.inputAbleBarrels != null) {
-            return this.inputAbleBarrels;
+        if (this.material2InputAbleBarrels != null) {
+            return this.material2InputAbleBarrels;
         }
 
         final Set<Location> addedLocations = ConcurrentHashMap.newKeySet();
@@ -1269,7 +1295,12 @@ public class NetworkRoot extends NetworkNode {
             }
         }
 
-        this.inputAbleBarrels = barrelSet;
+        this.material2InputAbleBarrels = barrelSet;
+        Set<BarrelIdentity> barrels = ConcurrentHashMap.newKeySet();
+        barrelSet.forEach((key,value)->barrels.addAll(value));
+        this.inputAbleBarrels = barrels;
+        NetworkRootLocateStorageEvent event = new NetworkRootLocateStorageEvent(this, StorageType.BARREL, true, false, Bukkit.isPrimaryThread());
+        Bukkit.getPluginManager().callEvent(event);
         return barrelSet;
     }
 
@@ -1279,8 +1310,8 @@ public class NetworkRoot extends NetworkNode {
             handleAsync();
             return Map.of();
         }
-        if (this.outputAbleBarrels != null) {
-            return this.outputAbleBarrels;
+        if (this.material2OutputAbleBarrels != null) {
+            return this.material2OutputAbleBarrels;
         }
       //  Networks.getInstance().getLogger().info("Initialize "+nodePosition+" root output barrels uid "+locUniqueId+ " status "+ready);
 //        Preconditions.checkArgument(ready);
@@ -1342,8 +1373,13 @@ public class NetworkRoot extends NetworkNode {
                 }
             }
         }
-//        Networks.getInstance().getLogger().info("Initialize "+nodePosition+" output barrels finish uid "+locUniqueId+" size "+barrelSet.size());
-        this.outputAbleBarrels = barrelSet;
+
+        this.material2OutputAbleBarrels = barrelSet;
+        Set<BarrelIdentity> barrels = ConcurrentHashMap.newKeySet();
+        barrelSet.forEach((key,value)->barrels.addAll(value));
+        this.outputAbleBarrels = barrels;
+        NetworkRootLocateStorageEvent event = new NetworkRootLocateStorageEvent(this, StorageType.BARREL, false, true, Bukkit.isPrimaryThread());
+        Bukkit.getPluginManager().callEvent(event);
         return barrelSet;
     }
 
@@ -1389,6 +1425,8 @@ public class NetworkRoot extends NetworkNode {
         }
 
         this.inputAbleCargoStorageUnitDatas = dataSet;
+        NetworkRootLocateStorageEvent event = new NetworkRootLocateStorageEvent(this, StorageType.DRAWER, true, false, Bukkit.isPrimaryThread());
+        Bukkit.getPluginManager().callEvent(event);
         return dataSet;
     }
     public void handleAsync(){
@@ -1436,6 +1474,8 @@ public class NetworkRoot extends NetworkNode {
         }
 
         this.outputAbleCargoStorageUnitDatas = dataSet;
+        NetworkRootLocateStorageEvent event = new NetworkRootLocateStorageEvent(this, StorageType.DRAWER, false, true, Bukkit.isPrimaryThread());
+        Bukkit.getPluginManager().callEvent(event);
         return dataSet;
     }
     public void resetRootItems(){

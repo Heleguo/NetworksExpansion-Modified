@@ -3,7 +3,7 @@ package com.balugaq.netex.api.enums;
 import lombok.Getter;
 
 @Getter
-public enum MCVersion {
+public enum MinecraftVersion {
     MC1_20(20, 0),
     MC1_20_1(20, 1),
     MC1_20_2(20, 2),
@@ -18,13 +18,13 @@ public enum MCVersion {
     private final int major;
     private final int minor;
 
-    MCVersion(int major, int minor) {
+    MinecraftVersion(int major, int minor) {
         this.major = major;
         this.minor = minor;
     }
 
-    public static MCVersion of(int major, int minor) {
-        for (MCVersion version : values()) {
+    public static MinecraftVersion of(int major, int minor) {
+        for (MinecraftVersion version : values()) {
             if (version.major == major && version.minor == minor) {
                 return version;
             }
@@ -32,7 +32,7 @@ public enum MCVersion {
         return UNKNOWN;
     }
 
-    public boolean isAtLeast(MCVersion version) {
+    public boolean isAtLeast(MinecraftVersion version) {
         return this.major > version.major || (this.major == version.major && this.minor >= version.minor);
     }
 }

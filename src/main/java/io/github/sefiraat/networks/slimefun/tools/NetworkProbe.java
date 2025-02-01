@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.tools;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import com.ytdd9527.networksexpansion.implementation.ExpansionItemStacks;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.NetworkRoot;
@@ -24,7 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-public class NetworkProbe extends SlimefunItem implements CanCooldown {
+public class NetworkProbe extends SpecialSlimefunItem implements CanCooldown {
 
     private static final MessageFormat MESSAGE_FORMAT = new MessageFormat("{0}{1}: {2}{3}", Locale.ROOT);
 

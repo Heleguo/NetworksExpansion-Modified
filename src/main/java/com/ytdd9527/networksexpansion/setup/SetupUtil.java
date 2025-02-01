@@ -18,8 +18,7 @@ public class SetupUtil {
                 ExpansionItems.INFO_TOOL.registerThis(),
                 ExpansionItems.DUE_MACHINE_CONFIGURATOR.registerThis(),
                 ExpansionItems.ITEM_MOVER.registerThis(),
-                ExpansionItems.NETWORKS_EXPANSION_SURVIVAL_GUIDE.registerThis(),
-                ExpansionItems.NETWORKS_EXPANSION_CHEAT_GUIDE.registerThis()
+                ExpansionItems.STATUS_VIEWER.registerThis()
         );
         ExpansionItemsMenus.SUB_MENU_BLUEPRINT.addTo(
                 ExpansionItems.MAGIC_WORKBENCH_BLUEPRINT.registerThis(),

@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -82,6 +83,7 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         super.onTick(blockMenu, block);
 
         if (blockMenu == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
         final Location location = blockMenu.getLocation();
@@ -116,6 +118,7 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -126,6 +129,7 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         final Block block = blockMenu.getBlock();
         final String ownerUUID = StorageCacheUtils.getData(block.getLocation(), OWNER_KEY);
         if (ownerUUID == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_OWNER_FOUND);
             return;
         }
         final UUID uuid = UUID.fromString(ownerUUID);
@@ -136,15 +140,18 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         for (int d = 0; d <= maxDistance; d++) {
             try {
                 if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+                    sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
                     break;
                 }
             } catch (NullPointerException ex) {
+                sendFeedback(blockMenu.getLocation(), FeedbackType.ERROR_OCCURRED);
                 break;
             }
 
             final BlockState blockState = targetBlock.getState();
 
             if (!(blockState instanceof InventoryHolder holder)) {
+                sendFeedback(blockMenu.getLocation(), FeedbackType.NO_INVENTORY_FOUND);
                 return;
             }
 
@@ -152,6 +159,7 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
             boolean isChest = wildChests && WildChestsAPI.getChest(targetBlock.getLocation()) != null;
 
             if (wildChests && isChest) {
+                sendFeedback(blockMenu.getLocation(), FeedbackType.PROTECTED_BLOCK);
                 continue;
             }
 
@@ -186,6 +194,7 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
             }
             targetBlock = targetBlock.getRelative(direction);
         }
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     private boolean grabItem(@Nonnull NetworkRoot root, @Nonnull BlockMenu blockMenu, @Nullable ItemStack stack) {

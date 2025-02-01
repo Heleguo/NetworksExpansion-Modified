@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.interfaces.Configurable;
@@ -111,25 +112,23 @@ public class AdvancedLineTransferPusher extends AdvancedDirectional implements R
         }
     }
 
-    private void performPushItemOperation(@Nullable BlockMenu blockMenu) {
-        if (blockMenu != null) {
-            tryPushItem(blockMenu);
-        }
-    }
-
     @Override
     protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
         super.onTick(blockMenu, block);
+        if (blockMenu == null) {
+            sendFeedback(block.getLocation(), FeedbackType.INVALID_BLOCK);
+            return;
+        }
         final Location location = block.getLocation();
         if (pushItemTick != 1) {
             int tickCounter = getTickCounter(location);
             tickCounter = (tickCounter + 1) % pushItemTick;
             if (tickCounter == 0) {
-                performPushItemOperation(blockMenu);
+                tryPushItem(blockMenu);
             }
             updateTickCounter(location, tickCounter);
         } else {
-            performPushItemOperation(blockMenu);
+            tryPushItem(blockMenu);
         }
     }
 
@@ -151,11 +150,13 @@ public class AdvancedLineTransferPusher extends AdvancedDirectional implements R
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = this.getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 

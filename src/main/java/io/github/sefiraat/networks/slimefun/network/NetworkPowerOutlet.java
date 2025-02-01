@@ -1,6 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
-import com.balugaq.netex.utils.LineOperationUtil;
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.utils.TransportUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -39,12 +39,14 @@ public class NetworkPowerOutlet extends NetworkDirectional {
     public void onTick(@Nullable BlockMenu menu, @Nonnull Block b) {
         super.onTick(menu, b);
         if (menu == null) {
+            sendFeedback(b.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
 
         final NodeDefinition definition = NetworkStorage.getNode(b.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(menu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 

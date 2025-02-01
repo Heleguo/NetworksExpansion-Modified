@@ -59,12 +59,28 @@ public class NetworkCard extends SlimefunItem implements DistinctiveItem {
             final SlimefunItem cardItem = SlimefunItem.getByItem(card);
             if (cardItem instanceof NetworkCard networkCard) {
                 final ItemMeta cardMeta = card.getItemMeta();
-                final CardInstance cardInstance = DataTypeMethods.getCustom(
+                CardInstance cardInstance = DataTypeMethods.getCustom(
                         cardMeta,
                         Keys.CARD_INSTANCE,
-                        PersistentCardInstanceType.TYPE,
-                        new CardInstance(null, 0, networkCard.getSize())
+                        PersistentCardInstanceType.TYPE
                 );
+
+                if (cardInstance == null) {
+                    cardInstance = DataTypeMethods.getCustom(
+                            cardMeta,
+                            Keys.CARD_INSTANCE2,
+                            PersistentCardInstanceType.TYPE
+                    );
+                }
+
+                if (cardInstance == null) {
+                    cardInstance = DataTypeMethods.getCustom(
+                            cardMeta,
+                            Keys.CARD_INSTANCE3,
+                            PersistentCardInstanceType.TYPE,
+                            new CardInstance(null, 0, networkCard.getSize())
+                    );
+                }
 
                 if (cardInstance.getAmount() > 0) {
                     e.getPlayer().sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.memory_card.not_empty"));

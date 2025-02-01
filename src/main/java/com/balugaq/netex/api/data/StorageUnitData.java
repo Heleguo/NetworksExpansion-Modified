@@ -20,9 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.IntStream;
+
 
 @ToString
 public class StorageUnitData {
@@ -231,7 +229,7 @@ public class StorageUnitData {
 
     public void removeItem(int itemId) {
         synchronized (mapLock){
-            storedItems.remove(itemId);
+            if (storedItems.remove(itemId) != null)
             DataStorage.deleteStoredItem(id, itemId);
         }
     }

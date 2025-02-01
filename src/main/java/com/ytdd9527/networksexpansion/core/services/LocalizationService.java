@@ -382,6 +382,7 @@ public class LocalizationService {
         return getIcon("mechanism." + key, Material.BOOK);
     }
 
+    @Deprecated
     @Nonnull
     @ParametersAreNonnullByDefault
     public String getMCMessage(String key) {

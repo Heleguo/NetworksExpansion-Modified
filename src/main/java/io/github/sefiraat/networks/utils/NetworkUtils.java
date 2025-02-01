@@ -36,8 +36,23 @@ public class NetworkUtils {
 
     public static void applyConfig(@Nonnull NetworkDirectional directional, @Nonnull ItemStack itemStack, @Nonnull BlockMenu blockMenu, @Nonnull Player player) {
         final ItemMeta itemMeta = itemStack.getItemMeta();
-        final ItemStack[] templateStacks = DataTypeMethods.getCustom(itemMeta, Keys.ITEM, DataType.ITEM_STACK_ARRAY);
-        final String string = DataTypeMethods.getCustom(itemMeta, Keys.FACE, DataType.STRING);
+        ItemStack[] templateStacks = DataTypeMethods.getCustom(itemMeta, Keys.ITEM, DataType.ITEM_STACK_ARRAY);
+        if (templateStacks == null) {
+            templateStacks = DataTypeMethods.getCustom(itemMeta, Keys.ITEM2, DataType.ITEM_STACK_ARRAY);
+        }
+
+        if (templateStacks == null) {
+            templateStacks = DataTypeMethods.getCustom(itemMeta, Keys.ITEM3, DataType.ITEM_STACK_ARRAY);
+        }
+
+        String string = DataTypeMethods.getCustom(itemMeta, Keys.FACE, DataType.STRING);
+        if (string == null) {
+            string = DataTypeMethods.getCustom(itemMeta, Keys.FACE2, DataType.STRING);
+        }
+
+        if (string == null) {
+            string = DataTypeMethods.getCustom(itemMeta, Keys.FACE3, DataType.STRING);
+        }
 
         if (string == null) {
             player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.configurator.facing_not_found"));

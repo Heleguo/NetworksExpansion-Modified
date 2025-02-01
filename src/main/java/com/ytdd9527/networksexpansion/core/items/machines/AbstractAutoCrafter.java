@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.core.items.machines;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.Algorithms.DataContainer;
 import com.balugaq.netex.utils.Algorithms.MenuWithData;
@@ -29,6 +30,7 @@ import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -94,9 +96,11 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
-            //sendDebugMessage(blockMenu.getLocation(), ()->"No network found");
+            sendDebugMessage(blockMenu.getLocation(), ()->"No network found");
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
+
         final NetworkRoot root = definition.getNode().getRoot();
 
         CompletableFuture<Void> future=CompletableFuture.runAsync(() -> {

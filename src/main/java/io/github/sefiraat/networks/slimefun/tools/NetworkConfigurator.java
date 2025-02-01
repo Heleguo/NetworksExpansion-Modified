@@ -3,6 +3,7 @@ package io.github.sefiraat.networks.slimefun.tools;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import com.ytdd9527.networksexpansion.core.items.machines.AdvancedDirectional;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.slimefun.network.NetworkDirectional;
@@ -29,7 +30,7 @@ import javax.annotation.Nonnull;
 import java.util.Optional;
 
 @SuppressWarnings("deprecation")
-public class NetworkConfigurator extends SlimefunItem {
+public class NetworkConfigurator extends SpecialSlimefunItem {
 
     public NetworkConfigurator(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe) {
         super(itemGroup, item, recipeType, recipe);

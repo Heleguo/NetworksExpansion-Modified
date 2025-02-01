@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.network;
 
-import com.balugaq.netex.api.enums.MCVersion;
+import com.balugaq.netex.api.enums.FeedbackType;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -69,12 +70,14 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         final ItemStack itemInSlot = blockMenu.getItemInSlot(OUTPUT_SLOT);
 
         if (itemInSlot != null && itemInSlot.getType() != Material.AIR) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.ALREADY_HAS_ITEM);
             return;
         }
 
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -84,6 +87,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         // Fix for early vanilla pusher release
         final String ownerUUID = StorageCacheUtils.getData(block.getLocation(), OWNER_KEY);
         if (ownerUUID == null) {
+            sendFeedback(block.getLocation(), FeedbackType.NO_OWNER_FOUND);
             return;
         }
         final UUID uuid = UUID.fromString(ownerUUID);
@@ -92,15 +96,18 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         // dirty fix
         try {
             if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+                sendFeedback(block.getLocation(), FeedbackType.NO_PERMISSION);
                 return;
             }
         } catch (NullPointerException ex) {
+            sendFeedback(block.getLocation(), FeedbackType.ERROR_OCCURRED);
             return;
         }
 
         final BlockState blockState = targetBlock.getState();
 
         if (!(blockState instanceof InventoryHolder holder)) {
+            sendFeedback(block.getLocation(), FeedbackType.NO_INVENTORY_FOUND);
             return;
         }
 
@@ -112,6 +119,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
 
         if (wildChests && isChest) {
             sendDebugMessage(block.getLocation(), ()->Networks.getLocalizationService().getString("messages.debug.wildchests_test_failed"));
+            sendFeedback(block.getLocation(), FeedbackType.PROTECTED_BLOCK);
             return;
         }
 
@@ -132,7 +140,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
                 final ItemStack stack = brewerInventory.getContents()[i];
                 if (stack != null && stack.getType() == Material.POTION) {
                     final PotionMeta potionMeta = (PotionMeta) stack.getItemMeta();
-                    if (Networks.getInstance().getMCVersion().isAtLeast(MCVersion.MC1_20_5)) {
+                    if (Networks.getInstance().getMCVersion().isAtLeast(MinecraftVersion.MC1_20_5)) {
                         if (potionMeta.getBasePotionType() == PotionType.WATER) {
                             grabItem(blockMenu, stack);
                         }
@@ -157,6 +165,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         if (stack != null && stack.getType() != Material.AIR) {
             blockMenu.replaceExistingItem(OUTPUT_SLOT, stack.clone());
             stack.setAmount(0);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
             return true;
         } else {
             return false;

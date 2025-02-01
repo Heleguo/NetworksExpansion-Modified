@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.slimefun.network;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -40,6 +41,7 @@ public class NetworkGrabber extends NetworkDirectional {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -47,6 +49,7 @@ public class NetworkGrabber extends NetworkDirectional {
         final BlockMenu targetMenu = StorageCacheUtils.getMenu(blockMenu.getBlock().getRelative(direction).getLocation());
 
         if (targetMenu == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_TARGET_BLOCK);
             return;
         }
 
@@ -63,6 +66,7 @@ public class NetworkGrabber extends NetworkDirectional {
                         definition.getNode().getRoot().addItemStack(input);
                     }
                 });
+                sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
                 if (definition.getNode().getRoot().isDisplayParticles() && itemStack.getAmount() < before) {
                     showParticle(blockMenu.getLocation(), direction);
                 }

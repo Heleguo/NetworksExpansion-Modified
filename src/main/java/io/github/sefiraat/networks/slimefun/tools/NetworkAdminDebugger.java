@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.tools;
 
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.slimefun.network.AdminDebuggable;
 import io.github.thebusybiscuit.slimefun4.api.events.PlayerRightClickEvent;
@@ -16,7 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Optional;
 
 @SuppressWarnings("deprecation")
-public class NetworkAdminDebugger extends SlimefunItem {
+public class NetworkAdminDebugger extends SpecialSlimefunItem {
 
     public NetworkAdminDebugger(ItemGroup itemGroup,
                                 SlimefunItemStack item,

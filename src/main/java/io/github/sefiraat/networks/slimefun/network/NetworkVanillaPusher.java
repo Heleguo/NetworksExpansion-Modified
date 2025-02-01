@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.network;
 
-import com.balugaq.netex.api.enums.MCVersion;
+import com.balugaq.netex.api.enums.FeedbackType;
+import com.balugaq.netex.api.enums.MinecraftVersion;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -68,6 +69,7 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
@@ -77,6 +79,7 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         // Fix for early vanilla pusher release
         final String ownerUUID = StorageCacheUtils.getData(block.getLocation(), OWNER_KEY);
         if (ownerUUID == null) {
+            sendFeedback(block.getLocation(), FeedbackType.NO_OWNER_FOUND);
             return;
         }
         final UUID uuid = UUID.fromString(ownerUUID);
@@ -85,20 +88,24 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         // dirty fix
         try {
             if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+                sendFeedback(block.getLocation(), FeedbackType.NO_PERMISSION);
                 return;
             }
         } catch (NullPointerException ex) {
+            sendFeedback(block.getLocation(), FeedbackType.ERROR_OCCURRED);
             return;
         }
 
         final BlockState blockState = targetBlock.getState();
 
         if (!(blockState instanceof InventoryHolder holder)) {
+            sendFeedback(block.getLocation(), FeedbackType.NO_INVENTORY_FOUND);
             return;
         }
 
-        if (Networks.getInstance().getMCVersion().isAtLeast(MCVersion.MC1_21)) {
+        if (Networks.getInstance().getMCVersion().isAtLeast(MinecraftVersion.MC1_21)) {
             if (blockState instanceof CrafterInventory) {
+                sendFeedback(block.getLocation(), FeedbackType.NOT_ALLOWED_BLOCK);
                 return;
             }
         }
@@ -107,6 +114,7 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         final ItemStack stack = blockMenu.getItemInSlot(INPUT_SLOT);
 
         if (stack == null || stack.getType() == Material.AIR) {
+            sendFeedback(block.getLocation(), FeedbackType.NO_ITEM_FOUND);
             return;
         }
 
@@ -117,9 +125,9 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         sendDebugMessage(block.getLocation(), ()->String.format(Networks.getLocalizationService().getString("messages.debug.ischest"), isChest));
 
         if (inventory instanceof FurnaceInventory furnace) {
-            handleFurnace(stack, furnace);
+            handleFurnace(blockMenu, stack, furnace);
         } else if (inventory instanceof BrewerInventory brewer) {
-            handleBrewingStand(stack, brewer);
+            handleBrewingStand(blockMenu, stack, brewer);
         } else if (wildChests && isChest) {
             sendDebugMessage(block.getLocation(),()-> Networks.getLocalizationService().getString("messages.debug.wildchests_test_failed"));
             return;
@@ -131,24 +139,28 @@ public class NetworkVanillaPusher extends NetworkDirectional {
     }
 
 
-    private void handleFurnace(@Nonnull ItemStack stack, @Nonnull FurnaceInventory furnace) {
+    private void handleFurnace(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack stack, @Nonnull FurnaceInventory furnace) {
         if (stack.getType().isFuel() && (furnace.getFuel() == null || furnace.getFuel().getType() == Material.AIR)) {
             furnace.setFuel(stack.clone());
             stack.setAmount(0);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         } else if (!stack.getType().isFuel() && (furnace.getSmelting() == null || furnace.getSmelting().getType() == Material.AIR)) {
             furnace.setSmelting(stack.clone());
             stack.setAmount(0);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         }
     }
 
-    private void handleBrewingStand(@Nonnull ItemStack stack, @Nonnull BrewerInventory brewer) {
+    private void handleBrewingStand(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack stack, @Nonnull BrewerInventory brewer) {
         if (stack.getType() == Material.BLAZE_POWDER) {
             if (brewer.getFuel() == null || brewer.getFuel().getType() == Material.AIR) {
                 brewer.setFuel(stack.clone());
                 stack.setAmount(0);
+                sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
             } else if (brewer.getIngredient() == null || brewer.getIngredient().getType() == Material.AIR) {
                 brewer.setIngredient(stack.clone());
                 stack.setAmount(0);
+                sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
             }
         } else if (stack.getType() == Material.POTION) {
             for (int i = 0; i < 3; i++) {
@@ -158,12 +170,14 @@ public class NetworkVanillaPusher extends NetworkDirectional {
                     contents[i] = stack.clone();
                     brewer.setContents(contents);
                     stack.setAmount(0);
+                    sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
                     return;
                 }
             }
         } else if (brewer.getIngredient() == null || brewer.getIngredient().getType() == Material.AIR) {
             brewer.setIngredient(stack.clone());
             stack.setAmount(0);
+            sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         }
     }
 

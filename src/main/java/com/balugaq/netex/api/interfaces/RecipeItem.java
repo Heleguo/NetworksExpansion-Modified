@@ -34,7 +34,7 @@ public interface RecipeItem extends RecipeDisplayItem {
             int inputLength = recipe.getInput().length;
             int outputLength = recipe instanceof RandomMachineRecipe ? ((RandomMachineRecipe) recipe).getAllOutput().length : recipe.getOutput().length;
             for (int i = 0; i < inputLength; i++) {
-                displayRecipes.add(ItemStackUtil.getCleanItem (recipe.getInput()[i]));
+                displayRecipes.add(ItemStackUtil.getCleanItem(recipe.getInput()[i]));
                 if (i < inputLength - 1) {
                     displayRecipes.add(new ItemStack(Material.AIR));
                 }

@@ -6,9 +6,11 @@ import com.balugaq.netex.api.groups.TypeItemGroup;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.GuideUtil;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
+import io.github.sefiraat.networks.Networks;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile;
+import io.github.thebusybiscuit.slimefun4.api.researches.Research;
 import io.github.thebusybiscuit.slimefun4.core.attributes.RecipeDisplayItem;
 import io.github.thebusybiscuit.slimefun4.core.guide.GuideHistory;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuide;
@@ -95,8 +97,18 @@ public class SlimefunItem6x6RecipeMenu extends ChestMenu {
             ItemStack itemStack = slimefunItem.getRecipe()[i];
             ItemStack icon = itemStack;
             SlimefunItem sfItem = SlimefunItem.getByItem(itemStack);
-            if (sfItem != null && !this.playerProfile.hasUnlocked(sfItem.getResearch())) {
-                icon = ChestMenuUtils.getNotResearchedItem();
+            if (sfItem != null) {
+                Research research = sfItem.getResearch();
+                if (!this.playerProfile.hasUnlocked(research)) {
+                    icon = ChestMenuUtils.getNotResearchedItem();
+                    ItemStackUtil.setLore(icon,
+                            "§7" + research.getName(player),
+                            "§4§l" + Slimefun.getLocalization().getMessage(player, "guide.locked"),
+                            "",
+                            Networks.getLocalizationService().getString("messages.guide.click-to-research"),
+                            "",
+                            Networks.getLocalizationService().getString("messages.guide.cost") + research.getCost() + Networks.getLocalizationService().getString("messages.guide.cost-level"));
+                }
             }
             this.addItem(RECIPE_CONTENT[i], ItemStackUtil.getCleanItem(ItemStackUtil.cloneWithoutNBT(icon)));
             this.addMenuClickHandler(RECIPE_CONTENT[i], (p, slot, item, action) -> {
@@ -178,8 +190,18 @@ public class SlimefunItem6x6RecipeMenu extends ChestMenu {
                     ItemStack itemStack = displayRecipes.get(index);
                     ItemStack icon = itemStack;
                     SlimefunItem slimefunItem = SlimefunItem.getByItem(itemStack);
-                    if (slimefunItem != null && !this.playerProfile.hasUnlocked(slimefunItem.getResearch())) {
-                        icon = ChestMenuUtils.getNotResearchedItem();
+                    if (slimefunItem != null) {
+                        Research research = slimefunItem.getResearch();
+                        if (!this.playerProfile.hasUnlocked(research)) {
+                            icon = ChestMenuUtils.getNotResearchedItem();
+                            ItemStackUtil.setLore(icon,
+                                    "§7" + research.getName(player),
+                                    "§4§l" + Slimefun.getLocalization().getMessage(player, "guide.locked"),
+                                    "",
+                                    Networks.getLocalizationService().getString("messages.guide.click-to-research"),
+                                    "",
+                                    Networks.getLocalizationService().getString("messages.guide.cost") + research.getCost() + Networks.getLocalizationService().getString("messages.guide.cost-level"));
+                        }
                     }
                     chestMenu.addItem(WORK_CONTENT[i], ItemStackUtil.getCleanItem(ItemStackUtil.cloneWithoutNBT(icon)));
                     chestMenu.addMenuClickHandler(WORK_CONTENT[i], (p, slot, item, action) -> {

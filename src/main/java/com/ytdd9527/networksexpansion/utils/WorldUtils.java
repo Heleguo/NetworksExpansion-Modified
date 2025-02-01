@@ -7,49 +7,50 @@ import org.bukkit.block.BlockState;
 
 import java.lang.reflect.Field;
 
+@Deprecated
 public class WorldUtils {
-    protected static Class<?> CraftBlockStateClass;
-    protected static Field IBlockDataField;
-    protected static Field BlockPositionField;
-    protected static Field WorldField;
-    protected static Field WeakWorldField;
-    protected static boolean invokeBlockStateSuccess = false;
+    protected static Class<?> craftBlockStateClass;
+    protected static Field interfaceBlockDataField;
+    protected static Field blockPositionField;
+    protected static Field worldField;
+    protected static Field weakWorldField;
+    protected static boolean success = false;
 
     static {
         try {
             World sampleWorld = Bukkit.getWorlds().get(0);
             BlockState blockstate = sampleWorld.getBlockAt(0, 0, 0).getState();
             var result = ReflectionUtil.getDeclaredFieldsRecursively(blockstate.getClass(), "data");
-            IBlockDataField = result.getFirstValue();
-            IBlockDataField.setAccessible(true);
-            CraftBlockStateClass = result.getSecondValue();
-            BlockPositionField = ReflectionUtil.getDeclaredFieldsRecursively(CraftBlockStateClass, "position").getFirstValue();
-            BlockPositionField.setAccessible(true);
-            WorldField = ReflectionUtil.getDeclaredFieldsRecursively(CraftBlockStateClass, "world").getFirstValue();
-            WorldField.setAccessible(true);
-            WeakWorldField = ReflectionUtil.getDeclaredFieldsRecursively(CraftBlockStateClass, "weakWorld").getFirstValue();
-            WeakWorldField.setAccessible(true);
-            invokeBlockStateSuccess = true;
+            interfaceBlockDataField = result.getFirstValue();
+            interfaceBlockDataField.setAccessible(true);
+            craftBlockStateClass = result.getSecondValue();
+            blockPositionField = ReflectionUtil.getDeclaredFieldsRecursively(craftBlockStateClass, "position").getFirstValue();
+            blockPositionField.setAccessible(true);
+            worldField = ReflectionUtil.getDeclaredFieldsRecursively(craftBlockStateClass, "world").getFirstValue();
+            worldField.setAccessible(true);
+            weakWorldField = ReflectionUtil.getDeclaredFieldsRecursively(craftBlockStateClass, "weakWorld").getFirstValue();
+            weakWorldField.setAccessible(true);
+            success = true;
         } catch (Throwable ignored) {
 
         }
     }
 
-    public static boolean copyBlockState(BlockState stateToSet, Block toBlock) {
-        if (!invokeBlockStateSuccess) {
+    public static boolean copyBlockState(BlockState fromBlockState, Block toBlock) {
+        if (!success) {
             return false;
         }
 
-        BlockState originalState = toBlock.getState();
-        if (!CraftBlockStateClass.isInstance(originalState) || !CraftBlockStateClass.isInstance(stateToSet)) {
+        BlockState toState = toBlock.getState();
+        if (!craftBlockStateClass.isInstance(toState) || !craftBlockStateClass.isInstance(fromBlockState)) {
             return false;
         }
 
         try {
-            BlockPositionField.set(stateToSet, BlockPositionField.get(originalState));
-            WorldField.set(stateToSet, WorldField.get(originalState));
-            WeakWorldField.set(stateToSet, WeakWorldField.get(originalState));
-            stateToSet.update(true, false);
+            blockPositionField.set(fromBlockState, blockPositionField.get(toState));
+            worldField.set(fromBlockState, worldField.get(toState));
+            weakWorldField.set(fromBlockState, weakWorldField.get(toState));
+            fromBlockState.update(true, false);
             return true;
         } catch (Throwable ignored) {
             return false;

@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.advanced;
 
+import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.interfaces.Configurable;
@@ -140,6 +141,7 @@ public class AdvancedLineTransfer extends AdvancedDirectional implements RecipeD
         final Location location = block.getLocation();
 
         if (blockMenu == null) {
+            sendFeedback(block.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
 
@@ -198,16 +200,19 @@ public class AdvancedLineTransfer extends AdvancedDirectional implements RecipeD
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
 
         final BlockFace direction = this.getCurrentDirection(blockMenu);
         if (direction == BlockFace.SELF) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_DIRECTION_SET);
             return;
         }
 
         final NetworkRoot root = definition.getNode().getRoot();
         if (root.getRootPower() < requiredPower) {
+            sendFeedback(blockMenu.getLocation(), FeedbackType.NOT_ENOUGH_POWER);
             return;
         }
 
@@ -236,6 +241,7 @@ public class AdvancedLineTransfer extends AdvancedDirectional implements RecipeD
 //                });
 
         root.removeRootPower(requiredPower);
+        sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
     private void tryGrabItem(@Nonnull BlockMenu blockMenu) {
