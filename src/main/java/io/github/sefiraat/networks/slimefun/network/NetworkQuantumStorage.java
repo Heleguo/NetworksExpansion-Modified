@@ -662,23 +662,23 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         final BlockMenu blockMenu = StorageCacheUtils.getMenu(event.getBlock().getLocation());
 
         if (blockMenu != null) {
-
+            final QuantumCache previewCache = CACHES.get(blockMenu.getLocation());
+            if(previewCache != null && previewCache.getAmount() <0 && previewCache.getItemStack() != null){
+                event.getPlayer().sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.quantum_storage.quantum_storage_negative"));
+                event.setCancelled(true);
+                return;
+            }
             final QuantumCache cache = removeCache(blockMenu.getLocation());
-            if(cache != null){
-                if( cache.getAmount() > 0 && cache.getItemStack() != null){
-                    final ItemStack itemToDrop = this.getItem().clone();
-                    final ItemMeta itemMeta = itemToDrop.getItemMeta();
+            if(cache != null && cache.getAmount() > 0 && cache.getItemStack() != null){
+                final ItemStack itemToDrop = this.getItem().clone();
+                final ItemMeta itemMeta = itemToDrop.getItemMeta();
 
-                    DataTypeMethods.setCustom(itemMeta, Keys.QUANTUM_STORAGE_INSTANCE, PersistentQuantumStorageType.TYPE, cache);
-                    cache.addMetaLore(itemMeta);
-                    itemToDrop.setItemMeta(itemMeta);
-                    location.getWorld().dropItem(location.clone().add(0.5, 0.5, 0.5), itemToDrop);
-                    event.setDropItems(false);
-                }else if(cache.getAmount() < 0 && cache.getItemStack() != null){
-                    //not allowed to drop
-                    event.getPlayer().sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.quantum_storage.quantum_storage_negative"));
-                    event.setCancelled(true);
-                }
+                DataTypeMethods.setCustom(itemMeta, Keys.QUANTUM_STORAGE_INSTANCE, PersistentQuantumStorageType.TYPE, cache);
+                cache.addMetaLore(itemMeta);
+                itemToDrop.setItemMeta(itemMeta);
+                location.getWorld().dropItem(location.clone().add(0.5, 0.5, 0.5), itemToDrop);
+                event.setDropItems(false);
+
             }
 
             for (int i : this.slotsToDrop) {

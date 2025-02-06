@@ -13,15 +13,20 @@ import java.util.logging.Level;
 
 public interface AdminDebuggable {
     Set<Player> VIEWERS = new HashSet<>();
-    String DEBUG_KEY = "network_debugging";
-
+    //String DEBUG_KEY = "network_debugging";
+    HashSet<Location> DEBUG_LOCATIONS = new HashSet<>();
     default boolean isDebug(@Nonnull Location location) {
-        String debug = StorageCacheUtils.getData(location, DEBUG_KEY);
-        return Boolean.parseBoolean(debug);
+       // String debug = StorageCacheUtils.getData(location, DEBUG_KEY);
+        return DEBUG_LOCATIONS.contains(location); //Boolean.parseBoolean(debug);
     }
 
     default void setDebug(@Nonnull Location location, boolean value) {
-        StorageCacheUtils.setData(location, DEBUG_KEY, String.valueOf(value));
+        if (value){
+            DEBUG_LOCATIONS.add(location);
+        }else {
+            DEBUG_LOCATIONS.remove(location);
+        }
+       // StorageCacheUtils.setData(location, DEBUG_KEY, String.valueOf(value));
     }
 
     default void toggle(@Nonnull Location location, @Nonnull Player player) {

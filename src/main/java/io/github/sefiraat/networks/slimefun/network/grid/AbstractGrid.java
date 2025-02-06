@@ -2,7 +2,6 @@ package io.github.sefiraat.networks.slimefun.network.grid;
 
 import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
-import com.balugaq.netex.api.helpers.ItemStackHelper;
 import com.github.houbb.pinyin.constant.enums.PinyinStyleEnum;
 import com.github.houbb.pinyin.util.PinyinHelper;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
@@ -28,6 +27,7 @@ import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
+import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -238,7 +238,8 @@ public abstract class AbstractGrid extends NetworkObject {
     protected List<Map.Entry<ItemStack, Long>> getEntries(@Nonnull NetworkRoot networkRoot, @Nonnull GridCache cache) {
         return networkRoot.getAllNetworkItemsLongType().entrySet().stream()
                 .filter(entry -> {
-                    if (cache.getFilter() == null) {
+                    String filter = cache.getFilter();
+                    if (filter == null) {
                         return true;
                     }
 
@@ -246,7 +247,7 @@ public abstract class AbstractGrid extends NetworkObject {
                     String name = ChatColor.stripColor(ItemStackHelper.getDisplayName(itemStack).toLowerCase(Locale.ROOT));
                     final String pinyinName = PinyinHelper.toPinyin(name, PinyinStyleEnum.INPUT, "");
                     final String pinyinFirstLetter = PinyinHelper.toPinyin(name, PinyinStyleEnum.FIRST_LETTER, "");
-                    return name.contains(cache.getFilter()) || pinyinName.contains(cache.getFilter()) || pinyinFirstLetter.contains(cache.getFilter());
+                    return name.contains(filter) || pinyinName.contains(filter) || pinyinFirstLetter.contains(filter);
                 })
                 .sorted(SORT_MAP.get(cache.getSortOrder()))
                 .toList();

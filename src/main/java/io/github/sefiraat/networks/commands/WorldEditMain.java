@@ -1,7 +1,6 @@
 package io.github.sefiraat.networks.commands;
 
 import com.balugaq.netex.api.enums.ErrorType;
-import com.balugaq.netex.api.helpers.ItemStackHelper;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.utils.WorldUtils;
@@ -18,10 +17,8 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.BlockPlaceHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.ChunkPosition;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
-import org.bukkit.Bukkit;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
@@ -70,6 +67,34 @@ public class WorldEditMain extends AbstractMainCommand{
             return true;
         }
     }
+            .register(this);
+    private SubCommand setPosCommand = new SubCommand("setpos",new SimpleCommandArgs("index","x","y","z"),""){
+        @Override
+        public boolean onCommand(CommandSender var1, Command var2, String var3, String[] var4) {
+            var args = parseInput(var4).getFirstValue();
+            try{
+                String index = args.nextArg();
+                int x = Integer.parseInt(args.nextArg());
+                int y = Integer.parseInt(args.nextArg());
+                int z = Integer.parseInt(args.nextArg());
+                Player p = isPlayer(var1,true);
+                World world = p.getWorld();
+                Location loc = new Location(world,x,y,z);
+                switch (index){
+                    case "1":worldeditPos1(p,loc);break;
+                    case "2":worldeditPos2(p,loc);break;
+                    default:throw new RuntimeException("No Such Index");
+                }
+            }catch (Throwable anyProblem){
+            }
+            return true;
+        }
+    }
+            .setTabCompletor("index",()->List.of("1","2"))
+            .setDefault("index","1")
+            .setTabCompletor("x",()->List.of("0"))
+            .setTabCompletor("y",()->List.of("0"))
+            .setTabCompletor("z",()->List.of("0"))
             .register(this);
     private SubCommand clearCommand=new SubCommand("clear",new SimpleCommandArgs("callHandler","skipVanilla"),""){
         public boolean onCommand(CommandSender var1, Command var2, String var3, String[] var4) {

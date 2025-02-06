@@ -128,13 +128,16 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 return;
             }
             final ItemStack output = blockMenu.getItemInSlot(OUTPUT_SLOT);
-            if (output != null
-                    && output.getType() != Material.AIR
-                    && (output.getAmount() + instance.getItemStack().getAmount()*craftAmount > output.getMaxStackSize()
+            int outputSlotAmount = 0 ;
+            if( output != null && !output.getType().isAir()){
+                outputSlotAmount=output.getAmount();
+            }
+            ItemStack outItem = instance.getItemStack();
+            if ( outputSlotAmount + outItem.getAmount()*craftAmount > outItem.getMaxStackSize()
                    // || !StackUtils.itemsMatch(instance, output)
                     //we will match it when we got the last crafted result
-            )) {
-                sendDebugMessage(blockMenu.getLocation(), ()->"Output slot is full");
+            ) {
+                sendDebugMessage(blockMenu.getLocation(), ()->"No Enough Space for output");
                 return;
             }
             //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(true);
@@ -366,8 +369,9 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             }else if(outputSlot.getAmount()<outputSlot.getMaxStackSize()&&StackUtils.itemsMatch(outputSlot,crafted)){
                 outputSlot.setAmount(outputSlot.getAmount()+crafted.getAmount()*craftAmount);
             }else{
-                sendDebugMessage(blockMenu.getLocation(), ()->"Output slot item no space or hot fit");
+                sendDebugMessage(blockMenu.getLocation(), ()->"Output slot item no space or not fit");
                 returnItems(root, fetch);
+                return;
             }
             if (root.isDisplayParticles()) {
                 final Location location = blockMenu.getLocation().clone().add(0.5, 1.1, 0.5);

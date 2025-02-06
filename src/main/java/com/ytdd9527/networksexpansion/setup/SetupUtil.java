@@ -76,9 +76,13 @@ public class SetupUtil {
                 ExpansionItems.LINE_TRANSFER.registerThis(),
                 ExpansionItems.LINE_TRANSFER_GRABBER.registerThis(),
                 ExpansionItems.LINE_TRANSFER_PUSHER.registerThis(),
+                ExpansionItems.LINE_TRANSFER_MORE_PUSHER.registerThis(),
+                ExpansionItems.LINE_TRANSFER_BEST_PUSHER.registerThis(),
                 ExpansionItems.LINE_TRANSFER_PLUS.registerThis(),
                 ExpansionItems.LINE_TRANSFER_PLUS_GRABBER.registerThis(),
                 ExpansionItems.LINE_TRANSFER_PLUS_PUSHER.registerThis(),
+                ExpansionItems.LINE_TRANSFER_PLUS_MORE_PUSHER.registerThis(),
+                ExpansionItems.LINE_TRANSFER_PLUS_BEST_PUSHER.registerThis(),
                 ExpansionItems.LINE_TRANSFER_VANILLA_GRABBER.registerThis(),
                 ExpansionItems.LINE_TRANSFER_VANILLA_PUSHER.registerThis()
         );
@@ -86,17 +90,25 @@ public class SetupUtil {
                 ExpansionItems.ADVANCED_LINE_TRANSFER.registerThis(),
                 ExpansionItems.ADVANCED_LINE_TRANSFER_GRABBER.registerThis(),
                 ExpansionItems.ADVANCED_LINE_TRANSFER_PUSHER.registerThis(),
+                ExpansionItems.ADVANCED_LINE_TRANSFER_MORE_PUSHER.registerThis(),
+                ExpansionItems.ADVANCED_LINE_TRANSFER_BEST_PUSHER.registerThis(),
                 ExpansionItems.ADVANCED_LINE_TRANSFER_PLUS.registerThis(),
                 ExpansionItems.ADVANCED_LINE_TRANSFER_PLUS_GRABBER.registerThis(),
-                ExpansionItems.ADVANCED_LINE_TRANSFER_PLUS_PUSHER.registerThis()
+                ExpansionItems.ADVANCED_LINE_TRANSFER_PLUS_PUSHER.registerThis(),
+                ExpansionItems.ADVANCED_LINE_TRANSFER_PLUS_MORE_PUSHER.registerThis(),
+                ExpansionItems.ADVANCED_LINE_TRANSFER_PLUS_BEST_PUSHER.registerThis()
         );
         ExpansionItemsMenus.SUB_MENU_CARGO.addTo(
                 ExpansionItems.TRANSFER.registerThis(),
                 ExpansionItems.TRANSFER_GRABBER.registerThis(),
                 ExpansionItems.TRANSFER_PUSHER.registerThis(),
+                ExpansionItems.TRANSFER_MORE_PUSHER.registerThis(),
+                ExpansionItems.TRANSFER_BEST_PUSHER.registerThis(),
                 ExpansionItems.ADVANCED_TRANSFER.registerThis(),
                 ExpansionItems.ADVANCED_TRANSFER_GRABBER.registerThis(),
-                ExpansionItems.ADVANCED_TRANSFER_PUSHER.registerThis()
+                ExpansionItems.ADVANCED_TRANSFER_PUSHER.registerThis(),
+                ExpansionItems.ADVANCED_TRANSFER_MORE_PUSHER.registerThis(),
+                ExpansionItems.ADVANCED_TRANSFER_BEST_PUSHER.registerThis()
         );
 
         ExpansionItemsMenus.SUB_MENU_CARGO.addTo(
@@ -239,7 +251,9 @@ public class SetupUtil {
                 ExpansionItems.NTW_EXPANSION_ANNOUNCE_5.registerThis(),
                 ExpansionItems.NTW_EXPANSION_ANNOUNCE_6.registerThis(),
                 ExpansionItems.NTW_EXPANSION_ANNOUNCE_7.registerThis(),
-                ExpansionItems.NTW_EXPANSION_ANNOUNCE_8.registerThis()
+                ExpansionItems.NTW_EXPANSION_ANNOUNCE_8.registerThis(),
+                ExpansionItems.NTW_EXPANSION_ANNOUNCE_9.registerThis(),
+                ExpansionItems.NTW_EXPANSION_ANNOUNCE_10.registerThis()
         );
     }
 

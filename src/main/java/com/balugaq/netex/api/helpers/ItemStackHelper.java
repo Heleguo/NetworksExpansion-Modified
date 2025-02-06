@@ -22,12 +22,12 @@ public final class ItemStackHelper {
     private ItemStackHelper() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
-
-    @Nonnull
-    public static String getDisplayName(@Nonnull ItemStack item) {
-        Preconditions.checkArgument(item != null, NULL_ITEMSTACK_MESSAGE);
-        return item.hasItemMeta() && item.getItemMeta().hasDisplayName() ? item.getItemMeta().getDisplayName() : getName(item);
-    }
+//
+//    @Nonnull
+//    public static String getDisplayName(@Nonnull ItemStack item) {
+//        Preconditions.checkArgument(item != null, NULL_ITEMSTACK_MESSAGE);
+//        return item.hasItemMeta() && item.getItemMeta().hasDisplayName() ? item.getItemMeta().getDisplayName() : getName(item);
+//    }
 
     @Nonnull
     public static String getName(@Nonnull ItemStack item) {
