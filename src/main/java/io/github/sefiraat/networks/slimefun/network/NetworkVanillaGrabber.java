@@ -13,6 +13,7 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
+import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -103,8 +104,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
             sendFeedback(block.getLocation(), FeedbackType.ERROR_OCCURRED);
             return;
         }
-
-        final BlockState blockState = targetBlock.getState();
+        final BlockState blockState = PaperLib.getBlockState(targetBlock,false).getState();
 
         if (!(blockState instanceof InventoryHolder holder)) {
             sendFeedback(block.getLocation(), FeedbackType.NO_INVENTORY_FOUND);

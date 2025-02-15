@@ -8,7 +8,6 @@ import io.github.sefiraat.networks.slimefun.network.NetworkPowerNode;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import lombok.Getter;
-import lombok.ToString;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -20,7 +19,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-@ToString
 public class NetworkNode {
 
     protected static final Set<BlockFace> VALID_FACES = EnumSet.of(

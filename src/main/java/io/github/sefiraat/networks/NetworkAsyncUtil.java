@@ -2,9 +2,11 @@ package io.github.sefiraat.networks;
 
 import com.google.common.base.Preconditions;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
+import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.tasks.TickerTask;
 import lombok.Getter;
+import net.bytebuddy.implementation.bytecode.member.FieldAccess;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -73,11 +75,27 @@ public class NetworkAsyncUtil {
     @Getter
     private boolean useAsync;
     private AbstractExecutorService genPool(){
-
-        int parallelism =Math.min((Runtime.getRuntime().availableProcessors()/2)+4 ,16) ;
-        Networks.getInstance().getLogger().info("Starting Thread Pool using coreSize "+parallelism+" and maxSize "+3*parallelism);
-        ThreadPoolExecutor executor=new ThreadPoolExecutor(parallelism,3*parallelism,60, TimeUnit.SECONDS,new ArrayBlockingQueue<Runnable>(5000), new ThreadPoolExecutor.CallerRunsPolicy());
+        //do we really need this?
+//        try{
+//            if(useAsync){
+//                Class<? extends TickerTask> asyncTickerTask = Slimefun.getTickerTask().getClass();
+//                Field executorField = asyncTickerTask.getDeclaredField("tickerThreadPool");
+//                executorField.setAccessible(true);
+//                AbstractExecutorService service = (AbstractExecutorService) executorField.get(Slimefun.getTickerTask());
+//                Preconditions.checkNotNull(service);
+//                Networks.getInstance().getLogger().info("Using Slimefun TickerTask Executor Service as thread pool");
+//                return service;
+//            }
+//        }catch (Throwable anything){
+//
+//        }
+        int parallelism =Math.min((Runtime.getRuntime().availableProcessors()/2),8) ;
+        ForkJoinPool executor= new ForkJoinPool(parallelism);
+        Networks.getInstance().getLogger().info("Starting Thread Pool with parallelism "+parallelism);
+//        Networks.getInstance().getLogger().info("Starting Thread Pool using coreSize "+parallelism+" and maxSize "+3*parallelism);
+//                    new ThreadPoolExecutor(parallelism,3*parallelism,60, TimeUnit.SECONDS,new ArrayBlockingQueue<Runnable>(5000), new ThreadPoolExecutor.CallerRunsPolicy());
         return executor;
+
     }
     private void restartPool(){
         if(parallelExecutor != null){
@@ -130,7 +148,7 @@ public class NetworkAsyncUtil {
 
     }
     public AbstractExecutorService getParallelExecutor(){
-        if(parallelExecutor == null){
+        if(parallelExecutor == null || parallelExecutor.isShutdown()){
             restartPool();
         }
         return parallelExecutor;
