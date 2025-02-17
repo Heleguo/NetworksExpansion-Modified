@@ -45,7 +45,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @SuppressWarnings("unused")
 public class NetworkRoot extends NetworkNode {
@@ -127,23 +126,30 @@ public class NetworkRoot extends NetworkNode {
     @Getter
     private boolean isOverburdened = false;
     @Deprecated
-    @Getter
+    public Set<BarrelIdentity> getBarrels(){
+        getMaterial2Barrels();
+        return barrels==null?Set.of():barrels;
+    }
     private Set<BarrelIdentity> barrels = null;
-    @Getter
+    public Set<BarrelIdentity> getInputAbleBarrels(){
+        getMaterial2InputAbleBarrels();
+        return inputAbleBarrels==null?Set.of():inputAbleBarrels;
+    }
     private Set<BarrelIdentity> inputAbleBarrels = null;
-    @Getter
+    public Set<BarrelIdentity> getOutputAbleBarrels(){
+        getMaterial2OutputAbleBarrels();
+        return outputAbleBarrels==null?Set.of():outputAbleBarrels;
+    }
     private Set<BarrelIdentity> outputAbleBarrels = null;
 
     private Map< Material,Set<BarrelIdentity>> material2Barrels = null;
     private Map< Material,Set<BarrelIdentity>> material2InputAbleBarrels = null;
     private Map< Material,Set<BarrelIdentity>> material2OutputAbleBarrels = null;
-
     @Deprecated
-    @Getter
     private Map<StorageUnitData, Location> cargoStorageUnitDatas = null;
-    @Getter
+
     private Map<StorageUnitData, Location> inputAbleCargoStorageUnitDatas = null;
-    @Getter
+
     private Map<StorageUnitData, Location> outputAbleCargoStorageUnitDatas = null;
     @Getter
     @Setter
@@ -282,7 +288,7 @@ public class NetworkRoot extends NetworkNode {
         final Map<ItemStack, Long> itemStacks = new HashMap<>();
 
         // Barrels
-        for(var barrels:getOutputAbleBarrels().values()){
+        for(var barrels: getMaterial2OutputAbleBarrels().values()){
             for (BarrelIdentity barrelIdentity : barrels) {
                 itemStacks.compute(barrelIdentity.getItemStack(),(i,num)->num==null?(long)barrelIdentity.getAmount():(long)num+barrelIdentity.getAmount() );
     //            final Long currentAmount = itemStacks.get(barrelIdentity.getItemStack());
@@ -376,7 +382,7 @@ public class NetworkRoot extends NetworkNode {
 
     @Deprecated
     @Nonnull
-    protected synchronized Map<Material,Set<BarrelIdentity>> getBarrels() {
+    protected synchronized Map<Material,Set<BarrelIdentity>> getMaterial2Barrels() {
         if(!ready){
             handleAsync();
             return Map.of();
@@ -659,7 +665,7 @@ public class NetworkRoot extends NetworkNode {
         }
 
         // Barrels first
-        var barrels=getOutputAbleBarrels().get(request.getItemType());
+        var barrels= getMaterial2OutputAbleBarrels().get(request.getItemType());
         if(barrels != null) {
             for (BarrelIdentity barrelIdentity :barrels) {
                 if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
@@ -850,7 +856,7 @@ public class NetworkRoot extends NetworkNode {
         long found = 0;
         int requestAmount=request.getAmount();
         // Barrels
-        var barrels=getOutputAbleBarrels().get(request.getItemType());
+        var barrels= getMaterial2OutputAbleBarrels().get(request.getItemType());
         if(barrels!=null){
             for (BarrelIdentity barrelIdentity : barrels) {
                 final ItemStack itemStack = barrelIdentity.getItemStack();
@@ -1001,7 +1007,7 @@ public class NetworkRoot extends NetworkNode {
                 totalAmount += inputSlotItem.getAmount();
             }
         }
-        var barrels=getOutputAbleBarrels().get(itemStack.getType());
+        var barrels= getMaterial2OutputAbleBarrels().get(itemStack.getType());
         if(barrels!=null){
             for (BarrelIdentity barrelIdentity : barrels) {
                 if (StackUtils.itemsMatch(barrelIdentity, itemStackCache)) {
@@ -1068,7 +1074,7 @@ public class NetworkRoot extends NetworkNode {
                 }
             }
         }
-        for (var entry:getOutputAbleBarrels().entrySet()){
+        for (var entry: getMaterial2OutputAbleBarrels().entrySet()){
             if(entry.getValue()==null||entry.getValue().isEmpty())continue;
             for (BarrelIdentity barrelIdentity : entry.getValue()) {
                 for (ItemStackCache itemStack : itemStackCaches) {
@@ -1147,7 +1153,7 @@ public class NetworkRoot extends NetworkNode {
 
 
         // Run for matching barrels
-        var barrels=getInputAbleBarrels().get(incoming.getType());
+        var barrels= getMaterial2InputAbleBarrels().get(incoming.getType());
         if(barrels!=null){
             for (BarrelIdentity barrelIdentity : barrels) {
                 if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {
@@ -1229,7 +1235,7 @@ public class NetworkRoot extends NetworkNode {
     }
 
     @Nonnull
-    protected synchronized Map<Material,Set<BarrelIdentity>> getInputAbleBarrels() {
+    protected synchronized Map<Material,Set<BarrelIdentity>> getMaterial2InputAbleBarrels() {
         if(!ready){
             handleAsync();
             return Map.of();
@@ -1305,7 +1311,7 @@ public class NetworkRoot extends NetworkNode {
     }
 
     @Nonnull
-    protected synchronized Map<Material,Set<BarrelIdentity>> getOutputAbleBarrels() {
+    protected synchronized Map<Material,Set<BarrelIdentity>> getMaterial2OutputAbleBarrels() {
         if(!ready){
             handleAsync();
             return Map.of();
@@ -1480,17 +1486,20 @@ public class NetworkRoot extends NetworkNode {
     }
     public void resetRootItems(){
         this.barrels = null;
+        this.material2Barrels = null;
         this.cargoStorageUnitDatas = null;
         this.inputAbleBarrels = null;
+        this.material2InputAbleBarrels = null;
         this.outputAbleBarrels = null;
+        this.material2OutputAbleBarrels = null;
         this.inputAbleCargoStorageUnitDatas = null;
         this.outputAbleCargoStorageUnitDatas = null;
     }
     public void initRootItems(){
-        getBarrels();
+        getMaterial2Barrels();
         getCargoStorageUnitDatas();
-        getInputAbleBarrels();
-        getOutputAbleBarrels();
+        getMaterial2InputAbleBarrels();
+        getMaterial2OutputAbleBarrels();
         getInputAbleCargoStorageUnitDatas();
         getOutputAbleCargoStorageUnitDatas();
     }

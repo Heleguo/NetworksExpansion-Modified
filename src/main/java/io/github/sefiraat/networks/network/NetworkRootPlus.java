@@ -4,7 +4,6 @@ import com.balugaq.netex.api.data.StorageUnitData;
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedGreedyBlock;
-import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.barrel.InfinityBarrel;
 import io.github.sefiraat.networks.network.stackcaches.BarrelIdentity;
@@ -12,7 +11,6 @@ import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.slimefun.network.NetworkGreedyBlock;
 import io.github.sefiraat.networks.utils.StackUtils;
-import io.github.thebusybiscuit.slimefun4.utils.itemstack.ItemStackWrapper;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
 import org.bukkit.Location;
@@ -23,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -108,7 +105,7 @@ public class NetworkRootPlus extends NetworkRoot {
         int totalAmount=0;
         requestItem:{
             // Barrels first
-            var barrels=getOutputAbleBarrels().get(request.getItemType());
+            var barrels= getMaterial2OutputAbleBarrels().get(request.getItemType());
             if(barrels!=null){
                 for (BarrelIdentity barrelIdentity :barrels) {
                     if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
@@ -380,7 +377,7 @@ public class NetworkRootPlus extends NetworkRoot {
         }
 
         // Run for matching barrels
-        var barrels=getInputAbleBarrels().get(incomingCache.getItemType());
+        var barrels= getMaterial2InputAbleBarrels().get(incomingCache.getItemType());
         if(barrels!=null){
             for (BarrelIdentity barrelIdentity :barrels) {
                 if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {
