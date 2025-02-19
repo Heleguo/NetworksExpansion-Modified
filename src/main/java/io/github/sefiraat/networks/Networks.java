@@ -25,6 +25,9 @@ import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.guide.CheatSheetSlimefunGuide;
 import io.github.thebusybiscuit.slimefun4.implementation.guide.SurvivalSlimefunGuide;
 import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
+import me.matl114.matlib.core.PluginInitialization;
+import me.matl114.matlib.core.UtilInitialization;
+import me.matl114.matlibAdaptor.Algorithms.Interfaces.Initialization;
 import net.guizhanss.guizhanlibplugin.updater.GuizhanUpdater;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.AdvancedPie;
@@ -63,6 +66,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
     private ListenerManager listenerManager;
     private SupportedPluginManager supportedPluginManager;
     private LocalizationService localizationService;
+    private UtilInitialization matlibInitiazation;
     private long slimefunTickCount;
     private NetworkAsyncUtil asyncUtil;
 
@@ -116,7 +120,9 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
     @Override
     public void onEnable() {
         instance = this;
-
+        matlibInitiazation = new UtilInitialization(this,"NetworkExpansion")
+                .displayName("网络拓展")
+                .onEnable();
         getLogger().info("Loading language");
         this.configManager = new ConfigManager();
         localizationService = new LocalizationService(this);
@@ -233,6 +239,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         getLogger().info(getLocalizationService().getString("messages.shutdown.saved-all-data"));
         getLogger().info(getLocalizationService().getString("messages.shutdown.disabled-successfully"));
         this.asyncUtil.deconstruct();
+        this.matlibInitiazation.onDisable();
     }
 
     public void tryUpdate() {

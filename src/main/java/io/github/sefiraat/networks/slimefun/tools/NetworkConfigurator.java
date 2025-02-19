@@ -66,12 +66,12 @@ public class NetworkConfigurator extends SpecialSlimefunItem {
                                         Integer amount = DataTypeMethods.getCustom(itemMeta, Keys.AMOUNT, DataType.INTEGER);
                                         if (amount != null) {
                                             advancedDirectional.setLimitQuantity(blockMenu.getLocation(), amount);
-                                            player.sendMessage(Networks.getLocalizationService().getString("messages.completed-operation.configurator.pasted_limit_quantity"));
+                                            player.sendMessage(String.format(Networks.getLocalizationService().getString("messages.completed-operation.configurator.pasted_limit_quantity"),amount));
                                         }
                                         String transportMode = DataTypeMethods.getCustom(itemMeta, Keys.TRANSFER_MODE, DataType.STRING);
                                         if (transportMode != null) {
                                             advancedDirectional.setTransportMode(blockMenu.getLocation(), TransportMode.valueOf(transportMode));
-                                            player.sendMessage(Networks.getLocalizationService().getString("messages.completed-operation.configurator.pasted_transport_mode"));
+                                            player.sendMessage(String.format(Networks.getLocalizationService().getString("messages.completed-operation.configurator.pasted_transport_mode"),transportMode));
                                         }
                                         advancedDirectional.updateShowIcon(blockMenu.getLocation());
                                         advancedDirectional.updateTransportModeIcon(blockMenu.getLocation());

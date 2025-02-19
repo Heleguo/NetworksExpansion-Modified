@@ -28,8 +28,8 @@ import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 
 public class TransportUtil {
-    public static int sendLimitedItemToRoot(NetworkRoot root, ItemStack item, int limit, ReentrantLock lock) {
-        return NetworkAsyncUtil.getInstance().ensureLock(lock,()->{
+    public static int sendLimitedItemToRoot(NetworkRoot root, ItemStack item, int limit,Location loc) {
+        return NetworkAsyncUtil.getInstance().ensureLocation(loc,()->{
             int itemAmount = item.getAmount();
             if(itemAmount <= limit) {
                 root.addItemStack(item);

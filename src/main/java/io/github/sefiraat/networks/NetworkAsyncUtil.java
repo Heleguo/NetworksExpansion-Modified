@@ -6,6 +6,12 @@ import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.tasks.TickerTask;
 import lombok.Getter;
+import me.matl114.matlib.Algorithms.DataStructures.Complex.DefaultLockFactory;
+import me.matl114.matlib.Algorithms.DataStructures.Complex.ObjectLockFactory;
+import me.matl114.matlib.Utils.Reflect.MethodAccess;
+import me.matl114.matlib.Utils.Reflect.ProxyUtils;
+import me.matl114.matlib.core.Manager;
+import me.matl114.matlibAdaptor.Algorithms.DataStructures.LockFactory;
 import net.bytebuddy.implementation.bytecode.member.FieldAccess;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
@@ -20,15 +26,15 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-public class NetworkAsyncUtil {
+public class NetworkAsyncUtil implements Manager {
     @Getter
     private static NetworkAsyncUtil instance;
     private Plugin plugin;
     public NetworkAsyncUtil() {
         instance = this;
     }
-    private BukkitTask cleanTask ;
-    public NetworkAsyncUtil init(Plugin plugin){
+    //private BukkitTask cleanTask ;
+    public NetworkAsyncUtil init(Plugin plugin,String... args){
         this.plugin = plugin;
         Networks.getInstance().getLogger().info("Enabling Network Async Util");
         detect_async:
@@ -46,25 +52,37 @@ public class NetworkAsyncUtil {
             if(isAsync){
                 useAsync = true;
                 Networks.getInstance().getLogger().info("Async Ticker Task Detected,Enabling Parallel Running Protector");
-                //每5分钟刷新一次锁缓存,防止垃圾堆积
-                cleanTask = (new BukkitRunnable() {
-                    public void run() {
-                        resetLockRecord();
-                    }
-                }).runTaskTimerAsynchronously(plugin, 5*60*20, 5*60*20);
+                try{
+                    Object lockFactory = MethodAccess.ofName(Slimefun.class,"getCargoLockFactory")
+                            .noSnapShot()
+                            .initWithNull()
+                            .invoke(null);
+                    cargoLockFactory = ProxyUtils.buildAdaptorOf(LockFactory.class, lockFactory);
+                    Networks.getInstance().getLogger().info("Slimefun Async Cargo Factory Adaptor created successfully");
+                }catch (Throwable error){
+                    cargoLockFactory = new ObjectLockFactory<>(Location.class,Location::clone)
+                            .init(plugin)
+                            .setupRefreshTask(10*20*60);
+                    Networks.getInstance().getLogger().severe("Slimefun Async Cargo Factory not found!");
+                    Networks.getInstance().getLogger().severe("Creating Network Cargo Lock Factory...");
+                }
             }else{
                 useAsync = false;
-                cleanTask = null;
+                cargoLockFactory = new DefaultLockFactory<>();
             }
 
         }
         Preconditions.checkNotNull( getParallelExecutor());
         return this;
     }
+
+    @Override
+    public NetworkAsyncUtil reload() {
+        deconstruct();
+        return init(plugin);
+    }
+
     public void deconstruct() {
-        if(cleanTask != null){
-            cleanTask.cancel();
-        }
         if(parallelExecutor != null){
             parallelExecutor.shutdown();
         }
@@ -104,42 +122,22 @@ public class NetworkAsyncUtil {
         }
         parallelExecutor = genPool();
     }
-    private void resetLockRecord(){
-        synchronized (locks){
-            locks.clear();
-        }
-    }
-    private final Map<Location,ReentrantLock> locks = new ConcurrentHashMap<>();
 
+   // private final Map<Location,ReentrantLock> locks = new ConcurrentHashMap<>();
+    private LockFactory<Location> cargoLockFactory;
     public void ensureLocation(Location location,Runnable runnable){
+
         if(useAsync||ExperimentalFeatureManager.getInstance().isEnableNotWaitTillJoin()){
-            var lock = getLocationLock(location);
-            lock.lock();
-            try{
-                runnable.run();
-            }finally {
-                lock.unlock();
-            }
+            this.cargoLockFactory.ensureLock(runnable,location);
         }else {
             runnable.run();
         }
     }
-    public <T extends Object> T ensureLock(ReentrantLock lock, Supplier<T> runnable){
+    public <T extends Object> T ensureLocation(Location location, Supplier<T> runnable){
         if(useAsync||ExperimentalFeatureManager.getInstance().isEnableNotWaitTillJoin()){
-            lock.lock();
-            try{
-                return runnable.get();
-            }finally {
-                lock.unlock();
-            }
+            return this.cargoLockFactory.ensureLock(runnable,location);
         }else {
             return runnable.get();
-        }
-    }
-    @Nonnull
-    public ReentrantLock getLocationLock(Location location){
-        synchronized (locks){
-            return locks.computeIfAbsent(location, k -> new ReentrantLock());
         }
     }
 

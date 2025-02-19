@@ -148,7 +148,7 @@ public class LineOperationUtil {
             int limitQuantity
     ) {
         final int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu, ItemTransportFlow.WITHDRAW, null);
-        ReentrantLock location = NetworkAsyncUtil.getInstance().getLocationLock(blockMenu.getLocation());
+        Location location = blockMenu.getLocation();
         int limit = limitQuantity;
         switch (transportMode) {
             case NONE, NONNULL_ONLY -> {

@@ -19,13 +19,15 @@ public class ItemContainer extends ItemStackCache implements OptionalSfItemCache
     //@Getter
     //private final ItemStackWrapper wrapper;
     @Getter
+    private final ItemStackWrapper wrapper;
+    @Getter
     private int amount;
 
     public ItemContainer(int id, ItemStack item, int amount) {
         super(StackUtils.getAsQuantity(item,1));
         this.id = id;
         //this.sample = getItemStack();
-        //this.wrapper = ItemStackWrapper.wrap(sample);
+        this.wrapper = ItemStackWrapper.wrap(getItemStack());
         this.amount = amount;
     }
 

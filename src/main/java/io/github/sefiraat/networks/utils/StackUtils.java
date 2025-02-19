@@ -11,6 +11,8 @@ import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
+import me.matl114.matlib.Utils.CraftUtils;
+import me.matl114.matlib.core.EnvironmentManager;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -145,28 +147,16 @@ public class StackUtils {
         //check cached id first,if OptionalSfItemCache,if id not match ,break earlier
         if(cache instanceof OptionalSfItemCache sfcache1&&cache2 instanceof OptionalSfItemCache sfcache2){
             if(!Objects.equals(sfcache1.getOptionalId(),sfcache2.getOptionalId())){
-//                Networks.getInstance().getLogger().info("not match "+sfcache1.getOptionalId()+" "+sfcache2.getOptionalId()+" "+sfcache1.getClass()+" "+((ItemStackCache) sfcache1).getItemStack());
                 return false;
             }
         }
 //        //todo remove
-//        if (Tag.SHULKER_BOXES.isTagged(type)) {
-//            return false;
-//        }
-//
-//        if (cache2.getItemType() == Material.BUNDLE) {
-//            return false;
-//        }
 
         // If amounts do not match, then the items cannot possibly match
         if (checkAmount && cache2.getItemAmount() > cache.getItemAmount()) {
             return false;
         }
 
-        // If either item does not have a meta then either a mismatch or both without meta = vanilla
-//        if (!itemStack.hasItemMeta() || !cache.getItemStack().hasItemMeta()) {
-//            return itemStack.hasItemMeta() == cache.getItemStack().hasItemMeta();
-//        }
         //no use
         //precheck sfid
 
@@ -175,7 +165,6 @@ public class StackUtils {
         final ItemMeta itemMeta = cache2.getItemMeta();
         final ItemMeta cachedMeta = cache.getItemMeta();
         boolean result=metaMatchCore(type,itemMeta,cachedMeta,checkLore,checkCustomModelId);
-        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta ends %s");
         return result;
     }
 
@@ -185,12 +174,13 @@ public class StackUtils {
             return itemMeta == cachedMeta;
         }
 
-//        if(ExperimentalFeatureManager.getInstance().isEnableMetaDirectlyCompare()){
-//            return itemMeta.equals(cachedMeta);
-//        }
-
         // ItemMetas are different types and cannot match
         if (!itemMeta.getClass().equals(cachedMeta.getClass())) {
+            return false;
+        }
+        // Check the display name
+        // if sf item is different ,their name is probably different
+        if (!CraftUtils.matchDisplayNameField(itemMeta,cachedMeta)) {
             return false;
         }
         if (checkCustomModelId) {
@@ -209,38 +199,23 @@ public class StackUtils {
         if (!itemMeta.getPersistentDataContainer().equals(cachedMeta.getPersistentDataContainer())) {
             return false;
         }
+
         //this means slimefun id matchs
         // 99.999% of items can be judged to not match
 
         // Quick meta-extension escapes
-        if (canQuickEscapeMetaVariant(itemMeta, cachedMeta)) {
+        if(CraftUtils.canQuickEscapeMetaVariant(itemMeta,cachedMeta)){
             return false;
         }
-        if(!checkVersionedFeatures(itemMeta, cachedMeta)){
+
+        if(EnvironmentManager.getManager().getVersioned().differentSpecialMeta(itemMeta,cachedMeta)){
             return false;
         }
-//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta basic match %s");
-//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
-
-
-//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta pdc match %s");
-//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // Make sure enchantments match
-        boolean hasEnchant1=itemMeta.hasEnchants();
-        boolean hasEnchant2=cachedMeta.hasEnchants();
-        if(hasEnchant2==hasEnchant1){
-            if(hasEnchant1){
-                if(!matchEnchantments(itemMeta,cachedMeta))
-                    return false;
-            }
-        }else return false;
 
-        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta enchant match %s");
-        // Check item flags
-        //null
-
-
-        //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
+        if(!CraftUtils.matchEnchantmentsFields(itemMeta,cachedMeta)){
+            return false;
+        }
         // Check the attribute modifiers
         final boolean hasAttributeOne = itemMeta.hasAttributeModifiers();
         final boolean hasAttributeTwo = cachedMeta.hasAttributeModifiers();
@@ -251,8 +226,6 @@ public class StackUtils {
         } else if (hasAttributeTwo) {
             return false;
         }
-//        ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"matchMeta attribute match %s");
-//        ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         // Check the lore
         if (checkLore
                 //these shits should be compared in Distinctive Items,but we do these comparasion for them,
@@ -263,7 +236,7 @@ public class StackUtils {
                 || itemType == Material.SPAWNER // Fix Reinforced Spawner in Slimefun4
                 || itemType == Material.SUGAR )// Fix Symbols in MomoTech
                 )
-        ) {
+        ) {//do not use reflection ,as some item will fail exam
             final boolean hasLore1= itemMeta.hasLore();
             final boolean hasLore2 = cachedMeta.hasLore();
             if (hasLore1&&hasLore2) {
@@ -274,7 +247,6 @@ public class StackUtils {
                 return false;
             }
         }
-
         // Slimefun ID check no need to worry about distinction, covered in PDC + lore
         final Optional<String> optionalStackId1 = Slimefun.getItemDataService().getItemData(itemMeta);
         final Optional<String> optionalStackId2 = Slimefun.getItemDataService().getItemData(cachedMeta);
@@ -282,7 +254,6 @@ public class StackUtils {
             return false;
         }
         if (optionalStackId1.isPresent()) {
-
             if(ExperimentalFeatureManager.getInstance().isEnableMatchDistinctiveItem()){
                 final String stackId1 = optionalStackId1.get();
                 //when pdc equals, id value should equals
@@ -300,11 +271,6 @@ public class StackUtils {
 //            }
         }
 
-        // Check the display name
-        if (!Objects.equals(itemMeta.getDisplayName(), cachedMeta.getDisplayName())) {
-            return false;
-        }
-        //ExperimentalFeatureManager.getInstance().endGlobalProfiler(()->"meta All matched vanilla %s");
         // Everything should match if we've managed to get here
         return true;
     }
@@ -659,64 +625,10 @@ public class StackUtils {
         }
         return true;
     }
-    private static Class CraftMetaBlockState;
-    private static Field blockEntityTag;
-    private static boolean hasFailedBlockStateMeta;
-    public static boolean matchBlockStateMeta(BlockStateMeta meta1, BlockStateMeta meta2){
-        if(!hasFailedBlockStateMeta){
-            try{
-                if(CraftMetaBlockState==null){
-                    try{
-                        var field=ReflectUtils.getDeclaredFieldsRecursively(meta1.getClass(),"blockEntityTag");
-                        CraftMetaBlockState=field.getSecondValue();
-                        blockEntityTag=field.getFirstValue();
-                        blockEntityTag.setAccessible(true);
-                    }
-                    catch (Throwable e){
-                            Networks.getInstance().getLogger().severe(()->"Unexpected ERROR occured while initializing CraftMetaBlockState Reflection,please contact the author");
-                            e.printStackTrace();
-                            hasFailedBlockStateMeta =true;
-                    }
-                }
-                return Objects.equals(blockEntityTag.get(meta1),blockEntityTag.get(meta2));
-            }catch (Throwable e){
-                hasFailedBlockStateMeta =true;
-            }
-        }
-        return meta1.equals(meta2);
-    }
-    private static Class CraftMetaItemClass;
-    private static Field enchantmentField;
-    private static Field loreField;
-    private static boolean hasFailedCraftMetaItem;
-    private static void initCraftMetaItemReflection(Class metaClass){
-        try{
-            var field=ReflectUtils.getDeclaredFieldsRecursively(metaClass,"enchantments");
-            CraftMetaItemClass=field.getSecondValue();
-            enchantmentField=field.getFirstValue();
-            field=ReflectUtils.getDeclaredFieldsRecursively(metaClass,"lore");
-            assert  CraftMetaItemClass==field.getSecondValue();
-            loreField=field.getFirstValue();
-        }catch (Throwable e){
-            Networks.getInstance().getLogger().severe(()->"Unexpected ERROR occured while initializing CraftMetaItem Reflection,please contact the author");
-            e.printStackTrace();
-            hasFailedCraftMetaItem=true;
-        }
-    }
-    public static boolean matchEnchantments(ItemMeta meta1,ItemMeta meta2){
-        if(!hasFailedCraftMetaItem){
-            try{
-                if(CraftMetaItemClass==null){
-                    initCraftMetaItemReflection(meta1.getClass());
-                }
-                return Objects.equals(enchantmentField.get(meta1),enchantmentField.get(meta2));
-            }catch (Throwable e){
-                hasFailedCraftMetaItem=true;
-            }
-        }
-        return meta1.getEnchants().equals(meta2.getEnchants());
-    }
 
+    public static boolean matchBlockStateMeta(BlockStateMeta meta1, BlockStateMeta meta2){
+        return EnvironmentManager.getManager().getVersioned().matchBlockStateMeta(meta1, meta2);
+    }
 
     /**
      * Heal the entity by the provided amount
