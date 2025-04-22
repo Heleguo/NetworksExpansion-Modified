@@ -42,16 +42,17 @@ public class NetworkAsyncUtil implements Manager {
         Networks.getInstance().getLogger().info("Enabling Network Async Util");
         detect_async:
         {
-            boolean isAsync;
-            try{
-                TickerTask ticker = Slimefun.getTickerTask();
-                Class<?> tickerAsyncClass = ticker.getClass();
-                Field asyncField = tickerAsyncClass.getDeclaredField("useAsync");
-                asyncField.setAccessible(true);
-                isAsync = (boolean) asyncField.get(ticker);
-            }catch (Throwable e){
-                isAsync = false;
-            }
+            boolean isAsync = true;
+//            try{
+//                TickerTask ticker = Slimefun.getTickerTask();
+//                Class<?> tickerAsyncClass = ticker.getClass();
+//                Field asyncField = tickerAsyncClass.getDeclaredField("useAsync");
+//                asyncField.setAccessible(true);
+//                isAsync = (boolean) asyncField.get(ticker);
+//            }catch (Throwable e){
+//                isAsync = false;
+//            }
+
             if(isAsync){
                 useAsync = true;
                 Networks.getInstance().getLogger().info("Async Ticker Task Detected,Enabling Parallel Running Protector");
@@ -75,7 +76,7 @@ public class NetworkAsyncUtil implements Manager {
             }
 
         }
-        Preconditions.checkNotNull( getParallelExecutor());
+        Preconditions.checkNotNull(getParallelExecutor());
         return this;
     }
 

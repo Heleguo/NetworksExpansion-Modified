@@ -118,6 +118,10 @@ public class LineOperationUtil {
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         try{
             lock.acquire();
+        }catch (InterruptedException e){
+            throw new RuntimeException(e);
+        }
+        try{
             Location location = startLocation.clone();
             int finalLimit = limit;
             if (optimizeExperience) {
@@ -142,15 +146,22 @@ public class LineOperationUtil {
                     }
                 },NetworkAsyncUtil.getInstance().getParallelExecutor()));
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         } finally {
             if(futures.isEmpty()){
                 lock.release();
             }else {
-                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((vd,t)->{
-                    lock.release();
-                });
+                if(NetworkAsyncUtil.getInstance().isUseAsync()){
+                    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((vd,t)->{
+                        lock.release();
+                    });
+                }else {
+                    try{
+                        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+                    }finally {
+                        lock.release();
+                    }
+                }
+
             }
         }
 
