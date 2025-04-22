@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
 import lombok.ToString;
+import me.matl114.matlib.nmsUtils.ItemUtils;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -13,27 +14,30 @@ import java.io.Serializable;
 public class ItemStackCache implements Cloneable {
 
     private ItemStack itemStack;
-    @Nullable
-    private ItemMeta itemMeta = null;
-    private boolean metaCached = false;
-    private static ItemStackCache instanceTemplate=new ItemStackCache(new ItemStack(Material.STONE));
+//    @Nullable
+//    private ItemMeta itemMeta = null;
+//    private boolean metaCached = false;
+    private static final ItemStackCache instanceTemplate=new ItemStackCache(new ItemStack(Material.STONE));
     protected ItemStackCache init(ItemStack itemStack) {
         this.itemStack = itemStack;
-        this.itemMeta = null;
-        this.metaCached = false;
+//        this.itemMeta = null;
+//        this.metaCached = false;
         return this;
     }
-    public static ItemStackCache of(ItemStack itemStack) {
-        return instanceTemplate.clone().init(itemStack);
-    }
+//    public static ItemStackCache of(ItemStack itemStack) {
+//        return instanceTemplate.clone().init(itemStack);
+//    }
     public ItemStackCache(@Nullable ItemStack itemStack) {
         init(itemStack);
     }
 
     @Nullable
     public final ItemStack getItemStack() {
+        //fixme should make sure all itemStacks are CraftItemStacks
         return this.itemStack;
     }
+
+
 
     public final int getItemAmount(){
         return this.itemStack.getAmount();
@@ -45,25 +49,22 @@ public class ItemStackCache implements Cloneable {
     public final void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
 
-        // refresh meta here
-        this.metaCached = false;
-        this.itemMeta = null;
+//        // refresh meta here
+//        this.metaCached = false;
+//        this.itemMeta = null;
     }
     public final boolean isItemMaxStacked() {
         return this.itemStack.getAmount() >= this.itemStack.getMaxStackSize();
     }
     @Nullable
+    @Deprecated(forRemoval = true)
     public final ItemMeta getItemMeta() {
-        if (this.itemMeta == null && !this.metaCached) {
-            this.itemMeta = itemStack.hasItemMeta() ? itemStack.getItemMeta() : null;
-            this.metaCached = !this.metaCached;
-        }
-        return this.itemMeta;
+        return this.itemStack.getItemMeta();
     }
-    protected void setItemMeta0(ItemMeta itemMeta) {
-        this.itemMeta = itemMeta;
-        this.metaCached =  true;
-    }
+//    @Deprecated(forRemoval = true)
+//    protected void setItemMeta0(ItemMeta itemMeta) {
+//        this.itemStack.setItemMeta(itemMeta);
+//    }
 
     @Nonnull
     public final Material getItemType() {
@@ -73,9 +74,8 @@ public class ItemStackCache implements Cloneable {
     @Override
     public ItemStackCache clone() {
         try {
-            ItemStackCache clone = (ItemStackCache) super.clone();
             // TODO: copy mutable state here, so the clone can't change the internals of the original
-            return clone;
+            return (ItemStackCache) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new AssertionError(e);
         }

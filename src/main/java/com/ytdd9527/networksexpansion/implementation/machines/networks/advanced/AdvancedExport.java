@@ -116,64 +116,17 @@ public class AdvancedExport extends NetworkObject implements RecipeDisplayItem {
             return;
         }
         NetworkRoot networkRoot = definition.getNode().getRoot();
-        BlockMenuUtil.BlockMenuSnapShot snapShot=BlockMenuUtil.ofSnapShot(blockMenu);
         for (int testItemSlot : getTestSlots()) {
             ItemStack currentStack = blockMenu.getItemInSlot(testItemSlot);
             if (currentStack != null && currentStack.getType() != Material.AIR) {
                 ItemRequest request=ItemRequest.of(currentStack,currentStack.getAmount());
                 //todo can optimize
-                //itemRequests.add(new ItemRequest(StackUtils.getAsQuantity(currentStack, 1), currentStack.getAmount()));
-                TransportUtil.fetchItemAndPushSnapShot(networkRoot,snapShot,request,i->TransportUtil.commonMatchCache(i,request),currentStack.getAmount(),false,getOutputSlots());
+                TransportUtil.fetchItemAndPush(blockMenu,request,i->TransportUtil.commonMatch(i,request),currentStack.getAmount(),false, networkRoot::getItemStack,getOutputSlots());
             }
         }
-//        List<ItemRequest> itemRequests = new ArrayList<>();
-//        int totalFreeStackSpaces = 0;
-//
-//        for (int outputSlot : getOutputSlots()) {
-//            ItemStack currentStack = blockMenu.getItemInSlot(outputSlot);
-//            if (currentStack == null || currentStack.getType() == Material.AIR) {
-//                totalFreeStackSpaces += 64;
-//            } else {
-//                totalFreeStackSpaces += currentStack.getMaxStackSize() - currentStack.getAmount();
-//            }
-//        }
-//
-//        // no free space, we should escape quickly
-//        if (totalFreeStackSpaces == 0) {
-//            return;
-//        }
-//
-//        // for each every slot, then make itemRequests
-//        for (int testItemSlot : getTestSlots()) {
-//            ItemStack currentStack = blockMenu.getItemInSlot(testItemSlot);
-//            if (currentStack != null && currentStack.getType() != Material.AIR) {
-//                itemRequests.add(new ItemRequest(StackUtils.getAsQuantity(currentStack, 1), currentStack.getAmount()));
-//            }
-//        }
-//
-//        // if there is no item request, we should escape quickly
-//        if (itemRequests.isEmpty()) {
-//            return;
-//        }
-//
-//        // fetch items from network
-//        ItemStack fetched = null;
-//        for (ItemRequest itemRequest : itemRequests) {
-//            fetched = networkRoot.getItemStack(itemRequest); // fetch item from network
-//            if (fetched != null) {
-//                // amount may not be excepted, but it is the max amount we can fetch.
-//                placeItems(networkRoot, blockMenu, fetched.clone(), fetched.getAmount(), getOutputSlots());
-//            }
-//        }
     }
 
-    private void placeItems(@Nonnull NetworkRoot root, @Nonnull BlockMenu blockMenu, @Nonnull ItemStack itemStack, @Nonnull int itemAmount, int[] outputSlots) {
-        BlockMenuUtil.pushItem(blockMenu, itemStack, outputSlots);
 
-        if (itemStack.getAmount() > 0) {
-            returnItems(root, itemStack.clone());
-        }
-    }
 
     private void returnItems(@Nonnull NetworkRoot root, @Nonnull ItemStack itemStack) {
         root.addItemStack(itemStack);

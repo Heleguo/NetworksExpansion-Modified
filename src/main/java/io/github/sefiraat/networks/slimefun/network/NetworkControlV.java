@@ -12,6 +12,7 @@ import io.github.sefiraat.networks.managers.SupportedPluginManager;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
+import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
@@ -20,6 +21,8 @@ import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import io.github.thebusybiscuit.slimefun4.utils.tags.SlimefunTag;
+import me.matl114.matlib.nmsUtils.LevelUtils;
+import me.matl114.matlib.utils.ThreadUtils;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -99,15 +102,13 @@ public class NetworkControlV extends NetworkDirectional {
             return;
         }
 
-        final UUID uuid = UUID.fromString(StorageCacheUtils.getData(blockMenu.getLocation(), OWNER_KEY));
-        final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
 
-        if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.PLACE_BLOCK)) {
-            sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
+
+        final Material material = LevelUtils.getBlockTypeAsync(targetBlock, false); // targetBlock.getType();
+        if(material == null){
+            sendFeedback(blockMenu.getLocation(), FeedbackType.CHUNK_NOT_LOAD);
             return;
         }
-
-        final Material material = targetBlock.getType();
 
         if (material != Material.AIR) {
             sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_AIR);
@@ -127,7 +128,7 @@ public class NetworkControlV extends NetworkDirectional {
             return;
         }
 
-        final SlimefunItem slimefunItem = SlimefunItem.getByItem(templateStack);
+        final SlimefunItem slimefunItem = StackUtils.getByItem(templateStack);
 
         if (slimefunItem != null) {
             sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_TEMPLATE);
@@ -143,7 +144,19 @@ public class NetworkControlV extends NetworkDirectional {
         }
 
         this.blockCache.add(targetPosition);
-        Bukkit.getScheduler().runTask(Networks.getInstance(), bukkitTask -> {
+        String uid = StorageCacheUtils.getData(blockMenu.getLocation(), OWNER_KEY);
+        if(uid == null){
+            sendFeedback(blockMenu.getLocation(), FeedbackType.USER_NOT_PRESENT);
+            return;
+        }
+        final UUID uuid = UUID.fromString(uid);
+        final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+
+        ThreadUtils.executeSync(()->{
+            if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.PLACE_BLOCK)) {
+                sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
+                return;
+            }
             targetBlock.setType(fetchedStack.getType(), true);
             if (SupportedPluginManager.getInstance().isMcMMO()) {
                 try {
@@ -153,10 +166,10 @@ public class NetworkControlV extends NetworkDirectional {
                 }
             }
             ParticleUtils.displayParticleRandomly(
-                    LocationUtils.centre(targetBlock.getLocation()),
-                    Particle.ELECTRIC_SPARK,
-                    1,
-                    5
+                LocationUtils.centre(targetBlock.getLocation()),
+                Particle.ELECTRIC_SPARK,
+                1,
+                5
             );
             sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         });

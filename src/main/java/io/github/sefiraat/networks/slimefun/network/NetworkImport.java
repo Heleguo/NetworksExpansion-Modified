@@ -81,7 +81,6 @@ public class NetworkImport extends NetworkObject {
             sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
-        List<CompletableFuture<?>> threads=new ArrayList<>();
         final NetworkRoot root=definition.getNode().getRoot();
         NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
             for (int i=0;i<INPUT_SLOTS.length;i++) {
@@ -90,12 +89,7 @@ public class NetworkImport extends NetworkObject {
                 if (itemStack == null || itemStack.getType() == Material.AIR) {
                     continue;
                 }
-                threads.add( CompletableFuture.runAsync(() -> {
-                    root.addItemStack(itemStack);
-                },NetworkAsyncUtil.getInstance().getParallelExecutor()));
-            }
-            if(!threads.isEmpty()){
-                CompletableFuture.allOf(threads.toArray(CompletableFuture[]::new)).join();
+                root.addItemStack(itemStack);
             }
         });
         sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);

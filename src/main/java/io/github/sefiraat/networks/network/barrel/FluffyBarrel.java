@@ -2,6 +2,7 @@ package io.github.sefiraat.networks.network.barrel;
 
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.network.stackcaches.BarrelIdentity;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.utils.StackUtils;
@@ -63,14 +64,49 @@ public class FluffyBarrel extends BarrelIdentity {
     }
 
     @Override
+    public ItemStack requestItemExact(ItemRequest itemRequest) {
+        BlockMenu menu = StorageCacheUtils.getMenu(getLocation());
+        if (menu == null) {
+            return null;
+        }
+        ItemStack targetItem = itemRequest.getItemStack();
+        //ensure sync via transportation lock
+        int received0 = NetworkAsyncUtil.getInstance().ensureLocation(getLocation(), ()->{
+            int received = 0;
+
+            for (int slot : getOutputSlot()) {
+                ItemStack item = menu.getItemInSlot(slot);
+                if (item == null || item.getType() == Material.AIR) {
+                    continue;
+                }
+                if (StackUtils.itemsMatch(item, targetItem)) {
+                    int max = Math.min(item.getAmount(), itemRequest.getAmount() - received);
+                    item.setAmount(item.getAmount() - max);
+                    //menu.consumeItem(slot, max);
+                    received += max;
+                }
+            }
+            return received;
+        });
+        if (received0 <= 0) {
+            return null;
+        }
+
+        return StackUtils.getAsQuantity(targetItem, received0);
+    }
+
+    @Override
     public void depositItemStack(ItemStack itemsToDeposit) {
         BlockMenu menu = StorageCacheUtils.getMenu(getLocation());
         if (menu == null) {
             return;
         }
-        synchronized (this){
+       // synchronized (this){
+        NetworkAsyncUtil.getInstance().ensureLocation(getLocation(), ()->{
             BlockMenuUtil.pushItem(menu, itemsToDeposit, getInputSlot());
-        }
+        });
+
+        //}
     }
 
     @Override

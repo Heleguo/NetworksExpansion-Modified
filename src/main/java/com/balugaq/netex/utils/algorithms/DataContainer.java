@@ -1,4 +1,4 @@
-package com.balugaq.netex.utils.Algorithms;
+package com.balugaq.netex.utils.algorithms;
 
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;

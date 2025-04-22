@@ -6,12 +6,15 @@ import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.tasks.TickerTask;
 import lombok.Getter;
-import me.matl114.matlib.Algorithms.DataStructures.Complex.DefaultLockFactory;
-import me.matl114.matlib.Algorithms.DataStructures.Complex.ObjectLockFactory;
-import me.matl114.matlib.Utils.Reflect.MethodAccess;
-import me.matl114.matlib.Utils.Reflect.ProxyUtils;
+
+import me.matl114.matlib.algorithms.designs.concurrency.DefaultLockFactory;
+import me.matl114.matlib.algorithms.designs.concurrency.ObjectLockFactory;
 import me.matl114.matlib.core.Manager;
-import me.matl114.matlibAdaptor.Algorithms.DataStructures.LockFactory;
+import me.matl114.matlib.utils.reflect.proxy.ProxyBuilder;
+import me.matl114.matlib.utils.reflect.proxy.invocation.AdaptorInvocation;
+import me.matl114.matlib.utils.reflect.wrapper.MethodAccess;
+
+import me.matl114.matlibAdaptor.algorithms.dataStructures.LockFactory;
 import net.bytebuddy.implementation.bytecode.member.FieldAccess;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
@@ -57,7 +60,7 @@ public class NetworkAsyncUtil implements Manager {
                             .noSnapShot()
                             .initWithNull()
                             .invoke(null);
-                    cargoLockFactory = ProxyUtils.buildAdaptorOf(LockFactory.class, lockFactory);
+                    cargoLockFactory = ProxyBuilder.buildMatlibAdaptorOf(LockFactory.class, lockFactory,(x)-> AdaptorInvocation.createASM(lockFactory.getClass(), x));
                     Networks.getInstance().getLogger().info("Slimefun Async Cargo Factory Adaptor created successfully");
                 }catch (Throwable error){
                     cargoLockFactory = new ObjectLockFactory<>(Location.class,Location::clone)
@@ -125,6 +128,7 @@ public class NetworkAsyncUtil implements Manager {
 
    // private final Map<Location,ReentrantLock> locks = new ConcurrentHashMap<>();
     private LockFactory<Location> cargoLockFactory;
+    private final ConcurrentHashMap<Location,Semaphore> parallelTaskLock = new ConcurrentHashMap<>();
     public void ensureLocation(Location location,Runnable runnable){
 
         if(useAsync||ExperimentalFeatureManager.getInstance().isEnableNotWaitTillJoin()){
@@ -140,7 +144,9 @@ public class NetworkAsyncUtil implements Manager {
             return runnable.get();
         }
     }
-
+    public Semaphore getParallelTaskLock(Location loc){
+        return parallelTaskLock.computeIfAbsent(loc, (k)->new Semaphore(1));
+    }
 
     public void runParallel(){
 

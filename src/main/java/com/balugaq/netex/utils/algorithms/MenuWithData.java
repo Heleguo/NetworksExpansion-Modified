@@ -1,10 +1,8 @@
-package com.balugaq.netex.utils.Algorithms;
+package com.balugaq.netex.utils.algorithms;
 
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 
 import javax.annotation.Nonnull;
-import javax.xml.crypto.Data;
 
 public interface MenuWithData {
     public DataContainer newDataContainer();

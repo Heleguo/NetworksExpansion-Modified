@@ -1,5 +1,8 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
+import io.github.sefiraat.networks.utils.StackUtils;
+import me.matl114.matlib.nmsUtils.ItemUtils;
+import me.matl114.matlib.utils.reflect.ReflectUtils;
 import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
@@ -8,33 +11,37 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class QuantumCache extends ItemStackCache implements OptionalSfItemCache {
-
+    private static final VarHandle ATOMIC_AMOUNT_HANDLE = ReflectUtils.getVarHandlePrivate(QuantumCache.class, "amount").withInvokeExactBehavior();
+    private static final VarHandle ATOMIC_IDCACHE_HANDLE = ReflectUtils.getVarHandlePrivate(QuantumCache.class, "initializedId").withInvokeExactBehavior();
     @Nullable
     private final ItemMeta storedItemMeta;
     private final boolean supportsCustomMaxAmount;
+    @Setter
     @Getter
     private int limit;
-    private long amount;
-    private final byte[] lock=new byte[0];
-
+    @Getter
+    private volatile long amount;
+    @Setter
     @Getter
     private boolean voidExcess;
     //lock for saving thread
     @Getter
     private final AtomicBoolean saving = new AtomicBoolean(false);
     private String id;
-    private final AtomicBoolean initializedId=new AtomicBoolean(false);
+    private boolean initializedId= false;
     public final String getOptionalId(){
-        if(initializedId.compareAndSet(false,true)){
-            ItemMeta meta = getItemMeta();
-            id= meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
+        if(ATOMIC_IDCACHE_HANDLE.compareAndSet((QuantumCache)this,(boolean)false, (boolean)true)){
+            id = StackUtils.getOptionalId(getItemStack());
         }
         return id;
     }
@@ -46,8 +53,8 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
     private boolean pendingMove=false;
 
     public QuantumCache(@Nullable ItemStack storedItem, long amount, int limit, boolean voidExcess, boolean supportsCustomMaxAmount) {
-        super(storedItem);
-        this.storedItemMeta = storedItem == null ? null : storedItem.getItemMeta();
+        super(storedItem == null? null : ItemUtils.cleanStack(storedItem));
+        this.storedItemMeta = getItemStack() == null ? null : getItemStack().getItemMeta();
         this.amount = amount;
         this.limit = limit;
         this.voidExcess = voidExcess;
@@ -59,15 +66,9 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
     public ItemMeta getStoredItemMeta() {
         return this.storedItemMeta;
     }
-    public long getAmount(){
-        synchronized (lock){
-            return this.amount;
-        }
-    }
+
     public void setAmount(int amount) {
-        synchronized (lock) {
-            this.amount = amount;
-        }
+        this.amount = amount;
     }
 
     public boolean supportsCustomMaxAmount() {
@@ -75,32 +76,28 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
     }
 
     public int increaseAmount(int amount) {
-        synchronized (lock) {
-            long total = this.amount + (long) amount;
+        long oldValue, newValue;int retValue = 0;
+        do {
+            oldValue = this.amount;
+            long total = oldValue + (long) amount;
             if (total > this.limit) {
-                this.amount = this.limit;
+                newValue = this.limit;
                 if (!this.voidExcess) {
-                    return (int) (total - this.limit);
+                    retValue = (int) (total - this.limit);
                 }
             } else {
-                this.amount = total;
+                newValue = total;
             }
-        }
-        return 0;
+        }while (!ATOMIC_AMOUNT_HANDLE.compareAndSet((QuantumCache)this, (long)oldValue,(long)newValue));
+        return retValue;
     }
 
     public void reduceAmount(int amount) {
-        synchronized (lock) {
-            this.amount -= amount;
-        }
-    }
-
-    public void setLimit(int limit) {
-        this.limit = limit;
-    }
-
-    public void setVoidExcess(boolean voidExcess) {
-        this.voidExcess = voidExcess;
+        long oldValue, newValue;
+        do{
+            oldValue = this.amount;
+            newValue = oldValue - amount;
+        }while (!ATOMIC_AMOUNT_HANDLE.compareAndSet((QuantumCache)this,(long)oldValue,(long)newValue));
     }
 
 
@@ -110,13 +107,16 @@ public class QuantumCache extends ItemStackCache implements OptionalSfItemCache 
             return null;
         }
         final ItemStack clone = this.getItemStack().clone();
-        synchronized (lock) {
-            if(this.amount <= 0 ){
+        long oldValue, newValue;int amountToWithDraw;
+        do{
+            oldValue = this.amount;
+            if(oldValue <= 0){
                 return null;
             }
-            clone.setAmount((int) Math.min(this.amount, amount));
-            reduceAmount(clone.getAmount());
-        }
+            amountToWithDraw =(int) Math.min(this.amount, amount);
+            newValue = oldValue - amountToWithDraw;
+        }while (!ATOMIC_AMOUNT_HANDLE.compareAndSet((QuantumCache)this,(long)oldValue,(long)newValue));
+        clone.setAmount(amountToWithDraw);
         return clone;
     }
 

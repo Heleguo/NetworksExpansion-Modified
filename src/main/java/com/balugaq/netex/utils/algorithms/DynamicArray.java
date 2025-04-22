@@ -1,4 +1,4 @@
-package com.balugaq.netex.utils.Algorithms;
+package com.balugaq.netex.utils.algorithms;
 
 import java.util.AbstractList;
 import java.util.List;

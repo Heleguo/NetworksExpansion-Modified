@@ -10,6 +10,7 @@ import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.slimefun.network.NetworkObject;
+import io.github.sefiraat.networks.slimefun.network.NetworkQuantumWorkbench;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
@@ -99,7 +100,7 @@ public class NetworkDismantlingTable extends NetworkObject implements RecipeDisp
         if(machineRecipes==null||machineRecipes.isEmpty()){
             machineRecipes=new ArrayList<>();
             for(SlimefunItem item:Slimefun.getRegistry().getAllSlimefunItems()){
-                if(item.getAddon()==Networks.getInstance()&&item.getRecipeType()!=RecipeType.NULL&&item.getRecipe().length<=9){
+                if(item.getAddon()==Networks.getInstance()&&item.getRecipeType()!=RecipeType.NULL&& item.getRecipeType()!= NetworkQuantumWorkbench.TYPE &&item.getRecipe().length<=9){
                     machineRecipes.add(new MachineRecipe(0,new ItemStack[]{item.getRecipeOutput()},item.getRecipe()));
                 }
             }
@@ -135,7 +136,7 @@ public class NetworkDismantlingTable extends NetworkObject implements RecipeDisp
                     player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.dismant-table.null_input"));
                     return false;
                 }
-                ItemStackCache cache=ItemStackCache.of(item);
+                ItemStack cache=item;//ItemStackCache.of(item);
                 for(MachineRecipe machineRecipe:getMachineRecipes()){
                     if(StackUtils.itemsMatch(cache,machineRecipe.getInput()[0])){
                         craft(root,item,machineRecipe,menu);

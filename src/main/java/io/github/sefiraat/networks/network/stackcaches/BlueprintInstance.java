@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
 import lombok.Getter;
+import me.matl114.matlib.nmsUtils.ItemUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
@@ -17,7 +18,7 @@ public class BlueprintInstance extends ItemStackCache {
     private Recipe recipe = null;
 
     public BlueprintInstance(@Nonnull ItemStack[] recipeItems, @Nonnull ItemStack expectedOutput) {
-        super(expectedOutput);
+        super(ItemUtils.cleanStack(expectedOutput));
         this.recipeItems = recipeItems;
     }
 

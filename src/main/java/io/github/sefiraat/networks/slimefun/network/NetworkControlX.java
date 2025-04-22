@@ -19,6 +19,7 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction
 import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
 import io.github.thebusybiscuit.slimefun4.libraries.paperlib.features.blockstatesnapshot.BlockStateSnapshotResult;
 import io.github.thebusybiscuit.slimefun4.utils.tags.SlimefunTag;
+import me.matl114.matlib.nmsUtils.LevelUtils;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -99,7 +100,11 @@ public class NetworkControlX extends NetworkDirectional {
             return;
         }
 
-        final Material material = targetBlock.getType();
+        final Material material = LevelUtils.getBlockTypeAsync(targetBlock, false); // targetBlock.getType();
+        if(material == null){
+            sendFeedback(blockMenu.getLocation(), FeedbackType.CHUNK_NOT_LOAD);
+            return;
+        }
 
         if (material.getHardness() < 0 || material.isAir()) {
             sendFeedback(blockMenu.getLocation(), FeedbackType.BLOCK_CANNOT_BE_CUT);

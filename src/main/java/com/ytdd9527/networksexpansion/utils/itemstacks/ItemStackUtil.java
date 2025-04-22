@@ -7,6 +7,7 @@ import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.nms.ItemNameAdapter;
 import io.github.thebusybiscuit.slimefun4.utils.itemstack.ItemStackWrapper;
+import me.matl114.matlib.nmsUtils.ItemUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -45,21 +46,22 @@ public final class ItemStackUtil {
      * @param item to be cloned
      * @return a cloned #{@link ItemStack}
      */
+    @Nullable
     public static ItemStack cloneItem(@Nonnull ItemStack item) {
-        return item instanceof ItemStackWrapper ?ItemStackUtil.getCleanItem (item) : item.clone();
+        return item instanceof ItemStackWrapper ?ItemStackUtil.getCleanItem (item) : ItemUtils.copyStack(item);// item.clone();
     }
-
+    @Nullable
     public static ItemStack getCleanItem(@Nullable ItemStack item) {
         if (item == null) {
-            return new ItemStack(Material.AIR);
+            return null;//new ItemStack(Material.AIR);
         }
-
-        ItemStack cleanItem = new ItemStack(item.getType(),item.getAmount());
-       // if (item.hasItemMeta()) {
-        cleanItem.setItemMeta(item.getItemMeta());
-       // }
-
-        return cleanItem;
+        return ItemUtils.copyStack(item);// item.hasItemMeta()? : ItemUtils.newStack(item.getType(), item.getAmount());
+//        ItemStack cleanItem = new ItemStack(item.getType(),item.getAmount());
+//       // if (item.hasItemMeta()) {
+//        cleanItem.setItemMeta(item.getItemMeta());
+//       // }
+//
+//        return cleanItem;
     }
 
     /**

@@ -5,6 +5,7 @@ import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.balugaq.netex.utils.LineOperationUtil;
+import com.balugaq.netex.utils.algorithms.MenuWithPrefetch;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.machines.AdvancedDirectional;
 import com.ytdd9527.networksexpansion.utils.DisplayGroupGenerators;
@@ -42,7 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-public class AdvancedLineTransferMorePusher extends AdvancedDirectional implements RecipeDisplayItem, Configurable {
+public class AdvancedLineTransferMorePusher extends AdvancedDirectional implements RecipeDisplayItem, Configurable , MenuWithPrefetch {
     private static final int DEFAULT_MAX_DISTANCE = 64;
     private static final int DEFAULT_PUSH_ITEM_TICK = 1;
     private static final boolean DEFAULT_USE_SPECIAL_MODEL = false;
@@ -163,11 +164,15 @@ public class AdvancedLineTransferMorePusher extends AdvancedDirectional implemen
         final TransportMode currentTransportMode = getCurrentTransportMode(blockMenu.getLocation());
         final int limitQuantity = getLimitQuantity(blockMenu.getLocation());
 
-        List<ItemStack> templates = new ArrayList<>();
-        for (int slot : this.getItemSlots()) {
+        int[] len = getItemSlots();
+        List<ItemStack> templates = new ArrayList<>(len.length);
+        List<NetworkRoot.PusherPrefetcherInfo> prefetcherInfos = new ArrayList<>(len.length);
+        for (int index = 0; index < len.length; ++index) {
+            int slot =  len[index];
             final ItemStack template = blockMenu.getItemInSlot(slot);
             if (template != null && template.getType() != Material.AIR) {
                 templates.add(StackUtils.getAsQuantity(template, 1));
+                prefetcherInfos.add(getPrefetcher(blockMenu, index));
             }
         }
 
@@ -181,7 +186,7 @@ public class AdvancedLineTransferMorePusher extends AdvancedDirectional implemen
 //                (targetMenu) -> {
 //                    LineOperationUtil.pushItem(root, targetMenu, templates, currentTransportMode, limitQuantity);
 //                });
-        LineOperationUtil.linePushItemOperationParallel(root,blockMenu.getLocation(),direction,maxDistance, ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),false,false,templates,limitQuantity,currentTransportMode);
+        LineOperationUtil.linePushItemOperationParallel(root,blockMenu.getLocation(),direction,maxDistance, ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),false,false,templates,prefetcherInfos,limitQuantity,currentTransportMode);
         sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
@@ -320,5 +325,15 @@ public class AdvancedLineTransferMorePusher extends AdvancedDirectional implemen
     @Override
     protected int getTransportModeSlot() {
         return TRANSPORT_MODE_SLOT;
+    }
+
+    @Override
+    public int getPrefetchCount() {
+        return getItemSlots().length;
+    }
+
+    @Override
+    public int getDataSlot() {
+        return 0;
     }
 }

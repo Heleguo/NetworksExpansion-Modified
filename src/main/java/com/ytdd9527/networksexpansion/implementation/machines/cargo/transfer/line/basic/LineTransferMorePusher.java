@@ -5,6 +5,7 @@ import com.balugaq.netex.api.enums.TransportMode;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.interfaces.Configurable;
 import com.balugaq.netex.utils.LineOperationUtil;
+import com.balugaq.netex.utils.algorithms.MenuWithPrefetch;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.utils.DisplayGroupGenerators;
 import dev.sefiraat.sefilib.entity.display.DisplayGroup;
@@ -42,7 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-public class LineTransferMorePusher extends NetworkDirectional implements RecipeDisplayItem, Configurable {
+public class LineTransferMorePusher extends NetworkDirectional implements RecipeDisplayItem, Configurable, MenuWithPrefetch {
     private static final int DEFAULT_MAX_DISTANCE = 32;
     private static final int DEFAULT_PUSH_ITEM_TICK = 1;
     private static final boolean DEFAULT_USE_SPECIAL_MODEL = false;
@@ -145,18 +146,23 @@ public class LineTransferMorePusher extends NetworkDirectional implements Recipe
             return;
         }
 
-        List<ItemStack> templates = new ArrayList<>();
-        for (int slot : this.getItemSlots()) {
+        int[] len = getItemSlots();
+        List<ItemStack> templates = new ArrayList<>(len.length);
+        List<NetworkRoot.PusherPrefetcherInfo> prefetcherInfos = new ArrayList<>(len.length);
+        for (int index = 0; index < len.length; ++index) {
+            int slot =  len[index];
             final ItemStack template = blockMenu.getItemInSlot(slot);
             if (template != null && template.getType() != Material.AIR) {
                 templates.add(StackUtils.getAsQuantity(template, 1));
+                prefetcherInfos.add(getPrefetcher(blockMenu, index));
             }
         }
 
+
         final NetworkRoot root = definition.getNode().getRoot();
 
-        final boolean drawParticle = blockMenu.hasViewer();
-        LineOperationUtil.linePushItemOperationParallel(root,blockMenu.getLocation(),direction,maxDistance, ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),false,false,templates,64,TransportMode.FIRST_STOP);
+        //final boolean drawParticle = blockMenu.hasViewer();
+        LineOperationUtil.linePushItemOperationParallel(root,blockMenu.getLocation(),direction,maxDistance, ExperimentalFeatureManager.getInstance().isEnableLinePusherParallel(),false,false,templates,prefetcherInfos,64,TransportMode.FIRST_STOP);
 //        LineOperationUtil.doOperation(
 //                blockMenu.getLocation(),
 //                direction,
@@ -287,5 +293,15 @@ public class LineTransferMorePusher extends NetworkDirectional implements Recipe
                 String.format(Networks.getLocalizationService().getString("icons.mechanism.transfers.push_item_tick"), pushItemTick)
         ));
         return displayRecipes;
+    }
+
+    @Override
+    public int getPrefetchCount() {
+        return getItemSlots().length;
+    }
+
+    @Override
+    public int getDataSlot() {
+        return 0;
     }
 }

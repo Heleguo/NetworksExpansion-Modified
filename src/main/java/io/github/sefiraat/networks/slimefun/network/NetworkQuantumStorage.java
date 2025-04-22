@@ -6,6 +6,7 @@ import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
@@ -162,35 +163,38 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             ItemStack fetched = cache.withdrawItem(amount);
             BlockMenu blockMenu=StorageCacheUtils.getMenu(location);
             if (blockMenu != null) {
-                //if lock required ,this part is locked by blockMenu
-                synchronized (blockMenu){
+                final ItemStack fetch0 = fetched;
+                //if lock required ,this part is locked by location via transportation lock
+                fetched = NetworkAsyncUtil.getInstance().ensureLocation(location,()->{
+                    ItemStack fetch1 = fetch0;
                     ItemStack output= blockMenu.getItemInSlot(OUTPUT_SLOT);
                     //actually we don't use these part frequently
                     if (output != null
-                            && output.getType() != Material.AIR
-                            && StackUtils.itemsMatch(cache, output)
+                        && output.getType() != Material.AIR
+                        && StackUtils.itemsMatch(cache, output)
                     ) {
                         // We have an output item we can use also
-                        if (fetched == null || fetched.getType() == Material.AIR) {
+                        if (fetch1 == null || fetch1.getType() == Material.AIR) {
                             // Storage is totally empty - just use output slot
-                            fetched = output.clone();
-                            if (fetched.getAmount() > amount) {
-                                fetched.setAmount(amount);
+                            fetch1 = output.clone();
+                            if (fetch1.getAmount() > amount) {
+                                fetch1.setAmount(amount);
                             }
-                            output.setAmount(output.getAmount() - fetched.getAmount());
+                            output.setAmount(output.getAmount() - fetch1.getAmount());
                         } else {
                             // Storage has content, lets add on top of it
-                            int additional = Math.min(amount - fetched.getAmount(), output.getAmount());
+                            int additional = Math.min(amount - fetch1.getAmount(), output.getAmount());
                             output.setAmount(output.getAmount() - additional);
-                            fetched.setAmount(fetched.getAmount() + additional);
+                            fetch1.setAmount(fetch1.getAmount() + additional);
                         }
                     }
-                }
+                    return fetch1;
+                });
             }
             syncBlock(location, cache);
             return fetched;
         } else {
-            // Storage has everything we need
+            // Storage has everything we need,
             ItemStack fetched = cache.withdrawItem(amount);
             syncBlock(location, cache);
             return fetched;

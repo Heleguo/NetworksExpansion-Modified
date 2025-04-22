@@ -4,15 +4,15 @@ import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.utils.BlockMenuUtil;
 import com.balugaq.netex.utils.TransportUtil;
+import com.balugaq.netex.utils.algorithms.DataContainer;
+import com.balugaq.netex.utils.algorithms.MenuWithPrefetch;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
-import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.slimefun.network.NetworkDirectional;
-import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
@@ -28,7 +28,7 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class AbstractNetworkPusher extends NetworkDirectional {
+public abstract class AbstractNetworkPusher extends NetworkDirectional implements MenuWithPrefetch {
     private static final int NORTH_SLOT = 11;
     private static final int SOUTH_SLOT = 29;
     private static final int EAST_SLOT = 21;
@@ -66,10 +66,11 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
             sendFeedback(blockMenu.getLocation(), FeedbackType.NO_TARGET_BLOCK);
             return;
         }
-        BlockMenuUtil.BlockMenuSnapShot snapShot=BlockMenuUtil.ofSnapShot(targetMenu);
         NetworkRoot root=definition.getNode().getRoot();
         //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(true);
-        for (int itemSlot : this.getItemSlots()) {
+        int[] itemSlots = this.getItemSlots();
+        for (int index = 0; index < itemSlots.length; ++index) {
+            int itemSlot = itemSlots[index];
             final ItemStack testItem = blockMenu.getItemInSlot(itemSlot);
 
             if (testItem == null || testItem.getType() == Material.AIR) {
@@ -82,13 +83,23 @@ public abstract class AbstractNetworkPusher extends NetworkDirectional {
             final ItemRequest itemRequest = new ItemRequest(clone, clone.getMaxStackSize());
             //todo Parallel slotAccess
             int[] slots = targetMenu.getPreset().getSlotsAccessedByItemTransport(targetMenu, ItemTransportFlow.INSERT, clone);
+            var prefetcher = getPrefetcher(blockMenu, index);
             //if(ExperimentalFeatureManager.getInstance().isEnableSnapShotOptimize()){
-                TransportUtil.fetchItemAndPushSnapShot(root,snapShot,itemRequest,(itemStack)->TransportUtil.commonMatchCache(itemStack,itemRequest),64,true,slots);
+                TransportUtil.fetchItemAndPush(targetMenu,itemRequest,(itemStack)->TransportUtil.commonMatch(itemStack,itemRequest),64,true,ir->prefetcher.getItemStackWithPrefetch(root,ir),slots);
             //}else {
 //                TransportUtil.fetchItemAndPush(root,targetMenu,itemRequest,(itemStack)->TransportUtil.commonMatch(itemStack,itemRequest),64,true,slots);
             //}
         }
         //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(false);
+    }
+
+    public int getPrefetchCount(){
+        return this.getItemSlots().length;
+    }
+
+    @Override
+    public int getDataSlot() {
+        return 0;
     }
 
     @Override

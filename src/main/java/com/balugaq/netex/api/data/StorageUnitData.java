@@ -8,7 +8,13 @@ import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
 import it.unimi.dsi.fastutil.Hash;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+import lombok.Getter;
 import lombok.ToString;
+import me.matl114.matlib.algorithms.dataStructures.struct.Pair;
+import me.matl114.matlib.nmsUtils.ItemUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -25,11 +31,12 @@ import java.util.function.BiConsumer;
 @ToString
 public class StorageUnitData {
 
+    @Getter
     private final int id;
     private final OfflinePlayer owner;
     private final SyncedHashMap<Integer, ItemContainer> storedItems;
     //a view of storedItems using Material as filter
-    private final Map<Material, Set<ItemContainer>> material2Containers;
+    private final Map<Material, Int2ObjectArrayMap<ItemContainer>> material2Containers;
     private boolean isPlaced;
     private StorageUnitType sizeType;
     private Location lastLocation;
@@ -69,17 +76,18 @@ public class StorageUnitData {
         this.isPlaced = isPlaced;
         this.lastLocation = lastLocation;
         this.storedItems = storedItems;
-        this.material2Containers = new EnumMap<>(Material.class);
+        this.material2Containers = new Reference2ReferenceOpenHashMap<>();
         this.storedItems.setSynced((key,value)->{
             synchronized(mapLock) {
-                this.material2Containers.computeIfAbsent(value.getItemType(),k -> new HashSet<>()).add(value);
+                this.material2Containers.computeIfAbsent(value.getItemType(),k -> new Int2ObjectArrayMap<>()).put((int)key, value);
             }
         },(key,value)->{
             if (value != null) {
                 var material=value.getItemType();
                 var sets= material2Containers.get(material);
                 if(sets != null) {
-                    sets.removeIf(i->i.getId()==value.getId());
+                    sets.remove((int)key);
+//                    sets.removeIf(i->i.getId()==value.getId());
                     if(sets.isEmpty()){
                         material2Containers.remove(material);
                     }
@@ -87,8 +95,8 @@ public class StorageUnitData {
 
             }
         });
-        for(ItemContainer container : storedItems.values()) {
-            material2Containers.computeIfAbsent(container.getItemType(), k -> new HashSet<>()).add(container);
+        for(var container : storedItems.entrySet()) {
+            material2Containers.computeIfAbsent(container.getValue().getItemType(), k -> new Int2ObjectArrayMap<>()).put((int)container.getKey(), container.getValue());
         }
 
     }
@@ -140,31 +148,33 @@ public class StorageUnitData {
      * @param amount: amount will be added
      * @return the amount actual added
      */
-    public int addStoredItem(ItemStack item, int amount, boolean contentLocked, boolean force){
-        return addStoredItem(ItemStackCache.of(item),amount,contentLocked,force);
-    }
-    public int addStoredItem(ItemStackCache item, int amount, boolean contentLocked, boolean force) {
+//    public int addStoredItem(ItemStack item, int amount, boolean contentLocked, boolean force){
+//        return addStoredItem(ItemStackCache.of(item),amount,contentLocked,force);
+//    }
+    public int addStoredItem(ItemStack item, int amount, boolean contentLocked, boolean force) {
+        if(item == null ){
+            return 0;
+        }
         int add = 0;
         boolean isVoidExcess = NetworksDrawer.isVoidExcess(getLastLocation());
-        var containers=viewStoredItemByMaterial(item.getItemType());
+        var containers=viewStoredItemByMaterial(item.getType());
+        int sizeMax = sizeType.getEachMaxSize();
         if(containers!=null){
-            for (ItemContainer each : containers) {
+            for (ItemContainer each : containers.values()) {
                 if (each.isSimilar(item)) {
                     // Found existing one, add amount
-                    int eachAmount;
-                    synchronized (each) {
-                        eachAmount = each.getAmount();
-                        add = Math.min(amount, sizeType.getEachMaxSize() - eachAmount);
-                        if (add > 0||!isVoidExcess) {
-                            each.addAmount(add);
-                            eachAmount+=add;
-                        } else {
-                            //force voidExcess
-                            item.setItemAmount(0);
-                            return add;
+                    int oldAmount,newAmount;
+                    do{
+                        oldAmount = each.amount;
+                        add = Math.min(amount, sizeMax - oldAmount);
+                        if(add > 0 || !isVoidExcess){
+                            newAmount = oldAmount + add;
+                        }else {
+                            return item.getAmount();
                         }
-                    }
-                    DataStorage.setStoredAmount(id, each.getId(), eachAmount);
+
+                    }while (!ItemContainer.ATOMIC_AMOUNT_HANDLE.compareAndSet((ItemContainer)each,(int)oldAmount, (int)newAmount));
+                    DataStorage.setStoredAmount(id, each.getId(), each.amount);
                     return add;
 
                 }
@@ -175,23 +185,20 @@ public class StorageUnitData {
             // If in content locked mode, no new input allowed
             if (contentLocked || NetworksDrawer.isLocked(getLastLocation())) return 0;
         }
-        // Not found, new one
+        // Not found, new one, this action should be synchronized ,as it is not frequently called
         synchronized (mapLock){
             if (storedItems.size() < sizeType.getMaxItemCount()) {
                 add = Math.min(amount, sizeType.getEachMaxSize());
-                int itemId = DataStorage.getItemId(item.getItemStack());
-                var container = new ItemContainer(itemId, item.getItemStack(), add);
+                ItemStack cleanItem = ItemUtils.copyStack(item);
+                int itemId = DataStorage.getItemId(cleanItem);
+                var container = new ItemContainer(itemId, cleanItem, add);
                 storedItems.put(itemId, container);
-                material2Containers.computeIfAbsent(container.getItemType(), k -> new HashSet<>()).add(container);
+                material2Containers.computeIfAbsent(container.getItemType(), k -> new Int2ObjectArrayMap<>()).put(itemId, container);
                 DataStorage.addStoredItem(id, itemId, add);
                 return add;
             }
         }
         return add;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public boolean isPlaced() {
@@ -289,7 +296,7 @@ public class StorageUnitData {
             return storedItems.values().toArray(ItemContainer[]::new);
         }
     }
-    public Set<ItemContainer> viewStoredItemByMaterial(Material material){
+    public Int2ObjectArrayMap<ItemContainer> viewStoredItemByMaterial(Material material){
         synchronized (mapLock){
 //            Networks.getInstance().getLogger().info(material2Containers.toString());
 //            Networks.getInstance().getLogger().info(storedItems.toString());
@@ -300,38 +307,72 @@ public class StorageUnitData {
     public OfflinePlayer getOwner() {
         return owner;
     }
-
+    private static final ItemStack EMPTY = new ItemStack(Material.AIR);
     @Nullable
     public ItemStack requestItem(@Nonnull ItemRequest itemRequest) {
-        ItemStack item = itemRequest.getItemStack();
-        if (item == null) {
+
+        if (itemRequest.getItemStack() == null) {
             return null;
         }
 
         int amount = itemRequest.getAmount();
         var containers=viewStoredItemByMaterial(itemRequest.getItemType());
         if(containers != null) {
-            for (ItemContainer itemContainer : containers) {
-                if (itemContainer.isSimilar(itemRequest)) {
-                    int containerAmount;
-                    int take;
-                    synchronized (itemContainer) {
-                        containerAmount = itemContainer.getAmount();
-                        take = Math.min(amount, containerAmount);
-                        if (take <= 0) {
-                            break;
-                        }
-                        itemContainer.removeAmount(take);
-                    }
-
-                    DataStorage.setStoredAmount(id, itemContainer.getId(), containerAmount-take);
-                    ItemStack clone = item.clone();
-                    clone.setAmount(take);
-                    return clone;
+            find_loop:
+            for (ItemContainer itemContainer : containers.values()) {
+                ItemStack stack = requestItemContainer(itemContainer, itemRequest, amount, false);
+                if(stack == EMPTY) {
+                    break ;
+                }else if(stack != null){
+                    return stack;
                 }
             }
         }
         return null;
+    }
+    private ItemStack requestItemContainer(ItemContainer itemContainer, ItemRequest itemRequest, int amount, boolean bypassCheck){
+        if (bypassCheck || itemContainer.isSimilar(itemRequest)) {
+            int take;
+            int oldAmount, newAmount;
+            do{
+                oldAmount = itemContainer.amount;
+                take = Math.min(amount, oldAmount);
+                if(take <= 0){
+                    return EMPTY;
+                }
+                newAmount = oldAmount - take;
+            }while (!ItemContainer.ATOMIC_AMOUNT_HANDLE.compareAndSet((ItemContainer)itemContainer, (int)oldAmount, (int)newAmount));
+            DataStorage.setStoredAmount(id, itemContainer.getId(), itemContainer.amount);
+            ItemStack clone = itemRequest.getItemStack().clone();
+            clone.setAmount(take);
+            return clone;
+        }
+        return null;
+    }
+
+    public Integer getPrefetchInfo(ItemRequest itemRequest){
+        ItemStack item = itemRequest.getItemStack();
+        if(item == null){
+            return null;
+        }
+        var containers=viewStoredItemByMaterial(itemRequest.getItemType());
+        if(containers != null) {
+            for (var itemContainerEntry : containers.int2ObjectEntrySet()) {
+                var ic = itemContainerEntry.getValue();
+                if (ic.isSimilar(itemRequest)) {
+                    return itemContainerEntry.getIntKey();
+                }
+            }
+        }
+        return null;
+    }
+    private static final Pair<ItemStack,Integer> NULL_REQUEST = Pair.of(null, null);
+    @Nonnull
+    public Pair<ItemStack,Integer> requestViaIndex(ItemRequest itemRequest, int index, boolean bypassCheck){
+        ItemContainer container = storedItems.get(index);
+        int amount = itemRequest.getAmount();
+        ItemStack request = requestItemContainer(container, itemRequest, amount, bypassCheck);
+        return request == EMPTY? Pair.of(null, index) : (request == null? Pair.of(null,null): Pair.of(request, index));
     }
 
     public void depositItemStack(@Nonnull ItemStack[] itemsToDeposit, boolean contentLocked) {
@@ -348,11 +389,12 @@ public class StorageUnitData {
         itemsToDeposit.setAmount(itemsToDeposit.getAmount() - actualAdded);
     }
     public void depositItemStack(ItemStackCache itemsToDeposit, boolean contentLocked, boolean force){
-        if(itemsToDeposit.getItemStack()==null||isBlacklisted(itemsToDeposit.getItemStack())){
+        ItemStack depositeItem = itemsToDeposit.getItemStack();
+        if(depositeItem==null||isBlacklisted(depositeItem)){
             return;
         }
-        int actualAdded=addStoredItem(itemsToDeposit,itemsToDeposit.getItemAmount(),contentLocked,force);
-        itemsToDeposit.setItemAmount(itemsToDeposit.getItemAmount() - actualAdded);
+        int actualAdded=addStoredItem(itemsToDeposit.getItemStack(),itemsToDeposit.getItemAmount(), contentLocked, force);
+        depositeItem.setAmount(depositeItem.getAmount() - actualAdded);
     }
     public void depositItemStack(ItemStackCache item, boolean contentLocked) {
         depositItemStack(item, contentLocked, false);

@@ -6,6 +6,7 @@ import com.balugaq.netex.utils.BlockMenuUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.slimefun.network.AdminDebuggable;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -126,7 +127,9 @@ public class Offsetter extends SpecialSlimefunItem implements AdminDebuggable {
             }
 
             if (BlockMenuUtil.fits(toMenu, fromItem, toSlot[offseti])) {
-                BlockMenuUtil.pushItem(toMenu, fromItem, toSlot[offseti]);
+                NetworkAsyncUtil.getInstance().ensureLocation(toMenu.getLocation(), ()->{
+                    BlockMenuUtil.pushItem(toMenu, fromItem, toSlot[offseti]);
+                });
             }
         }
     }

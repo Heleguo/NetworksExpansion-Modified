@@ -5,6 +5,8 @@ messages:
     already_has_item: "抓取槽已经有物品了"
     block_already_cut: "方块已剪切"
     block_already_pasted: "方块已粘贴"
+    chunk_not_load: "机器所在的区块处于弱加载"
+    user_not_present: "机器拥有者不存在"
     block_cannot_be_air: "方块不能是空气"
     block_cannot_be_cut: "方块不能被剪切"
     block_not_match_template: "方块与模板不匹配"
@@ -294,6 +296,8 @@ messages:
       output_full: "&c输出栏不足"
     storage_unit_upgrade_table:
       no_recipe_match: "&c没有合适的配方"
+      no_enough_space: "&c输出槽没有充足的空间"
+      item_banned: "&c该物品被禁用,无法合成"
     wireless_configurator:
       not_network_wireless_block: "<error>必须对着网络无线方块使用。"
       no_target_location: "<error>需要先设置接收器位置。"

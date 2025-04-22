@@ -10,11 +10,20 @@ public interface BarrelCore {
 
     /**
      * this method should be multi-thread safe
+     * this method is shit
      * @param itemRequest
      * @return
      */
     @Nullable
+    @Deprecated
     ItemStack requestItem(@Nonnull ItemRequest itemRequest);
+
+    /**
+     * this method should return the requested ItemStack, item should already been consumed from barrel
+     * @param itemRequest
+     * @return
+     */
+    ItemStack requestItemExact(ItemRequest itemRequest);
 
     default void depositItemStack(ItemStack... itemToDeposit) {
         for (ItemStack itemStack : itemToDeposit) {

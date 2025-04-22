@@ -206,10 +206,14 @@
         <dependency>
             <groupId>com.github.m1919810</groupId>
             <artifactId>matlib</artifactId>
-            <version>2e13e8d</version>
+            <version>a198e22</version>
             <scope>compile</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.4</version> <!-- 使用最新版本 -->
+        </dependency>
         <!-- Supported Plugins -->
         <!-- Support Infinity Storage -->
         <dependency>

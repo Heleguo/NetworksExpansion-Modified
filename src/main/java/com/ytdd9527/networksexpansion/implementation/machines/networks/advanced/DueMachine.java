@@ -5,6 +5,7 @@ import com.balugaq.netex.utils.BlockMenuUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.slimefun.network.AdminDebuggable;
 import io.github.sefiraat.networks.utils.StackUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -95,8 +96,10 @@ public class DueMachine extends SpecialSlimefunItem implements AdminDebuggable {
             }
             if (StackUtils.itemsMatch(inputItem, dueItem, false, true)) {
                 if (BlockMenuUtil.fits(blockMenu, dueItem, outputSlot)) {
-                    blockMenu.consumeItem(inputSlot, dueItem.getAmount());
-                    BlockMenuUtil.pushItem(blockMenu, dueItem.clone(), outputSlot);
+                    NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
+                        blockMenu.consumeItem(inputSlot, dueItem.getAmount());
+                        BlockMenuUtil.pushItem(blockMenu, dueItem.clone(), outputSlot);
+                    });
                 }
             }
         }

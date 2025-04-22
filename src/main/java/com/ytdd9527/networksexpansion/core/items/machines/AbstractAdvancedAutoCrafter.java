@@ -1,44 +1,10 @@
 package com.ytdd9527.networksexpansion.core.items.machines;
 
-import com.balugaq.netex.api.helpers.Icon;
-import com.balugaq.netex.utils.Algorithms.DataContainer;
-import com.balugaq.netex.utils.Algorithms.MenuWithData;
-import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
-import io.github.sefiraat.networks.NetworkStorage;
-import io.github.sefiraat.networks.network.NetworkRoot;
-import io.github.sefiraat.networks.network.NodeDefinition;
-import io.github.sefiraat.networks.network.NodeType;
-import io.github.sefiraat.networks.network.stackcaches.BlueprintInstance;
-import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
-import io.github.sefiraat.networks.slimefun.network.NetworkObject;
-import io.github.sefiraat.networks.utils.Keys;
-import io.github.sefiraat.networks.utils.StackUtils;
-import io.github.sefiraat.networks.utils.datatypes.DataTypeMethods;
-import io.github.sefiraat.networks.utils.datatypes.PersistentCraftingBlueprintType;
+import com.balugaq.netex.utils.algorithms.MenuWithData;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
-import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
-import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
-import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
-import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
-import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-
-import javax.annotation.Nonnull;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 public abstract class AbstractAdvancedAutoCrafter extends AbstractAutoCrafter implements MenuWithData {
 //    private static final int[] BACKGROUND_SLOTS = new int[]{

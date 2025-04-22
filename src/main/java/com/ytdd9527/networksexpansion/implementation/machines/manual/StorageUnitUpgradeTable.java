@@ -112,6 +112,25 @@ public class StorageUnitUpgradeTable extends SpecialSlimefunItem implements Admi
                 ItemStack itemInSlot = menu.getItemInSlot(outputSlot);
                 int id = NetworksDrawer.getBoundId(menu.getItemInSlot(inputSlots[4]));
                 ItemStack out = each.getValue().clone();
+                SlimefunItemStack sfis = (SlimefunItemStack) out;
+                SlimefunItem sfi = SlimefunItem.getById(sfis.getItemId());
+
+                if (sfi != null && sfi.isDisabled()) {
+                    p.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.storage_unit_upgrade_table.item_banned"));
+                    return;
+                }
+                out = NetworksDrawer.bindId(out, id);
+                if (itemInSlot != null && itemInSlot.getType() != Material.AIR) {
+                    if (StackUtils.itemsMatch(itemInSlot, out)) {
+                        if (itemInSlot.getAmount() + out.getAmount() > itemInSlot.getMaxStackSize()) {
+                            p.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.storage_unit_upgrade_table.no_enough_space"));
+                            return;
+                        }
+                    } else {
+                        p.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.storage_unit_upgrade_table.no_enough_space"));
+                        return;
+                    }
+                }
                 if (id != -1) {
                     if (DataStorage.isContainerLoaded(id)) {
                         if (DataStorage.getCachedStorageData(id).isPresent()) {
@@ -129,23 +148,12 @@ public class StorageUnitUpgradeTable extends SpecialSlimefunItem implements Admi
                             return true;
                         });
                     }
-                    out = NetworksDrawer.bindId(out, id);
                 }
-                SlimefunItemStack sfis = (SlimefunItemStack) out;
-                SlimefunItem sfi = SlimefunItem.getById(sfis.getItemId());
-                if (sfi != null && sfi.isDisabled()) {
-                    return;
-                }
-                if (itemInSlot == null || itemInSlot.getType() == Material.AIR) {
+                //output and consume
+                if(itemInSlot == null || itemInSlot.getType().isAir()){
                     menu.replaceExistingItem(outputSlot, out);
-                } else if (StackUtils.itemsMatch(itemInSlot, out)) {
-                    if (itemInSlot.getAmount() + out.getAmount() <= itemInSlot.getMaxStackSize()) {
-                        itemInSlot.setAmount(itemInSlot.getAmount() + out.getAmount());
-                    } else {
-                        return;
-                    }
-                } else {
-                    return;
+                }else {
+                    itemInSlot.setAmount(itemInSlot.getAmount() + out.getAmount());
                 }
                 for (int slot : inputSlots) {
                     menu.consumeItem(slot);

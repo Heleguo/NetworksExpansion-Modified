@@ -2,6 +2,7 @@ package com.ytdd9527.networksexpansion.implementation.machines.networks.advanced
 
 import com.balugaq.netex.api.helpers.Icon;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 import com.google.errorprone.annotations.Immutable;
 import com.ytdd9527.networksexpansion.core.services.LocalizationService;
 import com.ytdd9527.networksexpansion.implementation.ExpansionItems;
@@ -238,7 +239,12 @@ public class NetworkResetter extends NetworkObject {
                 meta.addEnchant(entry.getKey(),entry.getValue(),true);
             }
             //restore attr
-            meta.setAttributeModifiers(originMeta.getAttributeModifiers());
+            if(originMeta.hasAttributeModifiers()){
+                meta.setAttributeModifiers(originMeta.getAttributeModifiers());
+            }else{
+                meta.setAttributeModifiers(ImmutableMultimap.of());
+            }
+
             if(meta instanceof Damageable dm1&&originMeta instanceof Damageable dm2){
                 dm1.setDamage(dm2.getDamage());
             }

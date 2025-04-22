@@ -7,12 +7,11 @@ import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
-import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
-import me.matl114.matlib.Utils.CraftUtils;
-import me.matl114.matlib.core.EnvironmentManager;
+import me.matl114.matlib.nmsUtils.ItemUtils;
+import me.matl114.matlib.utils.CraftUtils;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -41,6 +40,8 @@ import org.bukkit.inventory.meta.ShieldMeta;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.WritableBookMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -74,7 +75,7 @@ public class StackUtils {
     }
     public static ItemStack getAsQuantity(@Nullable ItemStack itemStack,int amount,boolean forceCopy) {
         if (itemStack == null) {
-            return new ItemStack(Material.AIR);
+            return ItemUtils.newStack(Material.AIR, 0);//  new ItemStack(Material.AIR);
         }
         if(!forceCopy&&itemStack.getAmount()<=amount){
             return itemStack;
@@ -88,42 +89,43 @@ public class StackUtils {
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, checkAmount, checkCustomModelId);
+        return itemsMatchCore(itemStack1, itemStack2, checkLore, checkAmount, checkCustomModelId);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore, boolean checkAmount) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, checkAmount,true);
+        return itemsMatchCore(itemStack1, itemStack2, checkLore, checkAmount,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2, boolean checkLore) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1), ItemStackCache.of(itemStack2), checkLore, false,true);
+        return itemsMatchCore(itemStack1, itemStack2, checkLore, false,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack1, @Nullable ItemStack itemStack2) {
-        return itemsMatchCore(ItemStackCache.of(itemStack1),ItemStackCache.of(itemStack2), false, false,true);
+        return itemsMatchCore(itemStack1, itemStack2, false, false,true);
     }
 
     public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack, boolean checkLore) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false,true);
+        return itemsMatchCore(cache.getItemStack(), itemStack, checkLore, false,true);
     }
 
     public static boolean itemsMatch(@Nonnull ItemStackCache cache, @Nullable ItemStack itemStack) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false,true);
+        return itemsMatchCore(cache.getItemStack(), itemStack, false, false,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache, boolean checkLore, boolean checkAmount) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, checkAmount,true);
+        return itemsMatchCore(cache.getItemStack(), itemStack, checkLore, checkAmount,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache, boolean checkLore) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), checkLore, false,true);
+        return itemsMatchCore(cache.getItemStack(), itemStack, checkLore, false,true);
     }
 
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache) {
-        return itemsMatchCore(cache, ItemStackCache.of(itemStack), false, false,true);
+        return itemsMatchCore(cache.getItemStack(), itemStack, false, false,true);
     }
     public static boolean itemsMatch(@Nullable ItemStackCache itemStack, @Nonnull ItemStackCache cache) {
-        return itemsMatchCore(cache, itemStack, false, false,true);
+        return itemsMatchCore(itemStack.getItemStack(), cache.getItemStack(), false);
+        //return itemsMatchCore(cache, itemStack, false, false,true);
     }
 
     /**
@@ -133,39 +135,53 @@ public class StackUtils {
      * @return True if items match
      */
 
-    public static boolean itemsMatchCore(@Nonnull ItemStackCache cache, @Nonnull ItemStackCache cache2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
+    public static String getOptionalId(ItemStack item){
+        PersistentDataContainer pdcView = ItemUtils.getPersistentDataContainerView(item, false);
+        return pdcView == null? null: pdcView.get(Slimefun.getItemDataService().getKey(), PersistentDataType.STRING);
+    }
+
+    public static SlimefunItem getByItem(ItemStack item){
+        String id = getOptionalId(item);
+        return id == null ?null: SlimefunItem.getById(id);
+    }
+    public static boolean itemsMatchCore(@Nullable ItemStack cache, @Nullable ItemStack cache2, boolean checkLore){
+        return ItemUtils.matchItemStack(cache, cache2, checkLore);
+    }
+    public static boolean itemsMatchCore(@Nullable ItemStack cache, @Nullable ItemStack cache2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
         // Null check
-        if (cache.getItemStack() == null || cache2.getItemStack()== null) {
-            return cache2.getItemStack() == null && cache.getItemStack() == null;
-        }
+//        if (cache.getItemStack() == null || cache2.getItemStack()== null) {
+//            return cache2.getItemStack() == null && cache.getItemStack() == null;
+//        }
+//
+//        // If types do not match, then the items cannot possibly match
+//        //check cached id first,if OptionalSfItemCache,if id not match ,break earlier
+//        if(cache instanceof OptionalSfItemCache sfcache1&&cache2 instanceof OptionalSfItemCache sfcache2){
+//            if(!Objects.equals(sfcache1.getOptionalId(),sfcache2.getOptionalId())){
+//                return false;
+//            }
+//        }
 
-        // If types do not match, then the items cannot possibly match
-        Material type=cache2.getItemType();
-        if (type != cache.getItemType()) {
-            return false;
-        }
-        //check cached id first,if OptionalSfItemCache,if id not match ,break earlier
-        if(cache instanceof OptionalSfItemCache sfcache1&&cache2 instanceof OptionalSfItemCache sfcache2){
-            if(!Objects.equals(sfcache1.getOptionalId(),sfcache2.getOptionalId())){
-                return false;
-            }
-        }
-//        //todo remove
+        return ItemUtils.matchItemStack(cache, cache2, checkLore);
 
-        // If amounts do not match, then the items cannot possibly match
-        if (checkAmount && cache2.getItemAmount() > cache.getItemAmount()) {
-            return false;
-        }
-
-        //no use
-        //precheck sfid
-
-        // Now we need to compare meta's directly - cache is already out, but let's fetch the 2nd meta also
-
-        final ItemMeta itemMeta = cache2.getItemMeta();
-        final ItemMeta cachedMeta = cache.getItemMeta();
-        boolean result=metaMatchCore(type,itemMeta,cachedMeta,checkLore,checkCustomModelId);
-        return result;
+//        Material type=cache2.getItemType();
+//        if (type != cache.getItemType()) {
+//            return false;
+//        }
+////        //todo remove
+//
+//        // If amounts do not match, then the items cannot possibly match
+//        if (checkAmount && cache2.getItemAmount() > cache.getItemAmount()) {
+//            return false;
+//        }
+//
+//        //no use
+//        //precheck sfid
+//
+//        // Now we need to compare meta's directly - cache is already out, but let's fetch the 2nd meta also
+//
+//        final ItemMeta itemMeta = cache2.getItemMeta();
+//        final ItemMeta cachedMeta = cache.getItemMeta();
+//        return metaMatchCore(type,itemMeta,cachedMeta,checkLore,checkCustomModelId);
     }
 
     public static boolean metaMatchCore(Material itemType,ItemMeta itemMeta,ItemMeta cachedMeta,boolean checkLore, boolean checkCustomModelId) {
@@ -208,9 +224,9 @@ public class StackUtils {
             return false;
         }
 
-        if(EnvironmentManager.getManager().getVersioned().differentSpecialMeta(itemMeta,cachedMeta)){
-            return false;
-        }
+//        if(EnvironmentManager.getManager().getVersioned().differentSpecialMeta(itemMeta,cachedMeta)){
+//            return false;
+//        }
         // Make sure enchantments match
 
         if(!CraftUtils.matchEnchantmentsFields(itemMeta,cachedMeta)){
@@ -274,7 +290,7 @@ public class StackUtils {
         // Everything should match if we've managed to get here
         return true;
     }
-
+    @Deprecated(forRemoval = true)
     public static boolean canQuickEscapeMetaVariant(@Nonnull ItemMeta metaOne, @Nonnull ItemMeta metaTwo) {
 
         // Damageable (first as everything can be damageable apparently)
@@ -337,9 +353,9 @@ public class StackUtils {
                 return true;
             }
 
-            if (!matchBlockStateMeta(instanceOne,instanceTwo)) {
-                return true;
-            }
+//            if (!matchBlockStateMeta(instanceOne,instanceTwo)) {
+//                return true;
+//            }
         }
 
         // Books
@@ -626,9 +642,9 @@ public class StackUtils {
         return true;
     }
 
-    public static boolean matchBlockStateMeta(BlockStateMeta meta1, BlockStateMeta meta2){
-        return EnvironmentManager.getManager().getVersioned().matchBlockStateMeta(meta1, meta2);
-    }
+//    public static boolean matchBlockStateMeta(BlockStateMeta meta1, BlockStateMeta meta2){
+//        return EnvironmentManager.getManager().getVersioned().matchBlockStateMeta(meta1, meta2);
+//    }
 
     /**
      * Heal the entity by the provided amount

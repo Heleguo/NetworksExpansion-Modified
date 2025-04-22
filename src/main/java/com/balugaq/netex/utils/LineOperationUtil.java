@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -113,32 +114,47 @@ public class LineOperationUtil {
         }
     }
     public static void doOperationParallel(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer) {
-        Location location = startLocation.clone();
-        int finalLimit = limit;
-        if (optimizeExperience) {
-            finalLimit += 1;
-        }
+        Semaphore lock = NetworkAsyncUtil.getInstance().getParallelTaskLock(startLocation);
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        Vector directionVec = direction.getDirection();
-        for (int i = 0; i < finalLimit; i++) {
-            location.add(directionVec);
-            final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
-            if (blockMenu == null) {
-                if (skipNoMenu) {
-                    continue;
-                }else {
-                    break;
-                }
+        try{
+            lock.acquire();
+            Location location = startLocation.clone();
+            int finalLimit = limit;
+            if (optimizeExperience) {
+                finalLimit += 1;
             }
-            futures.add(CompletableFuture.runAsync(() -> {
-                try{
-                    consumer.accept(blockMenu);
-                }catch (Throwable e) {
-                    e.printStackTrace();
+            Vector directionVec = direction.getDirection();
+            for (int i = 0; i < finalLimit; i++) {
+                location.add(directionVec);
+                final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
+                if (blockMenu == null) {
+                    if (skipNoMenu) {
+                        continue;
+                    }else {
+                        break;
+                    }
                 }
-            },NetworkAsyncUtil.getInstance().getParallelExecutor()));
+                futures.add(CompletableFuture.runAsync(() -> {
+                    try{
+                        consumer.accept(blockMenu);
+                    }catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                },NetworkAsyncUtil.getInstance().getParallelExecutor()));
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if(futures.isEmpty()){
+                lock.release();
+            }else {
+                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((vd,t)->{
+                    lock.release();
+                });
+            }
         }
-        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+
+        //when can we remove this shit
     }
 
     public static void grabItem(
@@ -265,11 +281,11 @@ public class LineOperationUtil {
             pushItem(root, blockMenu, clone, transportMode, limitQuantity);
         }
     }
-    public static Pair<Integer,List<Integer>> calPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest quest, TransportMode transportMode, int limitPerMenu, int... slots){
+    public static Pair<Integer,List<Integer>> calPush( BlockMenu blockMenu, ItemRequest quest, TransportMode transportMode, int limitPerMenu,int... slots){
         int maxStackSize=quest.getMaxStackSize();
         return switch (transportMode) {
             case NONE -> {
-                yield  calFetchItem(root,blockMenu::getItemInSlot,quest,( itemStack)->{
+                yield  calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -281,18 +297,18 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitPerMenu,false,false,slots);
+                },limitPerMenu,false,false, slots);
             }
 
             case NULL_ONLY -> {
                 // int free = limitQuantity;
-                yield calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->
+                yield calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->
                         itemStack==null?maxStackSize:0,limitPerMenu,false,false,slots
                 );
             }
 
             case NONNULL_ONLY -> {
-                yield  calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->{
+                yield  calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return 0;
                     } else {
@@ -312,7 +328,7 @@ public class LineOperationUtil {
                     yield null;
                 }
                 final int slot = slots[0];
-                yield  calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->{
+                yield  calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -331,7 +347,7 @@ public class LineOperationUtil {
                     yield  null;
                 }
                 final int slot = slots[slots.length-1];
-                yield  calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->{
+                yield  calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -346,7 +362,7 @@ public class LineOperationUtil {
                 },limitPerMenu,true,false,slot);
             }
             case FIRST_STOP -> {
-                yield  calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->{
+                yield  calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -364,7 +380,7 @@ public class LineOperationUtil {
                 if (slots.length > 0) {
                     final ItemStack delta = blockMenu.getItemInSlot(slots[0]);
                     if (delta == null || delta.getType() == Material.AIR) {
-                        yield  calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->{
+                        yield  calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                             if (itemStack == null || itemStack.getType() == Material.AIR) {
                                 return maxStackSize;
                             } else {
@@ -382,7 +398,7 @@ public class LineOperationUtil {
                 yield null;
             }
             case GREEDY -> {
-                yield calFetchItem(root,blockMenu::getItemInSlot,quest,(itemStack)->{
+                yield calFetchItem(blockMenu::getItemInSlot,quest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -398,86 +414,73 @@ public class LineOperationUtil {
             }
         };
     }
-    public static void linePushItemOperationParallel(NetworkRoot root,Location startLocation,BlockFace face,int limit,boolean parallel,boolean skipNoMenu,boolean optimizeExperience,List<ItemStack> clones,int limitPerMenu,TransportMode transportMode){
-        for(ItemStack stack : clones){
-            linePushItemOperationParallel(root,startLocation,face,limit,parallel,skipNoMenu,optimizeExperience,stack,limitPerMenu,transportMode);
+    public static void linePushItemOperationParallel(NetworkRoot root,Location startLocation,BlockFace face,int limit,boolean parallel,boolean skipNoMenu,boolean optimizeExperience,List<ItemStack> clones, List<NetworkRoot.PusherPrefetcherInfo> prefetcherInfos,int limitPerMenu,TransportMode transportMode){
+        int size = clones.size();
+        for(int i = 0; i< size; ++i){
+            linePushItemOperationParallel(root,startLocation,face,limit,parallel,skipNoMenu,optimizeExperience,clones.get(i), prefetcherInfos.get(i),limitPerMenu,transportMode);
         }
     }
-    public static void linePushItemOperationParallel(NetworkRoot root,Location startLocation,BlockFace face,int limit,boolean parallel,boolean skipNoMenu,boolean optimizeExperience,ItemStack clone,int limitPerMenu,TransportMode transportMode) {
-        Location location = startLocation.clone();
-        int finalLimit = limit;
-        if (optimizeExperience) {
-            finalLimit += 1;
-        }
-        List<CompletableFuture<Void>> futures = new ArrayList<>(finalLimit);
-        BlockMenu[] menus = new BlockMenu[finalLimit];
-        int[] consumes = new int[finalLimit];
-        List<Integer>[] pushSlots=new List[finalLimit];
-        Vector directionVec = face.getDirection();
-        final int maxStackSize=clone.getMaxStackSize();
-        final ItemRequest quest=ItemRequest.of(clone,maxStackSize);
-        AtomicInteger sum=new AtomicInteger(0);
-        for (int i = 0; i < finalLimit; i++) {
-            final int index=i;
-            location.add(directionVec);
-            final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
-            if (blockMenu == null) {
-                if (skipNoMenu) {
-                    continue;
-                }else {
-                    break;
-                }
+    public static void linePushItemOperationParallel(NetworkRoot root, Location startLocation, BlockFace face, int limit, boolean parallel, boolean skipNoMenu, boolean optimizeExperience, ItemStack clone, NetworkRoot.PusherPrefetcherInfo info, int limitPerMenu, TransportMode transportMode) {
+        if(false && parallel){
+
+        }else {
+            Location location = startLocation.clone();
+            int finalLimit = limit;
+            if (optimizeExperience) {
+                finalLimit += 1;
             }
-            Runnable task= () -> {
+            BlockMenu[] menus = new BlockMenu[finalLimit];
+            int[] consumes = new int[finalLimit];
+            List<Integer>[] pushSlots=new List[finalLimit];
+            Vector directionVec = face.getDirection();
+            final int maxStackSize=clone.getMaxStackSize();
+            final ItemRequest quest=ItemRequest.of(clone,maxStackSize);
+            int sum = 0;
+            for (int i = 0; i < finalLimit; i++) {
+                final int index=i;
+                location.add(directionVec);
+                final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
+                if (blockMenu == null) {
+                    if (skipNoMenu) {
+                        continue;
+                    }else {
+                        break;
+                    }
+                }
                 int[] slots=blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu,ItemTransportFlow.INSERT,clone);
-                var re=calPush(root,blockMenu,quest,transportMode,limitPerMenu,slots);
+                var re=calPush(blockMenu,quest,transportMode,limitPerMenu,slots);
                 if(re==null||re.getFirstValue()==null||re.getSecondValue()==null){
                     return;
                 }
                 menus[index]=blockMenu;
                 consumes[index]=re.getFirstValue();
                 pushSlots[index]=re.getSecondValue();
-                sum.addAndGet(consumes[index]);
-            };
-            if(parallel){
-                futures.add(CompletableFuture.runAsync(task,NetworkAsyncUtil.getInstance().getParallelExecutor()));
-            }else {
-                task.run();
+                sum += consumes[index];
             }
-        }
-        if(parallel&&!futures.isEmpty()){
-            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-        }
-        quest.setAmount(sum.get());
-        final ItemStack retrieved = root.getItemStack(quest);
-        if (retrieved != null && retrieved.getType() != Material.AIR) {
-            int requested=retrieved.getAmount();
-            List<CompletableFuture> future1=new ArrayList<>(finalLimit);
-            for(int i=0;i<finalLimit;++i){
-                final int index=i;
-                if(menus[index]!=null&&consumes[index]>0){
-                    int request=Math.min(consumes[index],requested);
-                    requested-=request;
-                    if(request>0){
-                        Runnable task=()->{
-                            ItemStack pushed=StackUtils.getAsQuantity(retrieved,request);
-                            BlockMenuUtil.pushItemAlreadyMatched(menus[index],pushed, pushSlots[index]);
-                        };
-                        if(parallel){
-                            future1.add(CompletableFuture.runAsync(task,NetworkAsyncUtil.getInstance().getParallelExecutor()));
-                        }else {
-                            task.run();
+
+            quest.setAmount(sum);
+            final ItemStack retrieved = info.getItemStackWithPrefetch(root, quest); //root.getItemStack(quest);
+            if (retrieved != null && retrieved.getType() != Material.AIR) {
+                int requested=retrieved.getAmount();
+                for(int i=0;i<finalLimit;++i){
+                    final int index=i;
+                    if(menus[index]!=null&&consumes[index]>0){
+                        int request=Math.min(consumes[index],requested);
+                        requested-=request;
+                        if(request>0){
+                            NetworkAsyncUtil.getInstance().ensureLocation(menus[index].getLocation(), ()->{
+                                ItemStack pushed=StackUtils.getAsQuantity(retrieved,request);
+                                BlockMenuUtil.pushItemAlreadyMatched(menus[index],pushed, pushSlots[index]);
+                            });
                         }
-                    }
-                    if(requested<=0){
-                        break;
+                        if(requested<=0){
+                            break;
+                        }
                     }
                 }
             }
-            if(parallel&&!future1.isEmpty()){
-                CompletableFuture.allOf(future1.toArray(CompletableFuture[]::new)).join();
-            }
         }
+
     }
 
     public static void pushItem(
@@ -492,7 +495,7 @@ public class LineOperationUtil {
         final int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu, ItemTransportFlow.INSERT, clone);
         switch (transportMode) {
             case NONE -> {
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -504,18 +507,18 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitQuantity,false,slots);
+                },limitQuantity,false,root::getItemStack,slots);
             }
 
             case NULL_ONLY -> {
                // int free = limitQuantity;
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->
-                    itemStack==null?maxStackSize:0,limitQuantity,false,slots
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->
+                    itemStack==null?maxStackSize:0,limitQuantity,false,root::getItemStack,slots
                 );
             }
 
             case NONNULL_ONLY -> {
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return 0;
                     } else {
@@ -527,7 +530,7 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitQuantity,false,slots);
+                },limitQuantity,false, root::getItemStack,slots);
             }
             case FIRST_ONLY -> {
                 //int free = limitQuantity;
@@ -535,7 +538,7 @@ public class LineOperationUtil {
                     break;
                 }
                 final int slot = slots[0];
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -547,14 +550,14 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitQuantity,true,slot);
+                },limitQuantity,true,root::getItemStack,slot);
             }
             case LAST_ONLY -> {
                 if (slots.length == 0) {
                     break;
                 }
                 final int slot = slots[slots.length-1];
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -566,10 +569,10 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitQuantity,true,slot);
+                },limitQuantity,true,root::getItemStack,slot);
             }
             case FIRST_STOP -> {
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -581,13 +584,13 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitQuantity,true,slots);
+                },limitQuantity,true, root::getItemStack,slots);
             }
             case LAZY -> {
                 if (slots.length > 0) {
                     final ItemStack delta = blockMenu.getItemInSlot(slots[0]);
                     if (delta == null || delta.getType() == Material.AIR) {
-                        fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                        fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                             if (itemStack == null || itemStack.getType() == Material.AIR) {
                                 return maxStackSize;
                             } else {
@@ -599,12 +602,12 @@ public class LineOperationUtil {
                                 }
                                 return 0;
                             }
-                        },limitQuantity,false,slots);
+                        },limitQuantity,false, root::getItemStack,slots);
                     }
                 }
             }
             case GREEDY -> {
-                fetchItemAndPush(root,blockMenu,itemRequest,(itemStack)->{
+                fetchItemAndPush(blockMenu,itemRequest,(itemStack)->{
                     if (itemStack == null || itemStack.getType() == Material.AIR) {
                         return maxStackSize;
                     } else {
@@ -616,7 +619,7 @@ public class LineOperationUtil {
                         }
                         return 0;
                     }
-                },limitQuantity,false,true,slots);
+                },limitQuantity,false,true, root::getItemStack,slots);
             }
         }
     }

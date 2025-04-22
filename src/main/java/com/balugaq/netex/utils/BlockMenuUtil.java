@@ -1,10 +1,12 @@
 package com.balugaq.netex.utils;
 
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.sefiraat.networks.utils.StackUtils;
-import com.balugaq.netex.utils.Algorithms.DynamicArray;
+import com.balugaq.netex.utils.algorithms.DynamicArray;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
+import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -16,202 +18,49 @@ import java.util.*;
 
 @UtilityClass
 public class BlockMenuUtil {
-    public static void pushItem(@Nonnull BlockMenu blockMenu, @Nullable ItemStack stack,int... slots) {
-        pushItem(blockMenu,ItemStackCache.of(stack),false,slots);
+    public static ItemStack pushItem(@Nonnull BlockMenu blockMenu, @Nullable ItemStack stack,int... slots) {
+        return ItemUtils.pushItem(blockMenu.getInventory(), stack, slots);
     }
     public static void pushItemAlreadyMatched(@Nonnull BlockMenu inv, @Nullable ItemStack stack, List<Integer> slots)
     {
-        int maxSize=stack.getMaxStackSize();
-        int amount=stack.getAmount();
-        if(amount<=0)return;
-        ItemStackCache cachedStack=ItemStackCache.of(stack);
-        ItemStack sample=null;
-        for (int slot : slots) {
-            ItemStack slotItem=inv.getItemInSlot(slot);
+        int[] slotArray = new int[slots.size()];// slots.stream().mapToInt(Integer::intValue).toArray();
+        for (int i=0; i< slotArray.length; ++i){
+            slotArray[i] = slots.get(i);
+        }
+        if(NetworkAsyncUtil.getInstance().isUseAsync()){
+            pushItem(inv, stack, slotArray);
+        }else {
+            ItemUtils.pushItemWithoutMatch(inv.getInventory(), stack, slotArray);
+        }
 
-            if(slotItem==null||slotItem.getType()==Material.AIR) {
-                int transfered=Math.min(amount,maxSize);
-                if(sample==null){
-                    sample=StackUtils.getAsQuantity(stack,transfered);
-                }else {
-                    sample.setAmount(transfered);
-                }
-                inv.replaceExistingItem(slot,sample,false);
-//                slotItem=inv.getItemInSlot(slot);
-//                slotItem.setAmount(transfered);
-                amount-=transfered;
-            }else if(slotItem.getAmount()>=slotItem.getMaxStackSize()) {
-                continue;
-            }
-            //for Async safety,compare again
-            //this part doesn't cost mush actually.compared to root.getItemStack()
-            else if(StackUtils.itemsMatch(slotItem,cachedStack)){
-                int slotAmount=slotItem.getAmount();
-                int transfered=Math.min(amount,maxSize-slotAmount);
-                slotItem.setAmount(slotAmount+transfered);
-                amount-=transfered;
-            }
-            if(amount<=0){
-                break;
-            }
-        }
-        stack.setAmount(amount);
     }
-    @Nullable
-    public static ItemStack pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStackCache item,boolean needReturn, int... slots) {
-        if (item == null || item.getItemType() == Material.AIR) {
-            throw new IllegalArgumentException("Cannot push null or AIR");
-        }
-        item=ofSnapShot(blockMenu).pushItem(item,slots);
-        if (needReturn&&item.getItemAmount() > 0) {
-            return StackUtils.getAsQuantity(item, item.getItemAmount());
-        } else {
-            return null;
-        }
-    }
+
     //todo: this method should be optimized
+    //todo: this method is already optimized
     @Nonnull
     public static List<ItemStack> pushItem(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack[] items, int... slots) {
         if (items == null || items.length == 0) {
             throw new IllegalArgumentException("Cannot push null or empty array");
         }
-        List<ItemStack> listItems = Arrays.stream(items).filter(item->item != null && item.getType() != Material.AIR).toList();
-        return pushItem(blockMenu, listItems, slots);
+        ItemUtils.pushItem(blockMenu.getInventory(), slots, items);
+        return Arrays.stream(items).filter(item->item != null && !item.getType().isAir() && item.getAmount() > 0).toList();
     }
-    public BlockMenuSnapShot ofSnapShot(@Nonnull BlockMenu blockMenu) {
-        return BlockMenuSnapShot.of(blockMenu);
-    }
-    public class BlockMenuSnapShot implements Cloneable {
-        private static BlockMenuSnapShot instance = new BlockMenuSnapShot();
-        @Getter
-        private BlockMenu blockMenu;
-        private DynamicArray<ItemStackCache> items;
-        private BlockMenuSnapShot init(BlockMenu blockMenu){
-            this.blockMenu=blockMenu;
-            this.items=new DynamicArray<>(ItemStackCache[]::new,54,(i)->ItemStackCache.of(this.blockMenu.getItemInSlot(i)));
-            return this;
-        }
-        public static BlockMenuSnapShot of(BlockMenu blockMenu){
-            return instance.clone().init(blockMenu);
-        }
-        @Nonnull
-        public ItemStackCache getItemInSlot(int slot){
-            return items.get(slot);
-        }
-        @Override
-        protected BlockMenuSnapShot clone() {
-            try {
-                BlockMenuSnapShot clone = (BlockMenuSnapShot) super.clone();
-                // TODO: copy mutable state here, so the clone can't change the internals of the original
-                return clone;
-            } catch (CloneNotSupportedException e) {
-                throw new AssertionError();
-            }
-        }
-        public ItemStackCache pushItem(@Nonnull ItemStack item,int... slots){
-            return pushItem(ItemStackCache.of(item),slots);
-        }
-        @Nonnull
-        public ItemStackCache pushItem(@Nonnull ItemStackCache cache,int... slots){
-            Material material = cache.getItemType();
-            int maxSize=material.getMaxStackSize();
-            int leftAmount = cache.getItemAmount();
-            ItemStack sample=null;
-            for (int slot : slots) {
-                if (leftAmount <= 0) {
-                    break;
-                }
-                ItemStackCache invCache=getItemInSlot(slot);
-                ItemStack existing = invCache.getItemStack();
-                if (existing == null || existing.getType() == Material.AIR) {
-                    int received = Math.min(leftAmount, maxSize);
-                    if(sample==null){
-                        sample=StackUtils.getAsQuantity(cache.getItemStack(),received);
-                    }else {
-                        sample.setAmount(received);
-                    }
-                    blockMenu.replaceExistingItem(slot, sample);
-//                    //todo 同步更新invCache
-                    invCache.setItemStack(blockMenu.getItemInSlot(slot));
-                    leftAmount -= received;
-                    // item.setItemAmount();
-                } else {
-                    int existingAmount = invCache.getItemAmount();
-                    if (existingAmount >= maxSize) {
-                        continue;
-                    }
-                    //使用缓存的槽位物品cache进行比较
-                    if (!StackUtils.itemsMatch(cache, invCache)) {
-                        continue;
-                    }
-                    int received = Math.max(0, Math.min(maxSize - existingAmount, leftAmount));
-                    leftAmount -= received;
-                    //todo 数量更新到invCache
-                    invCache.setItemAmount(existingAmount + received);
-                }
-            }
-            cache.setItemAmount(leftAmount);
-            //left over
-            return cache;
-        }
-        public void pushItemAlreadyMatched(@Nullable ItemStack stack, List<Integer> slots)
-        {
-            int maxSize=stack.getMaxStackSize();
-            int amount=stack.getAmount();
-            ItemStack sample=null;
-            if(amount<=0)return;
-            ItemStackCache cachedStack=ItemStackCache.of(stack);
-            for (int slot : slots) {
-                ItemStackCache slotItem=getItemInSlot(slot);
 
-                if(slotItem.getItemStack()==null|| slotItem.getItemType()==Material.AIR) {
-                    int transfered=Math.min(amount,maxSize);
-                    if(sample==null){
-                        sample=StackUtils.getAsQuantity(stack,transfered);
-                    }else {
-                        sample.setAmount(transfered);
-                    }
-                    blockMenu.replaceExistingItem(slot, sample);
-                    slotItem.setItemStack(blockMenu.getItemInSlot(slot));
-                    amount-=transfered;
-                }else if(slotItem.isItemMaxStacked()) {
-                    continue;
-                }
-                //for Async safety,compare again
-                else if(StackUtils.itemsMatch(cachedStack,slotItem)){
-                    int slotAmount=slotItem.getItemAmount();
-                    int transfered=Math.min(amount,maxSize-slotAmount);
-                    slotItem.setItemAmount(slotAmount+transfered);
-                    amount-=transfered;
-                }
-                if(amount<=0){
-                    break;
-                }
-            }
-            stack.setAmount(amount);
-        }
-    }
     @Nonnull
     public static List<ItemStack> pushItem(@Nonnull BlockMenu blockMenu, @Nullable List<ItemStack> items, int... slots) {
         if (items ==null || items.isEmpty()) {
             throw new IllegalArgumentException("Cannot push null or empty list");
         }
-        List<ItemStack> itemMap = new ArrayList<>(items.size());
-        BlockMenuSnapShot snapShot=ofSnapShot(blockMenu);
-        for (ItemStack item : items) {
-            if (item != null && item.getType() != Material.AIR) {
-                //ItemStack leftOver =
-                ItemStackCache cache= snapShot.pushItem(item,slots);
-                //left over
-                if (cache.getItemStack()!=null&&cache.getItemAmount() >0) {
-                    itemMap.add(cache.getItemStack());
-                }
-            }
-        }
-        return itemMap;
+
+        return pushItem( blockMenu, items.toArray(ItemStack[]::new), slots);
     }
 
 
+
+
+
+
+    @Deprecated
     public static boolean fits(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack item, int... slots) {
         if (item == null || item.getType() == Material.AIR) {
             return true;

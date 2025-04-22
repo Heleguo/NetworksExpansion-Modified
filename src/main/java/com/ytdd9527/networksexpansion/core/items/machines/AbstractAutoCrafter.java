@@ -2,14 +2,13 @@ package com.ytdd9527.networksexpansion.core.items.machines;
 
 import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
-import com.balugaq.netex.utils.Algorithms.DataContainer;
-import com.balugaq.netex.utils.Algorithms.MenuWithData;
+import com.balugaq.netex.utils.algorithms.DataContainer;
+import com.balugaq.netex.utils.algorithms.MenuWithData;
+import com.balugaq.netex.utils.algorithms.MenuWithPrefetch;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
-import io.github.sefiraat.networks.Networks;
-import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
@@ -26,11 +25,11 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
+import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -40,12 +39,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nonnull;
-import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class AbstractAutoCrafter extends NetworkObject implements MenuWithData {
+public abstract class AbstractAutoCrafter extends NetworkObject implements MenuWithData, MenuWithPrefetch {
     private static final int[] BACKGROUND_SLOTS = new int[]{
             3, 4, 5, 12, 13, 14, 21, 22, 23
     };
@@ -115,13 +113,9 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
         final long networkCharge = root.getRootPower();
         DataContainer container=getDataContainer(blockMenu);
         if (networkCharge > this.chargePerCraft) {
-            BlueprintInstance instance=(BlueprintInstance)container.getObject(0);
-            if(blockMenu.hasViewer()||instance==null){
-                updateMenu(blockMenu);
-                //update后仍旧未找到instance 视为没有
-                if((instance=(BlueprintInstance) container.getObject(0))==null){
-                    return;
-                }
+            BlueprintInstance instance = updateForMenu(blockMenu);
+            if(instance == null){
+                return;
             }
             int craftAmount=Math.min(container.getInt(0),craftlimit);
             if(craftAmount<=0){
@@ -146,10 +140,24 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
             //ExperimentalFeatureManager.getInstance().setEnableGlobalDebugFlag(false);
         }
     }
+
+    public BlueprintInstance updateForMenu(BlockMenu blockMenu){
+        return updateForMenu(blockMenu, getDataContainer(blockMenu));
+    }
+    public BlueprintInstance updateForMenu(BlockMenu blockMenu, DataContainer container){
+        BlueprintInstance instance=(BlueprintInstance)container.getObject(0);
+        if(blockMenu.hasViewer()||instance==null){
+            updateMenu(blockMenu);
+            //update后仍旧未找到instance 视为没有
+            instance=(BlueprintInstance) container.getObject(0);
+        }
+        return instance;
+    }
     public DataContainer newDataContainer(){
         return new DataContainer() {
             int blueprintAmount=0;
             Object blueprintInstance;
+            final Object[] prefetchers = new Object[9];
             ItemStack lastRecipeOut;
             ItemRequest[] lastRecipeStacked;
             public int getInt(int val){
@@ -159,7 +167,18 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 this.blueprintAmount=val2;
             }
             public Object getObject(int lva){
-                return blueprintInstance;
+                if(lva == 0){
+                    return blueprintInstance;
+                }else {
+                    Object val1 = prefetchers[lva-1];
+                    if(val1 != null){
+                        return val1;
+                    }else {
+                        val1 = new NetworkRoot.PusherPrefetcherInfo();
+                        prefetchers[lva-1] = val1;
+                        return val1;
+                    }
+                }
             }
             public void setObject(int lva, Object object){
                 this.blueprintInstance = object;
@@ -177,6 +196,10 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 lastRecipeStacked = items;
             }
         };
+    }
+    public NetworkRoot.PusherPrefetcherInfo getPrefetcher(BlockMenu menu, int index){
+        DataContainer container = getDataContainer(menu);
+        return (NetworkRoot.PusherPrefetcherInfo) container.getObject(index + 1);
     }
     public int getDataSlot(){
         return 0;
@@ -251,7 +274,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                     //requested can be amount>1
                     //force set this to 1
                     int amount=requested.getAmount();
-                    requested=requested.clone();
+                    requested= ItemUtils.copyStack(requested);// requested.clone();
                     requested.setAmount(1);
                     requiredItems.merge(requested,amount, Integer::sum);
                 }
@@ -280,9 +303,10 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
         for (int i=0;i<request.length;i++) {
             final int index=i;
             final ItemRequest requested = request[index];
+            final NetworkRoot.PusherPrefetcherInfo prefetcher = getPrefetcher(blockMenu, i);
             futures.add(CompletableFuture.runAsync(()->{
                 if (requested.getItemStack() != null&&amountMatched.get()) {
-                    final ItemStack fetched = root.getItemStack(requested.clone());
+                    final ItemStack fetched = prefetcher.getItemStackWithPrefetch(root, requested.clone());//  root.getItemStack(requested.clone());
                     fetch[index] = fetched;
                     if(fetched==null||fetched.getAmount()<requested.getAmount()){
                         amountMatched.set(false);
@@ -434,6 +458,9 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 return new int[0];
             }
         };
+    }
+    public int getPrefetchCount(){
+        return 9;
     }
 
     public abstract boolean isValidBlueprint(SlimefunItem item);

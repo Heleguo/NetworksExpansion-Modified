@@ -4,6 +4,7 @@ import com.balugaq.netex.utils.BlockMenuUtil;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
+import io.github.sefiraat.networks.NetworkAsyncUtil;
 import io.github.sefiraat.networks.NetworkStorage;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -195,7 +196,9 @@ public class SmartPusher extends SpecialSlimefunItem implements AdminDebuggable 
 
                             final ItemStack retrieved = root.getItemStack(itemRequest);
                             if (retrieved != null && retrieved.getType() != Material.AIR) {
-                                BlockMenuUtil.pushItem(targetMenu, retrieved, slots);
+                                NetworkAsyncUtil.getInstance().ensureLocation(targetMenu.getLocation(), ()->{
+                                    BlockMenuUtil.pushItem(targetMenu, retrieved, slots);
+                                });
                             }
                         }
                     }

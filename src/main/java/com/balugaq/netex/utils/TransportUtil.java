@@ -24,10 +24,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.ToIntFunction;
 
 public class TransportUtil {
+    /**
+     * grabbing utils
+     * @param root
+     * @param item
+     * @param limit
+     * @param loc
+     * @return
+     */
     public static int sendLimitedItemToRoot(NetworkRoot root, ItemStack item, int limit,Location loc) {
         return NetworkAsyncUtil.getInstance().ensureLocation(loc,()->{
             int itemAmount = item.getAmount();
@@ -47,24 +56,49 @@ public class TransportUtil {
             }
         });
     }
-    public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch,boolean breakWhenNoMatch, int... slots){
 
-        var re=calFetchItem(root, blockMenu::getItemInSlot, itemRequest, matchAmount, limit, breakAfterFirstMatch, breakWhenNoMatch, slots);
+    /**
+     * fetch item using request , then push into menu
+     * @param blockMenu
+     * @param itemRequest
+     * @param matchAmount
+     * @param limit
+     * @param breakAfterFirstMatch
+     * @param breakWhenNoMatch
+     * @param itemRequestor
+     * @param slots
+     */
+    public static void fetchItemAndPush(BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch,boolean breakWhenNoMatch,Function<ItemRequest, ItemStack> itemRequestor, int... slots){
+
+        var re=calFetchItem(blockMenu::getItemInSlot, itemRequest, matchAmount, limit, breakAfterFirstMatch, breakWhenNoMatch, slots);
         if(re==null){
             return;
         }
         int space=re.getFirstValue();
         itemRequest.setAmount(space);
 
-        final ItemStack retrieved = root.getItemStack(itemRequest);
+        final ItemStack retrieved = itemRequestor.apply(itemRequest);
         if (retrieved != null && retrieved.getType() != Material.AIR) {
             //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
             NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
-            BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, re.getSecondValue());
+                BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, re.getSecondValue());
             });
         }
     }
-    public static <T extends Object> Pair<Integer,List<Integer>> calFetchItem(NetworkRoot root, IntFunction<T> indexer, ItemRequest itemRequest, ToIntFunction<T> matchAmount, int limit, boolean breakAfterFirstMatch, boolean breakWhenNoMatch, int... slots){
+
+    /**
+     * calculate item fetch info: amount , with matching slots
+     * @param indexer
+     * @param itemRequest
+     * @param matchAmount
+     * @param limit
+     * @param breakAfterFirstMatch
+     * @param breakWhenNoMatch
+     * @param slots
+     * @return
+     * @param <T>
+     */
+    public static <T extends Object> Pair<Integer,List<Integer>> calFetchItem(IntFunction<T> indexer, ItemRequest itemRequest, ToIntFunction<T> matchAmount, int limit, boolean breakAfterFirstMatch, boolean breakWhenNoMatch, int... slots){
         int freeSpace = 0;
         int maxStackSize=itemRequest.getMaxStackSize();
         if(maxStackSize<=0)return null;
@@ -91,38 +125,14 @@ public class TransportUtil {
             return null;
         }
         return new Pair<>(Math.min(freeSpace, limit), matchedSlots);
-//        itemRequest.setAmount(Math.min(freeSpace, limit));
-//
-//        final ItemStack retrieved = root.getItemStack(itemRequest);
-//        if (retrieved != null && retrieved.getType() != Material.AIR) {
-//            //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
-//            BlockMenuUtil.pushItemAlreadyMatched(blockMenu, retrieved, matchedSlots);
-//        }
     }
-    public static void fetchItemAndPush(NetworkRoot root, BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch, int... slots) {
-        fetchItemAndPush(root, blockMenu, itemRequest, matchAmount, limit, breakAfterFirstMatch, false, slots);
+
+    public static void fetchItemAndPush(BlockMenu blockMenu, ItemRequest itemRequest, ToIntFunction<ItemStack> matchAmount, int limit, boolean breakAfterFirstMatch, Function<ItemRequest,ItemStack> itemRequestor, int... slots) {
+        fetchItemAndPush( blockMenu, itemRequest, matchAmount, limit, breakAfterFirstMatch, false, itemRequestor, slots);
     }
-    public static void fetchItemAndPushSnapShot(NetworkRoot root, BlockMenuUtil.BlockMenuSnapShot snapShot, ItemRequest itemRequest, ToIntFunction<ItemStackCache> matchAmount, int limit, boolean breakAfterFirstMatch,int... slots) {
-        //long start=System.nanoTime();
-        var re=calFetchItem(root,snapShot::getItemInSlot,itemRequest,matchAmount,limit,breakAfterFirstMatch,false,slots);
-        if(re==null){
-            return;
-        }
-        itemRequest.setAmount(re.getFirstValue());
-        //long a=System.nanoTime();
-        final ItemStack retrieved = root.getItemStack(itemRequest);
-        //long d=System.nanoTime();
-        //ExperimentalFeatureManager.getInstance().sendTimings(a,d,()->"TransportUtils:getItemStack %s");
-        if (retrieved != null && retrieved.getType() != Material.AIR) {
-            //BlockMenuUtil.pushItem(blockMenu, retrieved, slots);
-            //a=System.nanoTime();
-            NetworkAsyncUtil.getInstance().ensureLocation(snapShot.getBlockMenu().getLocation(),()->{
-                snapShot.pushItemAlreadyMatched(retrieved, re.getSecondValue());
-            });
-            //d=System.nanoTime();
-            //ExperimentalFeatureManager.getInstance().sendTimings(a,d,()->"TransportUtils:pushItemMatched %s");
-        }
-    }
+
+
+
 
     public static int commonMatch(ItemStack itemStack,ItemRequest itemRequest){
         int maxStackSize=itemRequest.getMaxStackSize();
@@ -138,20 +148,20 @@ public class TransportUtil {
             return 0;
         }
     }
-    public static int commonMatchCache(@Nonnull ItemStackCache itemStack, ItemRequest itemRequest){
-        int maxStackSize=itemRequest.getMaxStackSize();
-        if (itemStack.getItemStack() == null || itemStack.getItemType() == Material.AIR) {
-            return maxStackSize;
-        } else {
-            if (itemStack.getItemAmount() >= maxStackSize) {
-                return 0;
-            }
-            if (StackUtils.itemsMatch(itemRequest, itemStack)) {
-                return maxStackSize - itemStack.getItemAmount();
-            }
-            return 0;
-        }
-    }
+//    public static int commonMatchCache(@Nonnull ItemStackCache itemStack, ItemRequest itemRequest){
+//        int maxStackSize=itemRequest.getMaxStackSize();
+//        if (itemStack.getItemStack() == null || itemStack.getItemType() == Material.AIR) {
+//            return maxStackSize;
+//        } else {
+//            if (itemStack.getItemAmount() >= maxStackSize) {
+//                return 0;
+//            }
+//            if (StackUtils.itemsMatch(itemRequest, itemStack)) {
+//                return maxStackSize - itemStack.getItemAmount();
+//            }
+//            return 0;
+//        }
+//    }
     public static void outPower(@Nonnull Location targetLocation, @Nonnull NetworkRoot root, int rate) {
         SlimefunBlockData data=StorageCacheUtils.getBlock(targetLocation);
         if(data==null){

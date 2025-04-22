@@ -173,7 +173,7 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
                         continue;
                     }
                 }
-                ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackCache.of( ItemStackUtil.getCleanItem(item)),true, getOutputSlots());
+                ItemStack left = BlockMenuUtil.pushItem(blockMenu,  ItemStackUtil.getCleanItem(item), getOutputSlots());
                 if (left != null&&left.getAmount()>0 && left.getType() != Material.AIR) {
                     player.sendMessage(ChatColor.RED + "No enough space in output slots.");
                     sendFeedback(blockMenu.getLocation(), FeedbackType.NO_ENOUGH_SPACE);
@@ -271,7 +271,7 @@ public abstract class AbstractManualCrafter extends SpecialSlimefunItem implemen
                         continue;
                     }
                 }
-                ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackCache.of(ItemStackUtil.getCleanItem(item)),true, getOutputSlots());
+                ItemStack left = BlockMenuUtil.pushItem(blockMenu, ItemStackUtil.getCleanItem(item), getOutputSlots());
                 if (left != null&&left.getAmount()>0 && left.getType() != Material.AIR) {
                     player.sendMessage(ChatColor.RED + "Not enough space in output slots.");
                     world.dropItem(blockMenu.getLocation(), left);

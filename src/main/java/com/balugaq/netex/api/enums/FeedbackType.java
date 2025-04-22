@@ -41,6 +41,8 @@ public enum FeedbackType implements Keyed {
     NO_OWNER_FOUND,
     NO_PERMISSION,
     NO_TARGET_BLOCK,
+    CHUNK_NOT_LOAD,
+    USER_NOT_PRESENT,
     NO_TEMPLATE_FOUND,
     NO_VANILLA_RECIPE_FOUND,
     NO_VALID_RECIPE_FOUND,

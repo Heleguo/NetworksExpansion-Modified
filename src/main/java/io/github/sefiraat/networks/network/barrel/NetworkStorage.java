@@ -16,7 +16,7 @@ public class NetworkStorage extends BarrelIdentity {
         super(location, itemStack, amount, BarrelType.NETWORKS);
         this.cacheReference = storedCache;
         this.id=storedCache.getOptionalId();
-        this.initializedId.set(true);
+        this.initializedId = true;
     }
 
     @Override
@@ -34,6 +34,14 @@ public class NetworkStorage extends BarrelIdentity {
         //as we all know,NTWStorage is just a temporary cache which refresh every sft
         //this check also prevent part of dupe13 somehow
         //final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
+        if (cacheReference.isPendingMove()) {
+            return null;
+        }
+        return NetworkQuantumStorage.getItemStack(cacheReference, this.getLocation(), itemRequest.getAmount());
+    }
+
+    @Override
+    public ItemStack requestItemExact(ItemRequest itemRequest) {
         if (cacheReference.isPendingMove()) {
             return null;
         }
