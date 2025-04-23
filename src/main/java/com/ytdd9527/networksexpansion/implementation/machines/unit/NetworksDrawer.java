@@ -34,11 +34,13 @@ import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
+import me.matl114.matlib.utils.chat.ComponentUtils;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
 import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -243,14 +245,14 @@ public class NetworksDrawer extends SpecialSlimefunItem implements DistinctiveIt
     public static ItemStack bindId(@Nonnull ItemStack itemSample, int id) {
         final ItemStack item = itemSample.clone();
         final ItemMeta meta = item.getItemMeta();
-        List<String> lore;
+        List<Component> lore;
         if (meta != null) {
-            lore = meta.getLore();
+            lore = meta.lore();
             if (lore == null) {
                 lore = new ArrayList<>();
             }
-            lore.add(String.format(Networks.getLocalizationService().getString("messages.completed-operation.drawer.bound_id"), id));
-            meta.setLore(lore);
+            lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.completed-operation.drawer.bound_id"), id)));
+            meta.lore(lore);
             meta.getPersistentDataContainer().set(idKey, PersistentDataType.INTEGER, id);
         }
         item.setItemMeta(meta);

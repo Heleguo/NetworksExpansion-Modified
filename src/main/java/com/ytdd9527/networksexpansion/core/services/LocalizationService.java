@@ -10,6 +10,8 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import lombok.Getter;
+import me.matl114.matlib.utils.chat.ComponentUtils;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -40,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +51,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class LocalizationService {
     private static final Map<String, String> CACHE = new HashMap<>();
+    private static final Map<String, Component> COMP_CACHE = new ConcurrentHashMap<>();
     private static final String KEY_NAME = ".name";
     private static final String KEY_LORE = ".lore";
     private static final String MSG_KEY_NULL = "key cannot be null";
@@ -204,6 +208,11 @@ public class LocalizationService {
     @Nonnull
     public String getString(@Nonnull String path) {
         return color(this.getString0(path));
+    }
+
+    public Component getComponent(String path){
+        String val = getString(path);
+        return COMP_CACHE.computeIfAbsent(val, ComponentUtils::fromLegacyString);
     }
 
     @Nonnull

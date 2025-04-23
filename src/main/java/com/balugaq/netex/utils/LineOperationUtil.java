@@ -432,65 +432,63 @@ public class LineOperationUtil {
         }
     }
     public static void linePushItemOperationParallel(NetworkRoot root, Location startLocation, BlockFace face, int limit, boolean parallel, boolean skipNoMenu, boolean optimizeExperience, ItemStack clone, NetworkRoot.PusherPrefetcherInfo info, int limitPerMenu, TransportMode transportMode) {
-        if(false && parallel){
-
-        }else {
-            Location location = startLocation.clone();
-            int finalLimit = limit;
-            if (optimizeExperience) {
-                finalLimit += 1;
+        Location location = startLocation.clone();
+        int finalLimit = limit;
+        if (optimizeExperience) {
+            finalLimit += 1;
+        }
+        BlockMenu[] menus = new BlockMenu[finalLimit];
+        int[] consumes = new int[finalLimit];
+        List<Integer>[] pushSlots=new List[finalLimit];
+        Vector directionVec = face.getDirection();
+        final int maxStackSize=clone.getMaxStackSize();
+        final ItemRequest quest=ItemRequest.of(clone,maxStackSize);
+        int sum = 0;
+        for (int i = 0; i < finalLimit; i++) {
+            final int index=i;
+            location.add(directionVec);
+            final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
+            if (blockMenu == null) {
+                if (skipNoMenu) {
+                    continue;
+                }else {
+                    break;
+                }
             }
-            BlockMenu[] menus = new BlockMenu[finalLimit];
-            int[] consumes = new int[finalLimit];
-            List<Integer>[] pushSlots=new List[finalLimit];
-            Vector directionVec = face.getDirection();
-            final int maxStackSize=clone.getMaxStackSize();
-            final ItemRequest quest=ItemRequest.of(clone,maxStackSize);
-            int sum = 0;
-            for (int i = 0; i < finalLimit; i++) {
+            int[] slots=blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu,ItemTransportFlow.INSERT,clone);
+            var re=calPush(blockMenu,quest,transportMode,limitPerMenu,slots);
+            if(re==null||re.getFirstValue()==null||re.getSecondValue()==null){
+                continue;
+            }
+            menus[index]=blockMenu;
+            consumes[index]=re.getFirstValue();
+            pushSlots[index]=re.getSecondValue();
+            sum += consumes[index];
+        }
+
+        quest.setAmount(sum);
+        final ItemStack retrieved = info.getItemStackWithPrefetch(root, quest); //root.getItemStack(quest);
+        if (retrieved != null && retrieved.getType() != Material.AIR) {
+            int requested=retrieved.getAmount();
+            for(int i=0;i<finalLimit;++i){
                 final int index=i;
-                location.add(directionVec);
-                final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
-                if (blockMenu == null) {
-                    if (skipNoMenu) {
-                        continue;
-                    }else {
-                        break;
+                if(menus[index]!=null&&consumes[index]>0){
+                    int request=Math.min(consumes[index],requested);
+                    requested-=request;
+                    if(request>0){
+                        NetworkAsyncUtil.getInstance().ensureLocation(menus[index].getLocation(), ()->{
+                            ItemStack pushed=StackUtils.getAsQuantity(retrieved,request);
+                            BlockMenuUtil.pushItemAlreadyMatched(menus[index],pushed, pushSlots[index]);
+                        });
                     }
-                }
-                int[] slots=blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu,ItemTransportFlow.INSERT,clone);
-                var re=calPush(blockMenu,quest,transportMode,limitPerMenu,slots);
-                if(re==null||re.getFirstValue()==null||re.getSecondValue()==null){
-                    return;
-                }
-                menus[index]=blockMenu;
-                consumes[index]=re.getFirstValue();
-                pushSlots[index]=re.getSecondValue();
-                sum += consumes[index];
-            }
-
-            quest.setAmount(sum);
-            final ItemStack retrieved = info.getItemStackWithPrefetch(root, quest); //root.getItemStack(quest);
-            if (retrieved != null && retrieved.getType() != Material.AIR) {
-                int requested=retrieved.getAmount();
-                for(int i=0;i<finalLimit;++i){
-                    final int index=i;
-                    if(menus[index]!=null&&consumes[index]>0){
-                        int request=Math.min(consumes[index],requested);
-                        requested-=request;
-                        if(request>0){
-                            NetworkAsyncUtil.getInstance().ensureLocation(menus[index].getLocation(), ()->{
-                                ItemStack pushed=StackUtils.getAsQuantity(retrieved,request);
-                                BlockMenuUtil.pushItemAlreadyMatched(menus[index],pushed, pushSlots[index]);
-                            });
-                        }
-                        if(requested<=0){
-                            break;
-                        }
+                    if(requested<=0){
+                        break;
                     }
                 }
             }
         }
+
+
 
     }
 

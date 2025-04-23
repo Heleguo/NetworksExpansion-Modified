@@ -24,11 +24,13 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.items.settings.IntRangeSetting;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.utils.ChatUtils;
+import me.matl114.matlib.utils.chat.ComponentUtils;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -126,22 +128,21 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                 }
         );
     }
-
     @Nonnull
-    private static List<String> getLoreAddition(Long long1) {
+    private static List<Component> getLoreAddition(Long long1) {
         final MessageFormat format = new MessageFormat(Networks.getLocalizationService().getString("messages.normal-operation.grid.item_amount"), Locale.ROOT);
         return List.of(
-                "",
-                format.format(new Object[]{Theme.CLICK_INFO.getColor(), Theme.PASSIVE.getColor(), long1}, new StringBuffer(), null).toString()
+                ComponentUtils.EMPTY,
+                ComponentUtils.fromLegacyString( format.format(new Object[]{Theme.CLICK_INFO.getColor(), Theme.PASSIVE.getColor(), long1}, new StringBuffer(), null).toString())
         );
     }
-
+    private static final List<Component> HISTORY_LORE_ADDITION = List.of(
+        ComponentUtils.EMPTY,
+        ComponentUtils.fromLegacyString( Networks.getLocalizationService().getString("messages.normal-operation.grid_new_style.click_to_withdraw"))
+    );
     @Nonnull
-    private static List<String> getHistoryLoreAddition() {
-        return List.of(
-                " ",
-                Networks.getLocalizationService().getString("messages.normal-operation.grid_new_style.click_to_withdraw")
-        );
+    private static List<Component> getHistoryLoreAddition() {
+        return HISTORY_LORE_ADDITION;
     }
 
     protected void updateDisplay(@Nonnull BlockMenu blockMenu) {
@@ -198,7 +199,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                     if (itemMeta == null) {
                         continue;
                     }
-                    List<String> lore = itemMeta.getLore();
+                    List<Component> lore = itemMeta.lore();
 
                     if (lore == null) {
                         lore = getLoreAddition(entry.getValue());
@@ -206,7 +207,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                         lore.addAll(getLoreAddition(entry.getValue()));
                     }
 
-                    itemMeta.setLore(lore);
+                    itemMeta.lore(lore);
                     displayStack.setItemMeta(itemMeta);
                     blockMenu.replaceExistingItem(getDisplaySlots()[i], displayStack);
                     blockMenu.addMenuClickHandler(getDisplaySlots()[i], (player, slot, item, action) -> {
@@ -255,7 +256,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                     if (itemMeta == null) {
                         continue;
                     }
-                    List<String> lore = itemMeta.getLore();
+                    List<Component> lore = itemMeta.lore();
 
                     if (lore == null) {
                         lore = getHistoryLoreAddition();
@@ -263,7 +264,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                         lore.addAll(getHistoryLoreAddition());
                     }
 
-                    itemMeta.setLore(lore);
+                    itemMeta.lore(lore);
                     displayStack.setItemMeta(itemMeta);
                     blockMenu.replaceExistingItem(getDisplaySlots()[i], displayStack);
                     blockMenu.addMenuClickHandler(getDisplaySlots()[i], (player, slot, item, action) -> {
@@ -373,7 +374,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
         if (cloneMeta == null) {
             return;
         }
-        final List<String> cloneLore = cloneMeta.getLore();
+        final var cloneLore = cloneMeta.lore();
 
         if (cloneLore == null || cloneLore.size() < 2) {
             return;
@@ -381,7 +382,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
 
         cloneLore.remove(cloneLore.size() - 1);
         cloneLore.remove(cloneLore.size() - 1);
-        cloneMeta.setLore(cloneLore);
+        cloneMeta.lore(cloneLore.isEmpty()?null: cloneLore);
         clone.setItemMeta(cloneMeta);
 
         NetworkRoot root = definition.getNode().getRoot();

@@ -2,6 +2,7 @@ package io.github.sefiraat.networks.network;
 
 import com.balugaq.netex.api.data.StorageUnitData;
 import com.balugaq.netex.utils.BlockMenuUtil;
+import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.implementation.machines.networks.advanced.AdvancedGreedyBlock;
 import io.github.sefiraat.networks.NetworkAsyncUtil;
@@ -32,14 +33,6 @@ public class NetworkRootPlus extends NetworkRoot {
         super(location, type, maxNodes);
     }
 
-    @Override
-    public void addItemStack(ItemStack itemStack) {
-//        if(enableAddAsync){
-            addItemStackAsync(itemStack);
-//        }else {
-//            super.addItemStack(itemStack);
-//        }
-    }
 
 //    private static final boolean enableGetAsync=true;
 //    private static final boolean enableAddAsync=true;
@@ -91,7 +84,7 @@ public class NetworkRootPlus extends NetworkRoot {
     }
 
     protected ItemStack fetchFromBarrels(ItemRequest request, BarrelIdentity barrelIdentity, ItemStack stackToReturn, boolean bypassCheck){
-        if (barrelIdentity.getItemStack() == null || !StackUtils.itemsMatch(request, barrelIdentity)) {
+        if (barrelIdentity.getItemStack() == null || !(bypassCheck || StackUtils.itemsMatch(request, barrelIdentity))) {
             return null;
         }
 
@@ -99,11 +92,13 @@ public class NetworkRootPlus extends NetworkRoot {
         if (fetched == null || fetched.getType() == Material.AIR) {
             return null;
         }
+        final int preserveAmount =  fetched.getAmount() ;
         if (stackToReturn == null) {
-            stackToReturn = fetched.clone();
+            //already cloned ,
+            stackToReturn = fetched;
             stackToReturn.setAmount(0);
         }
-        final int preserveAmount =  fetched.getAmount() ;
+
         if (request.getAmount() <= preserveAmount) {
             stackToReturn.setAmount(stackToReturn.getAmount() + request.getAmount());
             request.receiveAll();
@@ -119,17 +114,16 @@ public class NetworkRootPlus extends NetworkRoot {
         return NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(), ()->super.getFromBlockMenu(request, stackToReturn, blockMenu));
     }
 
-
-    /**
-     * add ItemStack to network
-     * this method should be multi-thread safe
-     * @param incoming
-     */
-    public void addItemStackAsync(@Nonnull ItemStack incoming) {
-        //incomingCache cached the meta of incoming,and the getAmount / setAmount is sync
-        ItemStackCache incomingCache = ItemRequest.of(incoming,0);
-        for (BlockMenu blockMenu : getAdvancedGreedyBlockMenus()) {
-
+    @Override
+    protected boolean addItemStackGreedyBlocks(ItemStack incomingCache) {
+        for (SlimefunBlockData data : getAdvancedGreedyBlocksMap().values()) {
+            if(data.isPendingRemove()){
+                continue;
+            }
+            BlockMenu blockMenu = data.getBlockMenu();
+            if(blockMenu == null){
+                continue;
+            }
             final ItemStack template = blockMenu.getItemInSlot(AdvancedGreedyBlock.TEMPLATE_SLOT);
 
             if (template == null || template.getType() == Material.AIR || !StackUtils.itemsMatch(incomingCache, template)) {
@@ -137,99 +131,56 @@ public class NetworkRootPlus extends NetworkRoot {
             }
             blockMenu.markDirty();
             NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(), ()->
-                BlockMenuUtil.pushItem(blockMenu, incomingCache.getItemStack(), ADVANCED_GREEDY_BLOCK_AVAILABLE_SLOTS)
+                BlockMenuUtil.pushItem(blockMenu, incomingCache, ADVANCED_GREEDY_BLOCK_AVAILABLE_SLOTS)
             );
             // Given we have found a match, it doesn't matter if the item moved or not, we will not bring it in
-            return;
+            return true;
         }
         // Run for matching greedy blocks
-        for (BlockMenu blockMenu : getGreedyBlockMenus()) {
+        for (SlimefunBlockData data : getGreedyBlocksMap().values()) {
+            if(data.isPendingRemove()){
+                continue;
+            }
+            BlockMenu blockMenu = data.getBlockMenu();
+            if(blockMenu == null){
+                continue;
+            }
             final ItemStack template = blockMenu.getItemInSlot(NetworkGreedyBlock.TEMPLATE_SLOT);
             if (template == null || template.getType() == Material.AIR || !StackUtils.itemsMatch(incomingCache, template)) {
                 continue;
             }
             blockMenu.markDirty();
             NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(), ()->
-                BlockMenuUtil.pushItem(blockMenu, incomingCache.getItemStack(), GREEDY_BLOCK_AVAILABLE_SLOTS[0])
+                BlockMenuUtil.pushItem(blockMenu, incomingCache, GREEDY_BLOCK_AVAILABLE_SLOTS[0])
             );
             // Given we have found a match, it doesn't matter if the item moved or not, we will not bring it in
-            return;
+            return true;
         }
+        return false;
+    }
 
-        // Run for matching barrels
-        var barrels= getMaterial2InputAbleBarrels().get(incomingCache.getItemType());
-        if(barrels!=null){
-            for (BarrelIdentity barrelIdentity :barrels.values()) {
-                if (StackUtils.itemsMatch(barrelIdentity, incomingCache)) {
-                    // barrel Identity should realize multi-thread safe somehow
-                    barrelIdentity.depositItemStack(incoming);
-                    // All distributed, can escape
-                    if (incoming.getAmount() == 0) {
-                        return;
-                    }
-                }
+    @Override
+    protected void addItemStackCells(ItemStack incoming) {
+        for (SlimefunBlockData data : getCellsMap().values()) {
+            if(data.isPendingRemove()){
+                continue;
             }
-        }
-
-
-        for (StorageUnitData cache : getInputAbleCargoStorageUnitDatas0().values()) {
-            //storageUnitData should realize multi-thread safe somehow
-            cache.depositItemStack(incomingCache, true);
-            if (incoming.getAmount() == 0) {
-                return;
+            BlockMenu blockMenu = data.getBlockMenu();
+            if(blockMenu == null){
+                continue;
             }
-        }
-
-        for (BlockMenu blockMenu : getCellMenus()) {
             blockMenu.markDirty();
             //multi-thread safe method of cell Menus
-            pushCellAsync(blockMenu,incomingCache);
+            pushCellAsync(blockMenu,incoming);
             if (incoming.getAmount() == 0) {
                 return;
             }
         }
     }
 
-    public void pushCellAsync(BlockMenu cellMenu,ItemStackCache item){
-        Material material = item.getItemType();
-        int maxSize=material.getMaxStackSize();
+    public void pushCellAsync(BlockMenu cellMenu,ItemStack item){
         NetworkAsyncUtil.getInstance().ensureLocation(cellMenu.getLocation(),()->{
-            int leftAmount = item.getItemAmount();
-            ItemStack sample=null;
-            for (int slot : CELL_AVAILABLE_SLOTS) {
-                if (leftAmount <= 0) {
-                    break;
-                }
-                ItemStack existing = cellMenu.getItemInSlot(slot);
-
-                if (existing == null || existing.getType() == Material.AIR) {
-
-                    int received = Math.min(leftAmount, maxSize);
-                    if(sample==null){
-                        sample=StackUtils.getAsQuantity(item.getItemStack(),received);
-                    }else {
-                        sample.setAmount(received);
-                    }
-                    cellMenu.replaceExistingItem(slot,sample,false);
-                    leftAmount -= received;
-                } else {
-                    int existingAmount = existing.getAmount();
-                    if (existingAmount >= maxSize) {
-                        continue;
-                    }
-                    if (!StackUtils.itemsMatch(item, existing)) {
-                        continue;
-                    }
-
-                    existing = cellMenu.getItemInSlot(slot);
-                    int received = Math.max(0, Math.min(maxSize - existingAmount, leftAmount));
-                    leftAmount -= received;
-                    existing.setAmount(existingAmount + received);
-                }
-            }
-            item.setItemAmount(leftAmount);
+            BlockMenuUtil.pushItem(cellMenu, item, CELL_AVAILABLE_SLOTS);
         });
-
-
     }
 }

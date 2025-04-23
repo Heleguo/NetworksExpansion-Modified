@@ -3,13 +3,16 @@ package io.github.sefiraat.networks.utils;
 import com.balugaq.netex.api.enums.MinecraftVersion;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
-import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import lombok.experimental.UtilityClass;
+import me.matl114.matlib.nmsMirror.impl.CraftBukkit;
+import me.matl114.matlib.nmsMirror.impl.NMSItem;
 import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.matl114.matlib.utils.CraftUtils;
 import org.bukkit.Material;
@@ -46,9 +49,10 @@ import org.bukkit.persistence.PersistentDataType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @UtilityClass
 @SuppressWarnings("deprecation")
@@ -123,7 +127,11 @@ public class StackUtils {
     public static boolean itemsMatch(@Nullable ItemStack itemStack, @Nonnull ItemStackCache cache) {
         return itemsMatchCore(cache.getItemStack(), itemStack, false, false,true);
     }
-    public static boolean itemsMatch(@Nullable ItemStackCache itemStack, @Nonnull ItemStackCache cache) {
+    public static boolean itemsMatch(@Nonnull ItemStackCache itemStack, @Nonnull ItemStackCache cache) {
+        //hashcode已经算出来了 而且都不匹配 那显然他不是匹配的
+        if( itemStack.hashCodeNoLore!= null && cache.hashCodeNoLore != null && !itemStack.hashCodeNoLore.equals(cache.hashCodeNoLore) ){
+            return false;
+        }
         return itemsMatchCore(itemStack.getItemStack(), cache.getItemStack(), false);
         //return itemsMatchCore(cache, itemStack, false, false,true);
     }
@@ -139,6 +147,18 @@ public class StackUtils {
         PersistentDataContainer pdcView = ItemUtils.getPersistentDataContainerView(item, false);
         return pdcView == null? null: pdcView.get(Slimefun.getItemDataService().getKey(), PersistentDataType.STRING);
     }
+    private static final ReferenceSet<Material> LORE_SENSITIVE_MATERIAL = new ReferenceOpenHashSet<>(List.of(Material.PLAYER_HEAD,Material.SUGAR,Material.SPAWNER));
+    private static final ReferenceSet<?> LORE_SENSITIVE_MATERIAL_NMS = new ReferenceOpenHashSet<>(
+        LORE_SENSITIVE_MATERIAL.stream()
+        .map(CraftBukkit.MAGIC_NUMBERS::getItem)
+        .collect(Collectors.toUnmodifiableSet())
+    );
+
+
+    public static boolean shouldNotEscapeLore(ItemStack stack){
+        var mat = stack.getType();
+        return LORE_SENSITIVE_MATERIAL.contains(mat);
+    }
 
     public static SlimefunItem getByItem(ItemStack item){
         String id = getOptionalId(item);
@@ -152,16 +172,23 @@ public class StackUtils {
 //        if (cache.getItemStack() == null || cache2.getItemStack()== null) {
 //            return cache2.getItemStack() == null && cache.getItemStack() == null;
 //        }
-//
-//        // If types do not match, then the items cannot possibly match
-//        //check cached id first,if OptionalSfItemCache,if id not match ,break earlier
-//        if(cache instanceof OptionalSfItemCache sfcache1&&cache2 instanceof OptionalSfItemCache sfcache2){
-//            if(!Objects.equals(sfcache1.getOptionalId(),sfcache2.getOptionalId())){
-//                return false;
-//            }
-//        }
-
-        return ItemUtils.matchItemStack(cache, cache2, checkLore);
+        if(cache == null || cache2 == null){
+            return cache == cache2;
+        }
+        Object handle1 = CraftBukkit.ITEMSTACK.unwrapToNMS(cache);
+        Object handle2 = CraftBukkit.ITEMSTACK.unwrapToNMS(cache2);
+        if(checkLore){
+            return NMSItem.ITEMSTACK.isSameItemSameTags(handle1, handle2);// .matchItem(handle1, handle2, true, true);
+        }else {
+            Object item1 = NMSItem.ITEMSTACK.getItem(handle1);
+            Object item2 = NMSItem.ITEMSTACK.getItem(handle2);
+            //material do not match
+            if(item1 != item2){
+                return false;
+            }
+            //check lore depends on material
+            return NMSItem.ITEMSTACK.matchNbt(handle1, handle2,  LORE_SENSITIVE_MATERIAL_NMS.contains(item1), true);
+        }
 
 //        Material type=cache2.getItemType();
 //        if (type != cache.getItemType()) {

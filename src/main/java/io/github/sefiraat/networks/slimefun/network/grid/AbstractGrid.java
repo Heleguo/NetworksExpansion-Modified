@@ -23,11 +23,13 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.items.settings.IntRangeSetting;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.utils.ChatUtils;
+import me.matl114.matlib.utils.chat.ComponentUtils;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -125,11 +127,11 @@ public abstract class AbstractGrid extends NetworkObject {
     }
 
     @Nonnull
-    private static List<String> getLoreAddition(long amount) {
+    private static List<Component> getLoreAddition(long amount) {
         final MessageFormat format = new MessageFormat(Networks.getLocalizationService().getString("messages.normal-operation.grid.item_amount"), Locale.ROOT);
         return List.of(
-                "",
-                format.format(new Object[]{Theme.CLICK_INFO.getColor(), Theme.PASSIVE.getColor(), amount}, new StringBuffer(), null).toString()
+                ComponentUtils.EMPTY,
+                ComponentUtils.fromLegacyString( format.format(new Object[]{Theme.CLICK_INFO.getColor(), Theme.PASSIVE.getColor(), amount}, new StringBuffer(), null).toString())
         );
     }
 
@@ -169,7 +171,7 @@ public abstract class AbstractGrid extends NetworkObject {
         final NetworkRoot root = definition.getNode().getRoot();
 
         final GridCache gridCache = getCacheMap().get(blockMenu.getLocation().clone());
-        sendDebugMessage(blockMenu.getLocation(),()->"update Display from root "+root.getLocUniqueId()+" root status "+root.isReady());
+        sendDebugMessage(blockMenu.getLocation(),()->"update Display from root , root status "+root.isReady());
         final List<Map.Entry<ItemStack, Long>> entries = getEntries(root, gridCache);
         sendDebugMessage(blockMenu.getLocation(),()->"update Display with size "+entries.size());
         final int pages = (int) Math.ceil(entries.size() / (double) getDisplaySlots().length) - 1;
@@ -201,7 +203,7 @@ public abstract class AbstractGrid extends NetworkObject {
                 if (itemMeta == null) {
                     continue;
                 }
-                List<String> lore = itemMeta.getLore();
+                List<Component> lore = itemMeta.lore();
 
                 if (lore == null) {
                     lore = getLoreAddition(entry.getValue());
@@ -209,7 +211,7 @@ public abstract class AbstractGrid extends NetworkObject {
                     lore.addAll(getLoreAddition(entry.getValue()));
                 }
 
-                itemMeta.setLore(lore);
+                itemMeta.lore(lore);
                 displayStack.setItemMeta(itemMeta);
                 blockMenu.replaceExistingItem(getDisplaySlots()[i], displayStack);
                 blockMenu.addMenuClickHandler(getDisplaySlots()[i], (player, slot, item, action) -> {
@@ -301,14 +303,14 @@ public abstract class AbstractGrid extends NetworkObject {
             return;
         }
 
-        final List<String> cloneLore = cloneMeta.getLore();
+        final List<Component> cloneLore = cloneMeta.lore();
         if (cloneLore == null || cloneLore.size() < 2) {
             return;
         }
 
         cloneLore.remove(cloneLore.size() - 1);
         cloneLore.remove(cloneLore.size() - 1);
-        cloneMeta.setLore(cloneLore);
+        cloneMeta.lore(cloneLore.isEmpty() ? null : cloneLore);
         clone.setItemMeta(cloneMeta);
 
         NetworkRoot root = definition.getNode().getRoot();

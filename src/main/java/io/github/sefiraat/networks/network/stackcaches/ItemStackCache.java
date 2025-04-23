@@ -1,7 +1,9 @@
 package io.github.sefiraat.networks.network.stackcaches;
 
+import io.github.sefiraat.networks.utils.StackUtils;
 import lombok.ToString;
 import me.matl114.matlib.nmsUtils.ItemUtils;
+import me.matl114.matlib.nmsUtils.inventory.ItemHashCache;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -11,7 +13,7 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 
 @ToString
-public class ItemStackCache implements Cloneable {
+public class ItemStackCache implements Cloneable, ItemHashCache {
 
     private ItemStack itemStack;
 //    @Nullable
@@ -20,6 +22,8 @@ public class ItemStackCache implements Cloneable {
     private static final ItemStackCache instanceTemplate=new ItemStackCache(new ItemStack(Material.STONE));
     protected ItemStackCache init(ItemStack itemStack) {
         this.itemStack = itemStack;
+        this.hashCodeNoLore = null;
+        this.hashCode = null;
 //        this.itemMeta = null;
 //        this.metaCached = false;
         return this;
@@ -48,7 +52,8 @@ public class ItemStackCache implements Cloneable {
 
     public final void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
-
+        this.hashCode = null;
+        this.hashCodeNoLore = null;
 //        // refresh meta here
 //        this.metaCached = false;
 //        this.itemMeta = null;
@@ -79,5 +84,35 @@ public class ItemStackCache implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new AssertionError(e);
         }
+    }
+    public volatile Integer hashCode;
+    public volatile Integer hashCodeNoLore;
+    @Override
+    public int getHashCode() {
+        if(hashCode == null){
+            hashCode = ItemUtils.itemStackHashCode(this.itemStack);
+        }
+        return hashCode;
+    }
+
+    public Integer getRawHash(){
+        return hashCode;
+    }
+
+    @Override
+    public int getHashCodeNoLore() {
+        if(hashCodeNoLore == null){
+            hashCodeNoLore = StackUtils.shouldNotEscapeLore(itemStack)? getHashCode() :ItemUtils.itemStackHashCodeWithoutLore(itemStack);
+        }
+        return hashCodeNoLore;
+    }
+
+    public Integer getRawHashNoLore(){
+        return hashCodeNoLore;
+    }
+
+    @Override
+    public ItemStack getCraftStack() {
+        return this.itemStack;
     }
 }

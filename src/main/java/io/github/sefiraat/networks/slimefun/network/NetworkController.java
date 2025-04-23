@@ -62,12 +62,17 @@ public class NetworkController extends NetworkObject {
                         NetworkRoot networkRoot = NetworkRoot.newInstance(block.getLocation(), NodeType.CONTROLLER, maxNodes.getValue());
                         networkRoot.addAllChildren();
                         //send update after all children add
-                        networkRoot.setReady(true);
-                        if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItems()){
+                        //async setup storageMaps
+                        CompletableFuture.runAsync(()->{
                             networkRoot.initRootItems();
-                        }else if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItemsAsync()){
-                            CompletableFuture.runAsync(networkRoot::initRootItems);
-                        }
+                            networkRoot.setReady(true);
+                            NetworkRootReadyEvent event = new NetworkRootReadyEvent(networkRoot);
+                            Bukkit.getPluginManager().callEvent(event);
+                        });
+//                        if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItems()){
+//                        }else if(ExperimentalFeatureManager.getInstance().isEnableControllerPreviewItemsAsync()){
+//                            CompletableFuture.runAsync(networkRoot::initRootItems);
+//                        }
                         boolean crayon = CRAYONS.contains(block.getLocation());
                         if (crayon) {
                             networkRoot.setDisplayParticles(true);
@@ -79,8 +84,7 @@ public class NetworkController extends NetworkObject {
                         if (definition != null) {
                             definition.setNode(networkRoot);
                         }
-                        NetworkRootReadyEvent event = new NetworkRootReadyEvent(networkRoot);
-                        Bukkit.getPluginManager().callEvent(event);
+
                     }
                 }
         );

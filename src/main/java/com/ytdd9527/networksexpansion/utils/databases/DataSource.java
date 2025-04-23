@@ -3,6 +3,7 @@ package com.ytdd9527.networksexpansion.utils.databases;
 import com.balugaq.netex.api.data.ItemContainer;
 import com.balugaq.netex.api.data.StorageUnitData;
 import com.balugaq.netex.api.enums.StorageUnitType;
+import com.google.common.base.Preconditions;
 import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawer;
 import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.utils.StackUtils;
@@ -100,8 +101,9 @@ public class DataSource {
                         l = new Location(w, Integer.parseInt(locStr[1]), Integer.parseInt(locStr[2]), Integer.parseInt(locStr[3]));
                     }
                 }
-
-                re = new StorageUnitData(result.getInt("ContainerID"), result.getString("PlayerUUID"), StorageUnitType.values()[result.getInt("SizeType")], result.getBoolean("IsPlaced"), l, getStoredItem(id));
+                int containerId = result.getInt("ContainerID");
+                Preconditions.checkArgument(containerId == id,"Error in DataBase!, ContainerId not match");
+                re = new StorageUnitData(id, result.getString("PlayerUUID"), StorageUnitType.values()[result.getInt("SizeType")], result.getBoolean("IsPlaced"), l, getStoredItem(id));
             }
         } catch (SQLException e) {
             logger.warning(Networks.getLocalizationService().getString("messages.data-saving.error-occurred-when-loading-data"));
@@ -112,9 +114,9 @@ public class DataSource {
 
     int getItemId(ItemStack item) {
         ItemStack clone = item.clone();
-        ItemStackWrapper wrapper = ItemStackWrapper.wrap(item);
+       // ItemStackWrapper wrapper = ItemStackWrapper.wrap(item);
         for (Map.Entry<Integer, ItemStack> each : itemMap.entrySet()) {
-            if (StackUtils.itemsMatch(each.getValue(), wrapper)) {
+            if (StackUtils.itemsMatch(each.getValue(), item)) {
                 return each.getKey();
             }
         }
@@ -268,7 +270,7 @@ public class DataSource {
                             int itemId = result.getInt("ItemID");
                             ItemStack item = itemMap.get(itemId);
                             if (item != null) {
-                                re.put(itemId, new ItemContainer(itemId, item, result.getInt("Amount")));
+                                re.put(itemId, new ItemContainer(itemId, item, result.getInt("Amount"), id));
                             }
                         }
                     } catch (SQLException e) {

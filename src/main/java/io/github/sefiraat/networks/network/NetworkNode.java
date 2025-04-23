@@ -8,6 +8,7 @@ import io.github.sefiraat.networks.slimefun.network.NetworkPowerNode;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import lombok.Getter;
+import me.matl114.matlib.utils.reflect.ReflectUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -15,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.invoke.VarHandle;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,8 +36,8 @@ public class NetworkNode {
     protected final Set<NetworkNode> childrenNodes = new HashSet<>();
     @Getter
     protected NetworkNode parent = null;
-    protected NetworkRoot root ;
-    @Nonnull
+    protected volatile NetworkRoot root ;
+
     protected NetworkRoot newRoot ;
     protected Location nodePosition;
     protected NodeType nodeType;
@@ -84,14 +86,20 @@ public class NetworkNode {
 //        return this.getRoot().getNodeLocations().contains(location);
 //    }
     //获取可靠的root,
+    private static final VarHandle ROOT_ATOMIC_UPDATE = ReflectUtils.getVarHandlePrivate(NetworkNode.class, "root").withInvokeExactBehavior();
     @Nonnull
-    public synchronized NetworkRoot getRoot() {
-        if( (this.root == null) ||  (this.newRoot !=null && this.newRoot .isReady()) ) {
-            this.root = this.newRoot;
-            this.newRoot = null;
-            //we are sure that root.isReady is true
-        }
-        return this.root;
+    public NetworkRoot getRoot() {
+        NetworkRoot currentRoot;
+        NetworkRoot currentNewRoot;
+        do{
+            currentRoot = this.root;
+            currentNewRoot = this.newRoot;
+            if (!(currentRoot == null || (currentNewRoot != null && currentNewRoot.isReady()))) {
+                return currentRoot;
+            }
+        }while (! ROOT_ATOMIC_UPDATE.compareAndSet((NetworkNode)this, (NetworkRoot)currentRoot, (NetworkRoot)currentNewRoot));
+        this.newRoot = null;
+        return currentNewRoot;
     }
     //获取最新版的root 可能是未完成的
     @Nonnull

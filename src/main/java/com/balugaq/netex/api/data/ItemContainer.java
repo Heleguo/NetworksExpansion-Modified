@@ -1,27 +1,19 @@
 package com.balugaq.netex.api.data;
 
-import com.google.errorprone.annotations.Var;
-import io.github.sefiraat.networks.network.barrel.OptionalSfItemCache;
-import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
 import io.github.sefiraat.networks.network.stackcaches.ItemStackCache;
-import io.github.sefiraat.networks.network.stackcaches.QuantumCache;
 import io.github.sefiraat.networks.utils.StackUtils;
-import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.utils.itemstack.ItemStackWrapper;
 import lombok.Getter;
 import lombok.Setter;
 import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.matl114.matlib.utils.reflect.ReflectUtils;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nonnull;
 import java.lang.invoke.VarHandle;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
-public class ItemContainer extends ItemStackCache implements OptionalSfItemCache {
+public class ItemContainer extends ItemStackCache  {
     @Getter
     private final int id;
     //private final ItemStack sample;
@@ -29,17 +21,21 @@ public class ItemContainer extends ItemStackCache implements OptionalSfItemCache
     //private final ItemStackWrapper wrapper;
     @Getter
     private final ItemStackWrapper wrapper;
+    @Getter
+    private final int storageUnitId;
     static final VarHandle ATOMIC_AMOUNT_HANDLE = ReflectUtils.getVarHandlePrivate(ItemContainer.class, "amount").withInvokeExactBehavior();
     @Setter
     @Getter
     volatile int amount;
 
-    public ItemContainer(int id, @Nonnull ItemStack item, int amount) {
+    public ItemContainer(int id, @Nonnull ItemStack item, int amount, int storageId) {
         super(ItemUtils.cleanStack(StackUtils.getAsQuantity(item,1)));
         this.id = id;
         //this.sample = getItemStack();
         this.wrapper = ItemStackWrapper.wrap(getItemStack());
         this.amount = amount;
+        this.storageUnitId =storageId;
+
     }
 
     public ItemStack getSample() {
@@ -84,20 +80,20 @@ public class ItemContainer extends ItemStackCache implements OptionalSfItemCache
 
     public String toString() {
         return "ItemContainer{" +
-                "id=" + id +
+
                 ", sample=" + this.getItemStack() +
                 ", wrapper=(ItemStackCache)this" +
                 ", amount=" + amount +
                 '}';
     }
 
-    private String cacheId;
-    private boolean initializedId= false;
-    private static final VarHandle ATOMIC_IDCACHE_HANDLE = ReflectUtils.getVarHandlePrivate(ItemContainer.class, "initializedId").withInvokeExactBehavior();
-    public final String getOptionalId(){
-        if(ATOMIC_IDCACHE_HANDLE.compareAndSet((ItemContainer)this, false,true)){
-            cacheId= StackUtils.getOptionalId(getItemStack()); //meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
-        }
-        return cacheId;
-    }
+//    private String cacheId;
+//    private boolean initializedId= false;
+//    private static final VarHandle ATOMIC_IDCACHE_HANDLE = ReflectUtils.getVarHandlePrivate(ItemContainer.class, "initializedId").withInvokeExactBehavior();
+//    public final String getOptionalId(){
+//        if(ATOMIC_IDCACHE_HANDLE.compareAndSet((ItemContainer)this, false,true)){
+//            cacheId= StackUtils.getOptionalId(getItemStack()); //meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
+//        }
+//        return cacheId;
+//    }
 }

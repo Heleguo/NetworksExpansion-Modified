@@ -12,11 +12,16 @@ import javax.annotation.Nullable;
 
 public class NetworkStorage extends BarrelIdentity {
     final QuantumCache cacheReference;
+    final ItemStack quantumItemStackHolder;
     public NetworkStorage(Location location, ItemStack itemStack,QuantumCache storedCache, long amount) {
         super(location, itemStack, amount, BarrelType.NETWORKS);
         this.cacheReference = storedCache;
-        this.id=storedCache.getOptionalId();
-        this.initializedId = true;
+        this.quantumItemStackHolder = cacheReference.getItemStack();
+//        this.id=storedCache.getOptionalId();
+//        this.initializedId = true;
+        //copy NoLore hashCode
+        this.hashCodeNoLore = storedCache.getHashCodeNoLore();
+        //this.hashCode = storedCache.getHashCode();
     }
 
     @Override
@@ -34,7 +39,9 @@ public class NetworkStorage extends BarrelIdentity {
         //as we all know,NTWStorage is just a temporary cache which refresh every sft
         //this check also prevent part of dupe13 somehow
         //final QuantumCache cache = NetworkQuantumStorage.getCaches().get(this.getLocation());
-        if (cacheReference.isPendingMove()) {
+
+        //check here if the type of cacheReference is changed by player
+        if (cacheReference.isPendingMove() || cacheReference.getItemStack() != quantumItemStackHolder) {
             return null;
         }
         return NetworkQuantumStorage.getItemStack(cacheReference, this.getLocation(), itemRequest.getAmount());

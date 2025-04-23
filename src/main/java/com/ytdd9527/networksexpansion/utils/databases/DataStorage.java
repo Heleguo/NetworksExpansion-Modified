@@ -3,6 +3,10 @@ package com.ytdd9527.networksexpansion.utils.databases;
 import com.balugaq.netex.api.data.StorageUnitData;
 import com.balugaq.netex.api.enums.StorageUnitType;
 import io.github.sefiraat.networks.Networks;
+import it.unimi.dsi.fastutil.ints.Int2BooleanMap;
+import it.unimi.dsi.fastutil.ints.Int2BooleanOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
@@ -19,8 +23,8 @@ import java.util.function.Consumer;
 public class DataStorage {
 
     private static final DataSource dataSource = Networks.getDataSource();
-    private static final Map<Integer, Boolean> state = new ConcurrentHashMap<>(4096);
-    private static final Map<Integer, Optional<StorageUnitData>> cache = new ConcurrentHashMap<>(4096);
+    private static final Int2BooleanMap state = new Int2BooleanOpenHashMap(4096);
+    private static final Int2ObjectMap<Optional<StorageUnitData>> cache =new Int2ObjectOpenHashMap<>(4096);// new ConcurrentHashMap<>(4096);
     private static Map<Integer, Map<Integer, Integer>> changes = new ConcurrentHashMap<>(4096);
 
     public static void requestStorageData(int id) {
@@ -63,9 +67,12 @@ public class DataStorage {
         StorageUnitData re = new StorageUnitData(dataSource.getNextContainerId(), owner.getUniqueId().toString(), sizeType, true, placedLocation);
 
         dataSource.saveNewStorageData(re);
-        cache.put(re.getId(), Optional.of(re));
-        state.put(re.getId(), true);
-
+        synchronized (cache){
+            cache.put(re.getId(), Optional.of(re));
+        }
+        synchronized (state){
+            state.put(re.getId(), true);
+        }
         return re;
     }
 
@@ -125,7 +132,9 @@ public class DataStorage {
     }
 
     static void setContainerLoaded(int id) {
-        state.put(id, true);
+        synchronized (state){
+            state.put(id, true);
+        }
     }
 
     static String formatLocation(Location l) {
@@ -134,8 +143,12 @@ public class DataStorage {
 
     private static void loadContainer(int id) {
         StorageUnitData data = dataSource.getStorageData(id);
-        cache.put(id, Optional.ofNullable(data));
-        state.put(id, data == null);
+        synchronized (cache){
+            cache.put(id, Optional.ofNullable(data));
+        }
+        synchronized (state){
+            state.put(id, data == null);
+        }
     }
 
 }

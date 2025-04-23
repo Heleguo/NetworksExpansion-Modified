@@ -17,6 +17,7 @@ import io.github.sefiraat.networks.managers.ListenerManager;
 import io.github.sefiraat.networks.managers.SupportedPluginManager;
 import io.github.sefiraat.networks.slimefun.NetworksSlimefunItemStacks;
 import io.github.sefiraat.networks.slimefun.network.NetworkController;
+import io.github.sefiraat.networks.slimefun.network.NetworkQuantumStorage;
 import io.github.sefiraat.networks.utils.NetworkUtils;
 import io.github.thebusybiscuit.slimefun4.api.SlimefunAddon;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideImplementation;
@@ -221,9 +222,10 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         getLogger().info(getLocalizationService().getString("messages.shutdown.saving-config"));
         this.configManager.saveAll();
         getLogger().info(getLocalizationService().getString("messages.shutdown.disconnecting-database"));
-        if (autoSaveThread != null) {
+        if (autoSaveThread != null && !autoSaveThread.isCancelled()) {
             autoSaveThread.cancel();
         }
+        NetworkQuantumStorage.saveWhenShutdown();
         DataStorage.saveAmountChange();
         if (queryQueue != null) {
             while (!queryQueue.isAllDone()) {

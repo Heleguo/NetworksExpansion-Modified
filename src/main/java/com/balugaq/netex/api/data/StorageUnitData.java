@@ -156,27 +156,13 @@ public class StorageUnitData {
             return 0;
         }
         int add = 0;
-        boolean isVoidExcess = NetworksDrawer.isVoidExcess(getLastLocation());
+
         var containers=viewStoredItemByMaterial(item.getType());
-        int sizeMax = sizeType.getEachMaxSize();
         if(containers!=null){
             for (ItemContainer each : containers.values()) {
-                if (each.isSimilar(item)) {
-                    // Found existing one, add amount
-                    int oldAmount,newAmount;
-                    do{
-                        oldAmount = each.amount;
-                        add = Math.min(amount, sizeMax - oldAmount);
-                        if(add > 0 || !isVoidExcess){
-                            newAmount = oldAmount + add;
-                        }else {
-                            return item.getAmount();
-                        }
-
-                    }while (!ItemContainer.ATOMIC_AMOUNT_HANDLE.compareAndSet((ItemContainer)each,(int)oldAmount, (int)newAmount));
-                    DataStorage.setStoredAmount(id, each.getId(), each.amount);
-                    return add;
-
+                Integer val = depositItemContainer(each, item, amount, false);
+                if(val != null){
+                    return val;
                 }
             }
         }
@@ -191,7 +177,7 @@ public class StorageUnitData {
                 add = Math.min(amount, sizeType.getEachMaxSize());
                 ItemStack cleanItem = ItemUtils.copyStack(item);
                 int itemId = DataStorage.getItemId(cleanItem);
-                var container = new ItemContainer(itemId, cleanItem, add);
+                var container = new ItemContainer(itemId, cleanItem, add, this.id);
                 storedItems.put(itemId, container);
                 material2Containers.computeIfAbsent(container.getItemType(), k -> new Int2ObjectArrayMap<>()).put(itemId, container);
                 DataStorage.addStoredItem(id, itemId, add);
@@ -237,7 +223,7 @@ public class StorageUnitData {
     public void removeItem(int itemId) {
         synchronized (mapLock){
             if (storedItems.remove(itemId) != null)
-            DataStorage.deleteStoredItem(id, itemId);
+                DataStorage.deleteStoredItem(id, itemId);
         }
     }
 
@@ -330,7 +316,7 @@ public class StorageUnitData {
         }
         return null;
     }
-    private ItemStack requestItemContainer(ItemContainer itemContainer, ItemRequest itemRequest, int amount, boolean bypassCheck){
+    public static ItemStack requestItemContainer(ItemContainer itemContainer, ItemRequest itemRequest, int amount, boolean bypassCheck){
         if (bypassCheck || itemContainer.isSimilar(itemRequest)) {
             int take;
             int oldAmount, newAmount;
@@ -342,10 +328,32 @@ public class StorageUnitData {
                 }
                 newAmount = oldAmount - take;
             }while (!ItemContainer.ATOMIC_AMOUNT_HANDLE.compareAndSet((ItemContainer)itemContainer, (int)oldAmount, (int)newAmount));
-            DataStorage.setStoredAmount(id, itemContainer.getId(), itemContainer.amount);
+            DataStorage.setStoredAmount(itemContainer.getStorageUnitId(), itemContainer.getId(), itemContainer.amount);
             ItemStack clone = itemRequest.getItemStack().clone();
             clone.setAmount(take);
             return clone;
+        }
+        return null;
+    }
+    @Nullable
+    public Integer depositItemContainer(ItemContainer each, ItemStack item, int amount, boolean bypassCheck){
+        if (each.getStorageUnitId() == this.id && (bypassCheck || each.isSimilar(item)) ) {
+            int add;
+            boolean isVoidExcess = NetworksDrawer.isVoidExcess(getLastLocation());
+            // Found existing one, add amount
+            int oldAmount,newAmount;
+            do{
+                oldAmount = each.amount;
+                add = Math.min(amount, sizeType.getEachMaxSize() - oldAmount);
+                if(add > 0 || !isVoidExcess){
+                    newAmount = oldAmount + add;
+                }else {
+                    return item.getAmount();
+                }
+
+            }while (!ItemContainer.ATOMIC_AMOUNT_HANDLE.compareAndSet((ItemContainer)each,(int)oldAmount, (int)newAmount));
+            DataStorage.setStoredAmount(id, each.getId(), each.amount);
+            return add;
         }
         return null;
     }

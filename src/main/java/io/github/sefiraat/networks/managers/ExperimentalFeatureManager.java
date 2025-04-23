@@ -95,6 +95,9 @@ public class ExperimentalFeatureManager implements TabExecutor {
     @Getter
     private boolean enableNotWaitTillJoin=false;
 
+    @Getter
+    private boolean enablePrefetchPusher = true;
+
     long lastTimeStamp=0L;
     boolean isTiming=false;
     public void startGlobalProfiler(){

@@ -27,13 +27,19 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.Persis
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import io.github.thebusybiscuit.slimefun4.utils.ChatUtils;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
+import it.unimi.dsi.fastutil.objects.Reference2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Reference2BooleanOpenHashMap;
 import lombok.Getter;
+import me.matl114.matlib.utils.chat.ComponentUtils;
+import me.matl114.matlib.utils.reflect.ReflectUtils;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
@@ -44,14 +50,15 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.awt.*;
+import java.lang.invoke.VarHandle;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -88,10 +95,41 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 
     private static final Map<Location, QuantumCache> CACHES = new HashMap<>();
 
+    private static volatile Set<Location> DIRTY_LOCATION = ConcurrentHashMap.newKeySet(4096);
+    private static final VarHandle LOCATION_HANDLE = Objects.requireNonNull( ReflectUtils.getVarHandlePrivate(NetworkQuantumStorage.class, "DIRTY_LOCATION")).withInvokeExactBehavior();
+    public static void saveDirtyLocations(){
+        Set<Location> newMap = ConcurrentHashMap.newKeySet(4096);
+        Set<Location> oldMap =(Set<Location>) LOCATION_HANDLE.getAndSet((Set<Location>)newMap);
+        for (Location loc: oldMap){
+            SlimefunBlockData block = StorageCacheUtils.getBlock(loc);
+            if(block != null && !block.isPendingRemove() && SlimefunItem.getById(block.getSfId()) instanceof NetworkQuantumStorage storage){
+                QuantumCache cache = CACHES.get(loc);
+                if(cache != null && !cache.isPendingMove()){
+                    block.setData(BS_AMOUNT, String.valueOf(cache.getAmount()));
+                    block.setData(BS_VOID, String.valueOf(cache.isVoidExcess()));
+                    if (cache.supportsCustomMaxAmount()) {
+                        block.setData(BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+                        //StorageCacheUtils.setData(location, BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
+                    }
+                }
+            }
+        }
+    }
+    public static void saveWhenShutdown(){
+        Networks.getInstance().getLogger().warning("Saving dirty quantum storages...");
+        if(autoSavingTask != null && !autoSavingTask.isCancelled()){
+            autoSavingTask.cancel();
+        }
+        saveDirtyLocations();
+    }
+
+    private static final BukkitTask autoSavingTask;
+
     static {
         final ItemMeta itemMeta = Icon.QUANTUM_STORAGE_NO_ITEM.getItemMeta();
         PersistentDataAPI.setBoolean(itemMeta, Keys.newKey("display"), true);
         Icon.QUANTUM_STORAGE_NO_ITEM.setItemMeta(itemMeta);
+        autoSavingTask = Bukkit.getScheduler().runTaskTimerAsynchronously(Networks.getInstance(), NetworkQuantumStorage::saveDirtyLocations, 100, 40);
     }
 
     private final List<Integer> slotsToDrop = new ArrayList<>();
@@ -237,24 +275,23 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
 //            return cache.withdrawItem(amount);
 //        }
     }
-
     public static void updateDisplayItem(@Nonnull BlockMenu menu, @Nonnull QuantumCache cache) {
         if (cache.getItemStack() == null) {
             menu.replaceExistingItem(ITEM_SLOT, Icon.QUANTUM_STORAGE_NO_ITEM);
         } else {
             final ItemStack itemStack = cache.getItemStack().clone();
             final ItemMeta itemMeta = itemStack.getItemMeta();
-            final List<String> lore = itemMeta.hasLore() ? itemMeta.getLore() : new ArrayList<>();
+            final List<Component> lore = itemMeta.hasLore() ? itemMeta.lore() : new ArrayList<>();
 
-            lore.add("");
-            lore.add(String.format(Networks.getLocalizationService().getString("displays.quantum_storage.void_excess"), (cache.isVoidExcess() ? Networks.getLocalizationService().getString("displays.quantum_storage.enabled_void_excess") : Networks.getLocalizationService().getString("displays.quantum_storage.disabled_void_excess"))));
-            lore.add(String.format(Networks.getLocalizationService().getString("displays.quantum_storage.stored_amount"), cache.getAmount()));
+            lore.add(ComponentUtils.EMPTY);
+            lore.add(ComponentUtils.fromLegacyString( String.format(Networks.getLocalizationService().getString("displays.quantum_storage.void_excess"), (cache.isVoidExcess() ? Networks.getLocalizationService().getString("displays.quantum_storage.enabled_void_excess") : Networks.getLocalizationService().getString("displays.quantum_storage.disabled_void_excess"))) ));
+            lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("displays.quantum_storage.stored_amount"), cache.getAmount())));
             if (cache.supportsCustomMaxAmount()) {
                 // Cache limit is set at the potentially custom max amount set
                 // The player could set the custom maximum amount to be the actual maximum amount
-                lore.add(String.format(Networks.getLocalizationService().getString("displays.quantum_storage.custom_max_amount"), cache.getLimit()));
+                lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("displays.quantum_storage.custom_max_amount"), cache.getLimit())));
             }
-            itemMeta.setLore(lore);
+            itemMeta.lore(lore);
             itemStack.setItemMeta(itemMeta);
             itemStack.setAmount(1);
             menu.replaceExistingItem(ITEM_SLOT, itemStack);
@@ -262,24 +299,20 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
     }
 
     public static void syncBlock(@Nonnull Location location, @Nonnull QuantumCache cache) {
-        AtomicBoolean save=cache.getSaving();
-        if(save.compareAndSet(false,true)){
-            CompletableFuture.runAsync(()->{
-                try{
-                    var blockData = StorageCacheUtils.getBlock(location);
-                    if(blockData!=null&&SlimefunItem.getById( blockData.getSfId()) instanceof NetworkQuantumStorage) {
-                        blockData.setData(BS_AMOUNT, String.valueOf(cache.getAmount()));
-                        blockData.setData(BS_VOID, String.valueOf(cache.isVoidExcess()));
-                        if (cache.supportsCustomMaxAmount()) {
-                            blockData.setData(BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
-                            //StorageCacheUtils.setData(location, BS_CUSTOM_MAX_AMOUNT, String.valueOf(cache.getLimit()));
-                        }
-                    }
-                }finally {
-                    save.set(false);
-                }
-            });
-        }
+        DIRTY_LOCATION.add(location);
+//        AtomicBoolean save=cache.getSaving();
+//        if(save.compareAndSet(false,true)){
+//            CompletableFuture.runAsync(()->{
+//                try{
+//                    var blockData = StorageCacheUtils.getBlock(location);
+//                    if(blockData!=null&&SlimefunItem.getById( blockData.getSfId()) instanceof NetworkQuantumStorage) {
+//
+//                    }
+//                }finally {
+//                    save.set(false);
+//                }
+//            });
+//        }
     }
 
     /**
@@ -349,8 +382,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         if (blockMenu.hasViewer()) {
             updateDisplayItem(blockMenu, cache);
         }
-        synchronized (blockMenu){
-            // Move items from the input slot into the card
+        NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(),()->{
             final ItemStack input = blockMenu.getItemInSlot(INPUT_SLOT);
             if (input != null && input.getType() != Material.AIR) {
                 tryInputItem(blockMenu.getLocation(), input, cache);
@@ -375,10 +407,8 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
                 blockMenu.markDirty();
                 syncBlock(blockMenu.getLocation(), cache);
             }
-        }
-
-
-
+        });
+            // Move items from the input slot into the card
         CACHES.put(blockMenu.getLocation().clone(), cache);
         sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
@@ -634,7 +664,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         } else {
             final ItemStack clone = itemStack.clone();
             final ItemMeta itemMeta = clone.getItemMeta();
-            final List<String> lore = itemMeta.getLore();
+            final var lore = itemMeta.lore();
             for (int i = 0; i < 3; i++) {
                 if (lore.size() == 0) {
                     break;
@@ -647,7 +677,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
                     lore.remove(lore.size() - 1);
                 }
             }
-            itemMeta.setLore(lore.isEmpty() ? null : lore);
+            itemMeta.lore(lore.isEmpty() ? null : lore);
             clone.setItemMeta(itemMeta);
 
             final QuantumCache cache = new QuantumCache(clone, amount, maxAmount, voidExcess, this.supportsCustomMaxAmount);
