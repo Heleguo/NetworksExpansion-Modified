@@ -1,13 +1,12 @@
 package io.github.sefiraat.networks;
 
 import com.google.common.base.Preconditions;
-import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
-import io.github.thebusybiscuit.slimefun4.core.debug.Debug;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.implementation.tasks.TickerTask;
 import lombok.Getter;
 
-import me.matl114.matlib.algorithms.designs.concurrency.DefaultLockFactory;
+import me.matl114.matlib.algorithms.algorithm.ExecutorUtils;
+import me.matl114.matlib.algorithms.designs.concurrency.FixedWorkerBatchExecutor;
 import me.matl114.matlib.algorithms.designs.concurrency.ObjectLockFactory;
 import me.matl114.matlib.core.Manager;
 import me.matl114.matlib.utils.reflect.proxy.ProxyBuilder;
@@ -15,23 +14,19 @@ import me.matl114.matlib.utils.reflect.proxy.invocation.AdaptorInvocation;
 import me.matl114.matlib.utils.reflect.wrapper.MethodAccess;
 
 import me.matl114.matlibAdaptor.algorithms.dataStructures.LockFactory;
-import net.bytebuddy.implementation.bytecode.member.FieldAccess;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class NetworkAsyncUtil implements Manager {
     @Getter
     private static NetworkAsyncUtil instance;
+    @Getter
+    private static FixedWorkerBatchExecutor fixedParallelWorker;
     private Plugin plugin;
     public NetworkAsyncUtil() {
         instance = this;
@@ -54,6 +49,7 @@ public class NetworkAsyncUtil implements Manager {
 
         if(isAsync){
             useAsync = true;
+            this.fixedParallelWorker = new FixedWorkerBatchExecutor(4, 4096);
             Networks.getInstance().getLogger().info("Async Ticker Task Detected,Enabling Parallel Running Protector");
             try{
                 Object lockFactory = MethodAccess.ofName(Slimefun.class,"getCargoLockFactory")
@@ -71,10 +67,13 @@ public class NetworkAsyncUtil implements Manager {
             }
         }else{
             useAsync = false;
+            this.fixedParallelWorker = new FixedWorkerBatchExecutor(6,4096);
             cargoLockFactory = new ObjectLockFactory<>(Location.class,Location::clone);
         }
         Preconditions.checkNotNull(this.cargoLockFactory);
-        Preconditions.checkNotNull(getParallelExecutor());
+//        Preconditions.checkNotNull(getParallelExecutor());
+        Preconditions.checkNotNull(this.fixedParallelWorker);
+        this.fixedParallelWorker.startBusy();
         return this;
     }
 
@@ -85,13 +84,14 @@ public class NetworkAsyncUtil implements Manager {
     }
 
     public void deconstruct() {
-        if(parallelExecutor != null){
-            parallelExecutor.shutdown();
-        }
+//        if(parallelExecutor != null){
+//            parallelExecutor.shutdown();
+//        }
         Networks.getInstance().getLogger().info("Disabling Network Async Util");
+        this.fixedParallelWorker.shutdownNow();
         return;
     }
-    private AbstractExecutorService parallelExecutor;
+    //private AbstractExecutorService parallelExecutor;
     @Getter
     private boolean useAsync;
     private AbstractExecutorService genPool(){
@@ -118,11 +118,11 @@ public class NetworkAsyncUtil implements Manager {
 
     }
     private void restartPool(){
-        if(parallelExecutor != null){
-            Networks.getInstance().getLogger().info("Restarting Thread Pool");
-            parallelExecutor.shutdown();
-        }
-        parallelExecutor = genPool();
+//        if(parallelExecutor != null){
+//            Networks.getInstance().getLogger().info("Restarting Thread Pool");
+//            parallelExecutor.shutdown();
+//        }
+//        parallelExecutor = genPool();
     }
 
    // private final Map<Location,ReentrantLock> locks = new ConcurrentHashMap<>();
@@ -147,14 +147,20 @@ public class NetworkAsyncUtil implements Manager {
     public Semaphore getParallelTaskLock(Location loc){
         return parallelTaskLock.computeIfAbsent(loc, (k)->new Semaphore(1));
     }
-
+    private static final AtomicInteger taskCounter = new AtomicInteger(0);
+//    public Future<Void> submitParallel(Runnable... runnables){
+//        return null;
+//    }
+    public void submitParallel(Runnable task){
+        this.fixedParallelWorker.executeAtWorker(task, taskCounter.getAndIncrement());
+    }
+    public Future<Void> submitParallelFuture(Runnable task){
+        FutureTask<Void> future = ExecutorUtils.getFutureTask(task);
+        this.fixedParallelWorker.executeAtWorker(future, taskCounter.getAndIncrement());
+        return future;
+    }
     public void runParallel(){
 
     }
-    public AbstractExecutorService getParallelExecutor(){
-        if(parallelExecutor == null || parallelExecutor.isShutdown()){
-            restartPool();
-        }
-        return parallelExecutor;
-    }
+
 }

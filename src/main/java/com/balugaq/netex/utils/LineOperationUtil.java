@@ -4,6 +4,7 @@ import com.balugaq.netex.api.enums.TransportMode;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkAsyncUtil;
+import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.ExperimentalFeatureManager;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.stackcaches.ItemRequest;
@@ -26,9 +27,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -115,7 +114,7 @@ public class LineOperationUtil {
     }
     public static void doOperationParallel(Location startLocation,BlockFace direction,int limit,boolean skipNoMenu,boolean optimizeExperience, Consumer<BlockMenu> consumer) {
         Semaphore lock = NetworkAsyncUtil.getInstance().getParallelTaskLock(startLocation);
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        List<Future<Void>> futures = new ArrayList<>();
         try{
             lock.acquire();
         }catch (InterruptedException e){
@@ -138,26 +137,58 @@ public class LineOperationUtil {
                         break;
                     }
                 }
-                futures.add(CompletableFuture.runAsync(() -> {
-                    try{
-                        consumer.accept(blockMenu);
-                    }catch (Throwable e) {
-                        e.printStackTrace();
-                    }
-                },NetworkAsyncUtil.getInstance().getParallelExecutor()));
+                futures.add(NetworkAsyncUtil.getInstance().submitParallelFuture(() -> {
+                        try{
+                            consumer.accept(blockMenu);
+                        }catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                }));//  CompletableFuture.runAsync(,NetworkAsyncUtil.getInstance().getParallelExecutor()));
             }
         } finally {
             if(futures.isEmpty()){
                 lock.release();
             }else {
                 if(NetworkAsyncUtil.getInstance().isUseAsync()){
-                    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((vd,t)->{
-                        lock.release();
+                    var task =  CompletableFuture.runAsync(()->{
+                        try{
+                            for (int i = 0, size = futures.size(); i < size; i++) {
+                                Future<Void> f = futures.get(i);
+                                if (!f.isDone()) {
+                                    try { f.get(); }
+                                    catch (CancellationException | ExecutionException ignore) {}
+                                }
+                            }
+                        }catch (InterruptedException i){
+                            throw new RuntimeException(i);
+                        }
                     });
+                    task.whenComplete((vd,t)->{
+                        lock.release();
+                        if(t instanceof TimeoutException timeout){
+                            Networks.getInstance().getLogger().severe("Time out while waiting for Line Operation done!");
+                            timeout.printStackTrace();
+                        }
+                    });
+                    task.orTimeout(2,TimeUnit.SECONDS);
                 }else {
+                    timeout:
                     try{
-                        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-                    }finally {
+                        for (int i = 0, size = futures.size(); i < size; i++) {
+                            Future<Void> f = futures.get(i);
+                            if (!f.isDone()) {
+                                try { f.get(2, TimeUnit.SECONDS); }
+                                catch (CancellationException | ExecutionException ignore) {}
+                                catch (TimeoutException timeout){
+                                    Networks.getInstance().getLogger().severe("Time out while waiting for Line Operation done!");
+                                    break timeout;
+                                }
+                            }
+                        }
+                    }catch (InterruptedException i){
+                        throw new RuntimeException(i);
+                    }
+                    finally {
                         lock.release();
                     }
                 }
