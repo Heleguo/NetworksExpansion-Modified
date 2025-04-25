@@ -108,6 +108,9 @@ public class FluffyBarrel extends BarrelIdentity {
 
         //}
     }
+    public void depositItemStackExact(ItemStack matchedItemstack){
+        depositItemStack(matchedItemstack);
+    }
 
     @Override
     public int[] getInputSlot() {

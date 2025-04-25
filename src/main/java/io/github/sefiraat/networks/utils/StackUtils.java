@@ -8,13 +8,18 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.core.attributes.DistinctiveItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import lombok.experimental.UtilityClass;
 import me.matl114.matlib.nmsMirror.impl.CraftBukkit;
+import me.matl114.matlib.nmsMirror.impl.NMSCore;
 import me.matl114.matlib.nmsMirror.impl.NMSItem;
+import me.matl114.matlib.nmsMirror.inventory.v1_20_R4.ItemStackHelper_1_20_R4;
 import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.matl114.matlib.utils.CraftUtils;
+import me.matl114.matlib.utils.version.Version;
+import me.matl114.matlib.utils.version.VersionAtMost;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -139,7 +144,7 @@ public class StackUtils {
     /**
      * Checks if items match each other, checks go in order from lightest to heaviest
      *
-     * @param cache     The cached {@link ItemStack} to compare against
+     * @para     The cached {@link ItemStack} to compare against
      * @return True if items match
      */
 
@@ -147,7 +152,7 @@ public class StackUtils {
         PersistentDataContainer pdcView = ItemUtils.getPersistentDataContainerView(item, false);
         return pdcView == null? null: pdcView.get(Slimefun.getItemDataService().getKey(), PersistentDataType.STRING);
     }
-    private static final ReferenceSet<Material> LORE_SENSITIVE_MATERIAL = new ReferenceOpenHashSet<>(List.of(Material.PLAYER_HEAD,Material.SUGAR,Material.SPAWNER));
+    private static final ReferenceSet<Material> LORE_SENSITIVE_MATERIAL = new ReferenceOpenHashSet<>(List.of(Material.PLAYER_HEAD,Material.SUGAR));
     private static final ReferenceSet<?> LORE_SENSITIVE_MATERIAL_NMS = new ReferenceOpenHashSet<>(
         LORE_SENSITIVE_MATERIAL.stream()
         .map(CraftBukkit.MAGIC_NUMBERS::getItem)
@@ -167,6 +172,7 @@ public class StackUtils {
     public static boolean itemsMatchCore(@Nullable ItemStack cache, @Nullable ItemStack cache2, boolean checkLore){
         return ItemUtils.matchItemStack(cache, cache2, checkLore);
     }
+    private static final boolean VERSION_AT_1_20_R4 = NMSItem.ITEMSTACK instanceof ItemStackHelper_1_20_R4;
     public static boolean itemsMatchCore(@Nullable ItemStack cache, @Nullable ItemStack cache2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
         // Null check
 //        if (cache.getItemStack() == null || cache2.getItemStack()== null) {
@@ -187,7 +193,8 @@ public class StackUtils {
                 return false;
             }
             //check lore depends on material
-            return NMSItem.ITEMSTACK.matchNbt(handle1, handle2,  LORE_SENSITIVE_MATERIAL_NMS.contains(item1), true);
+            //before Component version, lore is shit, we can not depend on it
+            return VERSION_AT_1_20_R4 ? NMSItem.ITEMSTACK.matchNbt(handle1, handle2,  LORE_SENSITIVE_MATERIAL_NMS.contains(item1), true) : (LORE_SENSITIVE_MATERIAL_NMS.contains(item1)?(NMSItem.ITEMSTACK.matchNbt(handle1, handle2, false, false) && distinctItemCheck(handle1, handle2)): NMSItem.ITEMSTACK.matchNbt(handle1, handle2,  false, true));
         }
 
 //        Material type=cache2.getItemType();
@@ -210,7 +217,29 @@ public class StackUtils {
 //        final ItemMeta cachedMeta = cache.getItemMeta();
 //        return metaMatchCore(type,itemMeta,cachedMeta,checkLore,checkCustomModelId);
     }
+    private static final String SF_ID_KEY = Slimefun.getItemDataService().getKey().toString();
+    @VersionAtMost(Version.v1_20_R3)
+    private static boolean distinctItemCheck(Object val1, Object val2){
 
+        Object customNBT = NMSItem.ITEMSTACK.getPersistentDataCompound(val1, false);
+        if(customNBT == null){
+            return true;
+        }
+
+        String id = NMSCore.COMPOUND_TAG.getString(customNBT, SF_ID_KEY);
+        if(id == null){
+            return true;
+        }
+        //few item can be distinctive so most of them will return true;
+        if(SlimefunItem.getById(id) instanceof DistinctiveItem distinctiveItem){
+            ItemMeta meta1 = CraftBukkit.ITEMSTACK.getItemMeta(val1);
+            ItemMeta meta2 = CraftBukkit.ITEMSTACK.getItemMeta(val2);
+            return distinctiveItem.canStack(meta1, meta2);
+        }
+        return true;
+    }
+
+    @Deprecated(forRemoval = true)
     public static boolean metaMatchCore(Material itemType,ItemMeta itemMeta,ItemMeta cachedMeta,boolean checkLore, boolean checkCustomModelId) {
         //ExperimentalFeatureManager.getInstance().startGlobalProfiler();
         if (itemMeta == null || cachedMeta == null) {

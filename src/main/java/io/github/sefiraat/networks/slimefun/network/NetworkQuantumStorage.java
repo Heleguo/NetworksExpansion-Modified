@@ -178,6 +178,19 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         syncBlock(location, cache);
     }
 
+    public static void tryInputWithoutCheck(Location location, ItemStack itemStack, QuantumCache cache) {
+        if (cache.getItemStack() == null||cache.getItemType().isAir()) {
+            return;
+        }
+        //actually ,you can not set a quatumStorage type as these
+//        if (ExperimentalFeatureManager.getInstance().isEnableNetworkStorageBlacklist()&& isBlacklisted(itemStack)) {
+//            return;
+//        }
+        int leftover = cache.increaseAmount(itemStack.getAmount());
+        itemStack.setAmount(leftover);
+        syncBlock(location, cache);
+    }
+
     public static boolean isBlacklisted(@Nonnull ItemStack itemStack) {
         return itemStack.getType() == Material.AIR
                 || itemStack.getType().getMaxDurability() < 0
@@ -281,7 +294,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         } else {
             final ItemStack itemStack = cache.getItemStack().clone();
             final ItemMeta itemMeta = itemStack.getItemMeta();
-            final List<Component> lore = itemMeta.hasLore() ? itemMeta.lore() : new ArrayList<>();
+            final List<Component> lore =  new ArrayList<>();
 
             lore.add(ComponentUtils.EMPTY);
             lore.add(ComponentUtils.fromLegacyString( String.format(Networks.getLocalizationService().getString("displays.quantum_storage.void_excess"), (cache.isVoidExcess() ? Networks.getLocalizationService().getString("displays.quantum_storage.enabled_void_excess") : Networks.getLocalizationService().getString("displays.quantum_storage.disabled_void_excess"))) ));
@@ -291,7 +304,7 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
                 // The player could set the custom maximum amount to be the actual maximum amount
                 lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("displays.quantum_storage.custom_max_amount"), cache.getLimit())));
             }
-            itemMeta.lore(lore);
+            ComponentUtils.addToLore(itemMeta, lore.toArray(Component[]::new));
             itemStack.setItemMeta(itemMeta);
             itemStack.setAmount(1);
             menu.replaceExistingItem(ITEM_SLOT, itemStack);
@@ -664,20 +677,10 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
         } else {
             final ItemStack clone = itemStack.clone();
             final ItemMeta itemMeta = clone.getItemMeta();
-            final var lore = itemMeta.lore();
-            for (int i = 0; i < 3; i++) {
-                if (lore.size() == 0) {
-                    break;
-                }
-                lore.remove(lore.size() - 1);
-            }
 
-            if (supportsCustomMaxAmount) {
-                if (lore.size() != 0) {
-                    lore.remove(lore.size() - 1);
-                }
-            }
-            itemMeta.lore(lore.isEmpty() ? null : lore);
+            int size = 3+ (supportsCustomMaxAmount?1:0);
+
+            ComponentUtils.removeLoreLast(itemMeta, size);
             clone.setItemMeta(itemMeta);
 
             final QuantumCache cache = new QuantumCache(clone, amount, maxAmount, voidExcess, this.supportsCustomMaxAmount);

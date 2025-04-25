@@ -199,15 +199,8 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                     if (itemMeta == null) {
                         continue;
                     }
-                    List<Component> lore = itemMeta.lore();
-
-                    if (lore == null) {
-                        lore = getLoreAddition(entry.getValue());
-                    } else {
-                        lore.addAll(getLoreAddition(entry.getValue()));
-                    }
-
-                    itemMeta.lore(lore);
+                    List<Component> lore = getLoreAddition(entry.getValue());
+                    ComponentUtils.addToLore(itemMeta, lore.toArray(Component[]::new));
                     displayStack.setItemMeta(itemMeta);
                     blockMenu.replaceExistingItem(getDisplaySlots()[i], displayStack);
                     blockMenu.addMenuClickHandler(getDisplaySlots()[i], (player, slot, item, action) -> {
@@ -256,15 +249,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
                     if (itemMeta == null) {
                         continue;
                     }
-                    List<Component> lore = itemMeta.lore();
-
-                    if (lore == null) {
-                        lore = getHistoryLoreAddition();
-                    } else {
-                        lore.addAll(getHistoryLoreAddition());
-                    }
-
-                    itemMeta.lore(lore);
+                    ComponentUtils.addToLore(itemMeta, getHistoryLoreAddition().toArray(Component[]::new));
                     displayStack.setItemMeta(itemMeta);
                     blockMenu.replaceExistingItem(getDisplaySlots()[i], displayStack);
                     blockMenu.addMenuClickHandler(getDisplaySlots()[i], (player, slot, item, action) -> {
@@ -374,15 +359,7 @@ public abstract class AbstractGridNewStyle extends NetworkObject {
         if (cloneMeta == null) {
             return;
         }
-        final var cloneLore = cloneMeta.lore();
-
-        if (cloneLore == null || cloneLore.size() < 2) {
-            return;
-        }
-
-        cloneLore.remove(cloneLore.size() - 1);
-        cloneLore.remove(cloneLore.size() - 1);
-        cloneMeta.lore(cloneLore.isEmpty()?null: cloneLore);
+        ComponentUtils.removeLoreLast(cloneMeta, 2);
         clone.setItemMeta(cloneMeta);
 
         NetworkRoot root = definition.getNode().getRoot();

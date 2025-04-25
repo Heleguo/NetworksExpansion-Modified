@@ -49,7 +49,8 @@ public class NetworkStorage extends BarrelIdentity {
 
     @Override
     public ItemStack requestItemExact(ItemRequest itemRequest) {
-        if (cacheReference.isPendingMove()) {
+        //check here if the type of cacheReference is changed by player
+        if (cacheReference.isPendingMove()|| cacheReference.getItemStack() != quantumItemStackHolder ) {
             return null;
         }
         return NetworkQuantumStorage.getItemStack(cacheReference, this.getLocation(), itemRequest.getAmount());
@@ -64,10 +65,17 @@ public class NetworkStorage extends BarrelIdentity {
         //as we have tested before,there's no dupe in this situation
         //as we all know,NTWStorage is just a temporary cache which refresh every sft
         //this check also prevent part of dupe13 somehow
-        if (!cacheReference.isPendingMove()) {
+
+        //check here if the type of cacheReference is changed by player
+        if (!cacheReference.isPendingMove() && cacheReference.getItemStack() == quantumItemStackHolder) {
             NetworkQuantumStorage.tryInputItem(this.getLocation(), itemsToDeposit, cacheReference);
         }
 
+    }
+    public void depositItemStackExact(ItemStack matchedItemstack){
+        if (!cacheReference.isPendingMove() && cacheReference.getItemStack() == quantumItemStackHolder) {
+            NetworkQuantumStorage.tryInputWithoutCheck(this.getLocation(), matchedItemstack, cacheReference);
+        }
     }
 
 

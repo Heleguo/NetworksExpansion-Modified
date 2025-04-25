@@ -83,10 +83,12 @@ public class NetworkRoot extends NetworkNode {
     @Getter
     private final Set<Location> purgers = ConcurrentHashMap.newKeySet();
     public Set<Location> getCrafters(){
-        return craftersMap.keySet();
+        return craftersMap;
     }
-    @Getter
-    private final Map<Location, SlimefunBlockData> craftersMap = new ConcurrentHashMap<>();
+
+    private final Set<Location> craftersMap = ConcurrentHashMap.newKeySet(); //Map<Location, SlimefunBlockData> craftersMap = new ConcurrentHashMap<>();
+
+    private final Map<Location, SlimefunBlockData> availableCraftersMap = new ConcurrentHashMap<>();
 
     @Getter
     private final Set<Location> powerNodes = ConcurrentHashMap.newKeySet();
@@ -235,7 +237,13 @@ public class NetworkRoot extends NetworkNode {
             case GRABBER -> grabbers.add(location);
             case PUSHER -> pushers.add(location);
             case PURGER -> purgers.add(location);
-            case CRAFTER -> craftersMap.put(location,StorageCacheUtils.getBlock(location));
+            case CRAFTER -> {
+                craftersMap.add(location);
+                var block =  StorageCacheUtils.getBlock(location);
+                if(block != null && !block.isPendingRemove() && block.getBlockMenu()!= null && block.getBlockMenu().getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW).length != 0){
+                    availableCraftersMap.put(location, block);
+                }
+            }
             case POWER_NODE -> powerNodes.add(location);
             case POWER_DISPLAY -> powerDisplays.add(location);
             case ENCODER -> encoders.add(location);
@@ -364,7 +372,14 @@ public class NetworkRoot extends NetworkNode {
             itemStacks.compute(clone,(i,num)->num==null?(long)itemStack.getAmount():(long)num+itemStack.getAmount());
         }
 
-        for (BlockMenu blockMenu : getCrafterOutputs()) {
+        for (SlimefunBlockData data : availableCraftersMap.values()) {
+            if(data.isPendingRemove()){
+                continue;
+            }
+            BlockMenu blockMenu = data.getBlockMenu();
+            if(blockMenu == null){
+                continue;
+            }
             int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
             for (int slot : slots) {
                 final ItemStack itemStack = blockMenu.getItemInSlot(slot);
@@ -679,11 +694,14 @@ public class NetworkRoot extends NetworkNode {
 //        return menus;
     }
 
+
     @Nonnull
     @Deprecated(forRemoval = true)
     public Set<BlockMenu> getCrafterOutputs() {
-        return this.craftersMap.values()
+
+        return this.craftersMap
             .stream()
+            .map(StorageCacheUtils::getBlock)
             .filter(d-> d!= null &&  !d.isPendingRemove())
             .map(SlimefunBlockData::getBlockMenu)
             .filter(Objects::nonNull)
@@ -946,7 +964,7 @@ public class NetworkRoot extends NetworkNode {
         return PREFETCH_INVALID;
     }
     protected final ItemStack getFromCrafters(ItemRequest request, ItemStack stackToReturn){
-        for (SlimefunBlockData data: getCraftersMap().values()) {
+        for (SlimefunBlockData data: availableCraftersMap.values()) {
             if(data.isPendingRemove()){
                 continue;
             }
@@ -1126,7 +1144,14 @@ public class NetworkRoot extends NetworkNode {
         }
 
         // Crafters
-        for (BlockMenu blockMenu : getCrafterOutputs()) {
+        for (SlimefunBlockData data : availableCraftersMap.values()) {
+            if(data.isPendingRemove()){
+                continue;
+            }
+            BlockMenu blockMenu = data.getBlockMenu();
+            if(blockMenu == null){
+                continue;
+            }
             int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(ItemTransportFlow.WITHDRAW);
             for (int slot : slots) {
                 final ItemStack itemStack = blockMenu.getItemInSlot(slot);
@@ -1458,7 +1483,7 @@ public class NetworkRoot extends NetworkNode {
     }
     protected boolean addItemStackStorageIdentities(ItemStack incoming, Object val){
         if(val instanceof BarrelIdentity barrel){
-            barrel.depositItemStack(incoming);
+            barrel.depositItemStackExact(incoming);
             return incoming.getAmount() <= 0;
         }else if (val instanceof Pair<?,?> unitData){
             StorageUnitData unit = (StorageUnitData) unitData.getA();
@@ -1508,7 +1533,7 @@ public class NetworkRoot extends NetworkNode {
         if(addItemStackGreedyBlocks(incomingCache)){
             return;
         }
-        Object val = getInputableStorageIdentities().get(ItemStackKey.of(incoming));
+        Object val = getInputableStorageIdentities().get(ItemStackCache.of(incoming));
         if(val != null){
             if(addItemStackStorageIdentities(incoming, val)){
                 return;
@@ -2142,7 +2167,7 @@ public class NetworkRoot extends NetworkNode {
                     type = 4;
                 case 4:
                     if(sourcePointer == null){
-                        sourcePointer = root.craftersMap.values().iterator();
+                        sourcePointer = root.availableCraftersMap.values().iterator();
                     }
                     while (sourcePointer.hasNext()){
                         SlimefunBlockData data = (SlimefunBlockData) sourcePointer.next();

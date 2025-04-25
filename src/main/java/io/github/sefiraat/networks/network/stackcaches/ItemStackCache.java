@@ -28,9 +28,9 @@ public class ItemStackCache implements Cloneable, ItemHashCache {
 //        this.metaCached = false;
         return this;
     }
-//    public static ItemStackCache of(ItemStack itemStack) {
-//        return instanceTemplate.clone().init(itemStack);
-//    }
+    public static ItemStackCache of(ItemStack itemStack) {
+        return instanceTemplate.clone().init(itemStack);
+    }
     public ItemStackCache(@Nullable ItemStack itemStack) {
         init(itemStack);
     }

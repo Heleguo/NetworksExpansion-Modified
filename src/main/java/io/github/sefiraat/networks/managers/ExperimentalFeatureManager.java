@@ -52,23 +52,12 @@ public class ExperimentalFeatureManager implements TabExecutor {
     //经过测试 对非并发情况下的性能影响几乎为0
     //已经使用
     @Getter
-    private boolean enableRootGetItemStackAsync=true;
-    @Getter
-    private boolean enableControllerPreviewItems=false;
-    @Getter
-    private boolean enableControllerPreviewItemsAsync=false;
-    @Getter
     private boolean enableMatchDistinctiveItem=true;
     @Getter
     private boolean enableAsyncRootPower=true;
-//    @Getter
-//    private boolean enableMetaDirectlyCompare=true;
-    //todo list
-    //add NetworksPusher slotAccess parallel
-    //check the safety of BlockMenuSnapShot
-    //check NetworkImport parallel execution
-    //check AdvancedImport parallel execution
-    //check SnapShot of AdvancedExport
+    @Getter
+    private boolean enableAsyncCrafter = false;
+
     public class Profiler{
         boolean enabled=true;
         public Profiler(boolean enabled ){

@@ -65,6 +65,9 @@ public class InfinityBarrel extends BarrelIdentity {
             cache.depositAll(new ItemStack[]{ itemsToDeposit}, true);
         }
     }
+    public void depositItemStackExact(ItemStack matchedItemstack){
+        depositItemStack(matchedItemstack);
+    }
 
     @Override
     public int[] getInputSlot() {

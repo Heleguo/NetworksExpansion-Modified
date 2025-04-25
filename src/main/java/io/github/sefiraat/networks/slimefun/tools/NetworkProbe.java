@@ -75,7 +75,7 @@ public class NetworkProbe extends SpecialSlimefunItem implements CanCooldown {
             final int pasters = root.getPasters().size();
             final int vacuums = root.getVacuums().size();
             final int purgers = root.getPurgers().size();
-            final int crafters = root.getCraftersMap().size();
+            final int crafters = root.getCrafters().size();
             final int powerNodes = root.getPowerNodes().size();
             final int powerDisplays = root.getPowerDisplays().size();
             final int encoders = root.getEncoders().size();

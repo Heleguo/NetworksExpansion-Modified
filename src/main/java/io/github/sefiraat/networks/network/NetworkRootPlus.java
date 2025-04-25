@@ -42,7 +42,7 @@ public class NetworkRootPlus extends NetworkRoot {
     public void removeRootPower(long power){
         if(ExperimentalFeatureManager.getInstance().isEnableAsyncRootPower()){
             this.rootPower -= power;
-            CompletableFuture.runAsync(()->{
+            NetworkAsyncUtil.getInstance().submitParallel(()->{
                 int removed = 0;
                 for (Location node : getPowerNodes()) {
                     var blockData=StorageCacheUtils.getBlock(node);

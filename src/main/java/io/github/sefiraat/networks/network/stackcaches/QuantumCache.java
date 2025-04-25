@@ -125,23 +125,23 @@ public class QuantumCache extends ItemStackCache  {
         return withdrawItem(this.getItemStack().getMaxStackSize());
     }
     public void addMetaLore(ItemMeta itemMeta) {
-        final List<Component> lore = itemMeta.hasLore() ? itemMeta.lore() : new ArrayList<>();
+        final List<Component> lore = new ArrayList<>();
         String itemName = Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.empty");
         if (getItemStack() != null) {
             itemName = ItemStackHelper.getDisplayName(this.getItemStack());
         }
+
         lore.add(ComponentUtils.EMPTY);
         lore.add(ComponentUtils.fromLegacyString( String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.stored_item"), itemName)));
         lore.add(ComponentUtils.fromLegacyString( String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.stored_amount"), this.getAmount())));
         if (this.supportsCustomMaxAmount) {
             lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.custom_max_limit"), this.getLimit())));
         }
-
-        itemMeta.lore(lore);
+        ComponentUtils.addToLore(itemMeta,lore.toArray(Component[]::new));
     }
 
     public void updateMetaLore(ItemMeta itemMeta) {
-        final List<Component> lore = itemMeta.hasLore() ? itemMeta.lore() : new ArrayList<>();
+        final List<Component> lore =  new ArrayList<>();
         String itemName ;
         if (getItemStack() != null) {
             itemName =   ItemStackHelper.getDisplayName(getItemStack());
@@ -149,12 +149,13 @@ public class QuantumCache extends ItemStackCache  {
             itemName = Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.empty");
         }
         final int loreIndexModifier = this.supportsCustomMaxAmount ? 1 : 0;
-        lore.set(lore.size() - 2 - loreIndexModifier, ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.stored_item"), itemName)));
-        lore.set(lore.size() - 1 - loreIndexModifier, ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.stored_amount"), this.getAmount())));
-        if (this.supportsCustomMaxAmount) {
-            lore.set(lore.size() - loreIndexModifier, ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.custom_max_limit"), this.getLimit())));
-        }
 
-        itemMeta.lore(lore);
+        lore.add( ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.stored_item"), itemName)));
+        lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.stored_amount"), this.getAmount())));
+        if (this.supportsCustomMaxAmount) {
+            lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.normal-operation.quantum_cache.custom_max_limit"), this.getLimit())));
+        }
+        ComponentUtils.removeLoreLast(itemMeta, lore.size());
+        ComponentUtils.addToLore(itemMeta, lore.toArray(Component[]::new));
     }
 }

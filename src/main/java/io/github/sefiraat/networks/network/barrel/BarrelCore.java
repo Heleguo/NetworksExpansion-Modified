@@ -36,6 +36,12 @@ public interface BarrelCore {
      */
     void depositItemStack(ItemStack itemsToDeposit);
 
+    /**
+     * this method should be as same as depositItemStack, but we can make sure that input itemStack is similar to Barrel cached ItemStack and there is no need for comparison
+     * @param matchedItemstack
+     */
+    void depositItemStackExact(ItemStack matchedItemstack);
+
     int[] getInputSlot();
 
     int[] getOutputSlot();

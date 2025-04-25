@@ -49,6 +49,7 @@ public class ItemRequest extends ItemStackCache  {
          +"}";
     }
     public ItemRequest clone() {
+        this.getHashCodeNoLore();
         return (ItemRequest) super.clone();
     }
 

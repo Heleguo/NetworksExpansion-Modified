@@ -247,12 +247,7 @@ public class NetworksDrawer extends SpecialSlimefunItem implements DistinctiveIt
         final ItemMeta meta = item.getItemMeta();
         List<Component> lore;
         if (meta != null) {
-            lore = meta.lore();
-            if (lore == null) {
-                lore = new ArrayList<>();
-            }
-            lore.add(ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.completed-operation.drawer.bound_id"), id)));
-            meta.lore(lore);
+            ComponentUtils.addToLore(meta, ComponentUtils.fromLegacyString(String.format(Networks.getLocalizationService().getString("messages.completed-operation.drawer.bound_id"), id)));
             meta.getPersistentDataContainer().set(idKey, PersistentDataType.INTEGER, id);
         }
         item.setItemMeta(meta);
