@@ -46,7 +46,7 @@ public class NetworkAsyncUtil implements Manager {
         }catch (Throwable e){
             isAsync = false;
         }
-
+        rootLockFactory = new ObjectLockFactory<>(Location.class, Location::clone);
         if(isAsync){
             useAsync = true;
             this.fixedParallelWorker = new FixedWorkerBatchExecutor(4, 4096);
@@ -73,6 +73,7 @@ public class NetworkAsyncUtil implements Manager {
         Preconditions.checkNotNull(this.cargoLockFactory);
 //        Preconditions.checkNotNull(getParallelExecutor());
         Preconditions.checkNotNull(this.fixedParallelWorker);
+        Preconditions.checkNotNull(this.rootLockFactory);
         this.fixedParallelWorker.startBusy();
         return this;
     }
@@ -127,6 +128,7 @@ public class NetworkAsyncUtil implements Manager {
 
    // private final Map<Location,ReentrantLock> locks = new ConcurrentHashMap<>();
     private LockFactory<Location> cargoLockFactory;
+    private LockFactory<Location> rootLockFactory;
     private final ConcurrentHashMap<Location,Semaphore> parallelTaskLock = new ConcurrentHashMap<>();
     public void ensureLocation(Location location,Runnable runnable){
         this.cargoLockFactory.ensureLock(runnable,location);
@@ -136,6 +138,17 @@ public class NetworkAsyncUtil implements Manager {
 //            runnable.run();
 //        }
     }
+
+    // we should use different lock factory for root menus, because actually we don't know which menu will be pushed
+    // we can not acquire a lock for root menu when entering the getItemStack/ addItemStack,
+    // when acquiring locks from root IO, may cause deadlock-> thread A holds Location A, requesting for root menu B, thread B holds menu B location as a cargo position and trys to require Location A,
+    public void ensureRootLocation(Location location, Runnable runnable){
+        this.rootLockFactory.ensureLock(runnable, location);
+    }
+    public <T extends Object> T ensureRootLocation(Location location, Supplier<T> runnable){
+        return this.rootLockFactory.ensureLock(runnable, location);
+    }
+
     public <T extends Object> T ensureLocation(Location location, Supplier<T> runnable){
         return this.cargoLockFactory.ensureLock(runnable,location);
 

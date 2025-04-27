@@ -287,7 +287,7 @@ public abstract class AbstractAutoCrafter extends NetworkObject implements MenuW
                 }
             }
             //here we add craftAmount to multiply the request
-            request0=requiredItems.entrySet().stream().map(e->ItemRequest.of(e.getKey(),e.getValue()*craftAmount)).toArray(ItemRequest[]::new);
+            request0=requiredItems.entrySet().stream().map(e->new ItemRequest(e.getKey(),e.getValue()*craftAmount)).toArray(ItemRequest[]::new);
             container.setItemRequests(0,request0);
         }
         final ItemRequest[] request=request0;

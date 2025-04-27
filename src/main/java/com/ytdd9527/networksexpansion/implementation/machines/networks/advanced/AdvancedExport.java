@@ -119,7 +119,7 @@ public class AdvancedExport extends NetworkObject implements RecipeDisplayItem {
         for (int testItemSlot : getTestSlots()) {
             ItemStack currentStack = blockMenu.getItemInSlot(testItemSlot);
             if (currentStack != null && currentStack.getType() != Material.AIR) {
-                ItemRequest request=ItemRequest.of(currentStack,currentStack.getAmount());
+                ItemRequest request=new ItemRequest(currentStack,currentStack.getAmount());
                 //todo can optimize
                 TransportUtil.fetchItemAndPush(blockMenu,request,i->TransportUtil.commonMatch(i,request),currentStack.getAmount(),false, networkRoot::getItemStack,getOutputSlots());
             }

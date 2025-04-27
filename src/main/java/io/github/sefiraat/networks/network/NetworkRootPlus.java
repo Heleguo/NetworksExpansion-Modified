@@ -111,7 +111,8 @@ public class NetworkRootPlus extends NetworkRoot {
 
     @Override
     protected ItemStack getFromBlockMenu(ItemRequest request, ItemStack stackToReturn, BlockMenu blockMenu) {
-        return NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(), ()->super.getFromBlockMenu(request, stackToReturn, blockMenu));
+        //fix deadLock from acquiring lock
+        return NetworkAsyncUtil.getInstance().ensureRootLocation(blockMenu.getLocation(), ()->super.getFromBlockMenu(request, stackToReturn, blockMenu));
     }
 
     @Override
@@ -130,7 +131,7 @@ public class NetworkRootPlus extends NetworkRoot {
                 continue;
             }
             blockMenu.markDirty();
-            NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(), ()->
+            NetworkAsyncUtil.getInstance().ensureRootLocation( blockMenu.getLocation(), ()->
                 BlockMenuUtil.pushItem(blockMenu, incomingCache, ADVANCED_GREEDY_BLOCK_AVAILABLE_SLOTS)
             );
             // Given we have found a match, it doesn't matter if the item moved or not, we will not bring it in
@@ -150,7 +151,7 @@ public class NetworkRootPlus extends NetworkRoot {
                 continue;
             }
             blockMenu.markDirty();
-            NetworkAsyncUtil.getInstance().ensureLocation(blockMenu.getLocation(), ()->
+            NetworkAsyncUtil.getInstance().ensureRootLocation(blockMenu.getLocation(), ()->
                 BlockMenuUtil.pushItem(blockMenu, incomingCache, GREEDY_BLOCK_AVAILABLE_SLOTS[0])
             );
             // Given we have found a match, it doesn't matter if the item moved or not, we will not bring it in
@@ -179,7 +180,7 @@ public class NetworkRootPlus extends NetworkRoot {
     }
 
     public void pushCellAsync(BlockMenu cellMenu,ItemStack item){
-        NetworkAsyncUtil.getInstance().ensureLocation(cellMenu.getLocation(),()->{
+        NetworkAsyncUtil.getInstance().ensureRootLocation(cellMenu.getLocation(),()->{
             BlockMenuUtil.pushItem(cellMenu, item, CELL_AVAILABLE_SLOTS);
         });
     }

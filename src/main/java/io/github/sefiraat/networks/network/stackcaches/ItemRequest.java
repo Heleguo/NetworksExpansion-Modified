@@ -15,16 +15,14 @@ public class ItemRequest extends ItemStackCache  {
     private int amount;
     @Getter
     private int maxStackSize;
-    private static ItemRequest instanceTemplate=new ItemRequest(new ItemStack(Material.STONE),0);
-    public static ItemRequest of(ItemStack itemStack, int amount) {
-        return instanceTemplate.clone().init(itemStack, amount);
-    }
-    protected ItemRequest init(ItemStack itemStack, int amount) {
-        super.init(itemStack);
-        this.amount = amount;
-        this.maxStackSize = itemStack.getMaxStackSize();
-        return this;
-    }
+    //private static ItemRequest instanceTemplate=new ItemRequest(new ItemStack(Material.STONE),0);
+
+//    protected ItemRequest init(ItemStack itemStack, int amount) {
+//        super.init(itemStack);
+//        this.amount = amount;
+//        this.maxStackSize = itemStack.getMaxStackSize();
+//        return this;
+//    }
     public ItemRequest(@Nonnull ItemStack itemStack, int amount) {
         super(ItemUtils.cleanStack( itemStack));
         this.amount = amount;

@@ -473,7 +473,7 @@ public class LineOperationUtil {
         List<Integer>[] pushSlots=new List[finalLimit];
         Vector directionVec = face.getDirection();
         final int maxStackSize=clone.getMaxStackSize();
-        final ItemRequest quest=ItemRequest.of(clone,maxStackSize);
+        final ItemRequest quest=new ItemRequest(clone,maxStackSize);
         int sum = 0;
         for (int i = 0; i < finalLimit; i++) {
             final int index=i;
@@ -531,7 +531,7 @@ public class LineOperationUtil {
             int limitQuantity
     ) {
         final int maxStackSize=clone.getMaxStackSize();
-        final ItemRequest itemRequest = ItemRequest.of(clone,maxStackSize);
+        final ItemRequest itemRequest = new ItemRequest(clone,maxStackSize);
         final int[] slots = blockMenu.getPreset().getSlotsAccessedByItemTransport(blockMenu, ItemTransportFlow.INSERT, clone);
         switch (transportMode) {
             case NONE -> {
