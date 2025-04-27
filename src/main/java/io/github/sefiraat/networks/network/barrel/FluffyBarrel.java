@@ -71,7 +71,7 @@ public class FluffyBarrel extends BarrelIdentity {
         }
         ItemStack targetItem = itemRequest.getItemStack();
         //ensure sync via transportation lock
-        int received0 = NetworkAsyncUtil.getInstance().ensureLocation(getLocation(), ()->{
+        int received0 = NetworkAsyncUtil.getInstance().ensureRootLocation(getLocation(), ()->{
             int received = 0;
 
             for (int slot : getOutputSlot()) {
@@ -102,7 +102,7 @@ public class FluffyBarrel extends BarrelIdentity {
             return;
         }
        // synchronized (this){
-        NetworkAsyncUtil.getInstance().ensureLocation(getLocation(), ()->{
+        NetworkAsyncUtil.getInstance().ensureRootLocation(getLocation(), ()->{
             BlockMenuUtil.pushItem(menu, itemsToDeposit, getInputSlot());
         });
 

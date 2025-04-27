@@ -47,7 +47,7 @@ public class InfinityBarrel extends BarrelIdentity {
             }
             //leave at least one itemStack in the slot!
             //ensure async using Transportation LockFactory
-            return NetworkAsyncUtil.getInstance().ensureLocation(this.getLocation(), ()->{
+            return NetworkAsyncUtil.getInstance().ensureRootLocation(this.getLocation(), ()->{
                 int requestAmount = Math.min(itemRequest.getAmount(), itemStack.getAmount()-1);
                 ItemStack itemStack1 = blockMenu.getItemInSlot(this.getOutputSlot()[0]);
                 int amount = itemStack1.getAmount();

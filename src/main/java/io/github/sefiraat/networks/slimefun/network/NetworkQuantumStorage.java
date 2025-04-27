@@ -216,7 +216,8 @@ public class NetworkQuantumStorage extends SpecialSlimefunItem implements Distin
             if (blockMenu != null) {
                 final ItemStack fetch0 = fetched;
                 //if lock required ,this part is locked by location via transportation lock
-                fetched = NetworkAsyncUtil.getInstance().ensureLocation(location,()->{
+                //fix: this is a root operation
+                fetched = NetworkAsyncUtil.getInstance().ensureRootLocation(location,()->{
                     ItemStack fetch1 = fetch0;
                     ItemStack output= blockMenu.getItemInSlot(OUTPUT_SLOT);
                     //actually we don't use these part frequently
