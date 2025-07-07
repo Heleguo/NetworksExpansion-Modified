@@ -210,7 +210,7 @@
         <dependency>
             <groupId>com.github.m1919810</groupId>
             <artifactId>matlib</artifactId>
-            <version>aec3063</version>
+            <version>53afb17</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
