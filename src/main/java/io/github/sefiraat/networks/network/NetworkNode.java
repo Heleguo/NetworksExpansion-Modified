@@ -7,30 +7,28 @@ import io.github.sefiraat.networks.slimefun.network.NetworkController;
 import io.github.sefiraat.networks.slimefun.network.NetworkPowerNode;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
+
+import java.lang.invoke.VarHandle;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
+import lombok.ToString;
 import me.matl114.matlib.utils.reflect.ReflectUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.lang.invoke.VarHandle;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
 
+@ToString
 public class NetworkNode {
 
-    protected static final Set<BlockFace> VALID_FACES = EnumSet.of(
-            BlockFace.UP,
-            BlockFace.DOWN,
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
-    );
+    protected static final Set<BlockFace> VALID_FACES =
+            EnumSet.of(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
 
     @Getter
     protected final Set<NetworkNode> childrenNodes = new HashSet<>();
@@ -78,13 +76,17 @@ public class NetworkNode {
         return nodeType;
     }
 
-//    public boolean networkContains(@Nonnull NetworkNode networkNode) {
-//        return networkContains(networkNode.nodePosition);
-//    }
+    public boolean networkContains(@NotNull NetworkNode networkNode) {
+        return networkContains(networkNode.nodePosition);
+    }
 
-//    public boolean networkContains(@Nonnull Location location) {
-//        return this.getRoot().getNodeLocations().contains(location);
-//    }
+    public boolean networkContains(@NotNull Location location) {
+        if (this.root == null) {
+            return false;
+        }
+
+        return this.root.getNodeLocations().contains(location);
+    }
     //获取可靠的root,
     private static final VarHandle ROOT_ATOMIC_UPDATE = ReflectUtils.getVarHandlePrivate(NetworkNode.class, "root").withInvokeExactBehavior();
     @Nonnull
@@ -111,9 +113,9 @@ public class NetworkNode {
 //        this.root = root;
 //        this.newRoot = null;
 //    }
-//    private void setRoot(NetworkRoot root) {
-//        this.newRoot = root;
-//    }
+    private void setRoot(NetworkRoot root) {
+        this.newRoot = root;
+    }
 
     private void setParent(NetworkNode parent) {
         this.parent = parent;
@@ -160,14 +162,14 @@ public class NetworkNode {
         }
     }
 
-    private void killAdditionalController(@Nonnull Location location) {
-        var sfItem = StorageCacheUtils.getSfItem(location);
+    private void killAdditionalController(@NotNull Location location) {
+        SlimefunItem sfItem = StorageCacheUtils.getSfItem(location);
         if (sfItem != null) {
             Slimefun.getDatabaseManager().getBlockDataController().removeBlock(location);
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
                 public void run() {
-                    //fix #99
+                    // fix #99
                     NetworkController.wipeNetwork(location);
                     location.getWorld().dropItemNaturally(location, sfItem.getItem());
                     location.getBlock().setType(Material.AIR);

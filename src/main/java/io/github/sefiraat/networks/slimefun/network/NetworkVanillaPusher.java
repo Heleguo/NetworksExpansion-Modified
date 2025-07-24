@@ -2,6 +2,9 @@ package io.github.sefiraat.networks.slimefun.network;
 
 import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.MinecraftVersion;
+import com.balugaq.netex.api.interfaces.SoftCellBannable;
+import com.balugaq.netex.utils.InventoryUtil;
+import com.balugaq.netex.utils.Lang;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -14,7 +17,7 @@ import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.inventory.InvUtils;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
-import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
+import java.util.UUID;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -30,16 +33,14 @@ import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.UUID;
+public class NetworkVanillaPusher extends NetworkDirectional implements SoftCellBannable {
 
-@SuppressWarnings("deprecation")
-public class NetworkVanillaPusher extends NetworkDirectional {
-
-    private static final int[] BACKGROUND_SLOTS = new int[]{
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 24, 26, 27, 28, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44
+    private static final int[] BACKGROUND_SLOTS = new int[] {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 24, 26, 27, 28, 30, 31, 33, 34, 35, 36,
+        37, 38, 39, 40, 41, 42, 43, 44
     };
     private static final int INPUT_SLOT = 25;
     private static final int NORTH_SLOT = 11;
@@ -49,30 +50,34 @@ public class NetworkVanillaPusher extends NetworkDirectional {
     private static final int UP_SLOT = 14;
     private static final int DOWN_SLOT = 32;
 
-    public NetworkVanillaPusher(ItemGroup itemGroup,
-                                SlimefunItemStack item,
-                                RecipeType recipeType,
-                                ItemStack[] recipe
-    ) {
+    public NetworkVanillaPusher(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.PUSHER);
         this.getSlotsToDrop().add(INPUT_SLOT);
     }
 
     @Override
-    protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
+    protected void onTick(@Nullable BlockMenu blockMenu, @NotNull Block block) {
         super.onTick(blockMenu, block);
         if (blockMenu != null) {
             tryPushItem(blockMenu);
         }
     }
 
-    private void tryPushItem(@Nonnull BlockMenu blockMenu) {
+    private void tryPushItem(@NotNull BlockMenu blockMenu) {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
             sendFeedback(blockMenu.getLocation(), FeedbackType.NO_NETWORK_FOUND);
             return;
         }
+//          remove cell ban
+//        if (checkSoftCellBan(blockMenu.getLocation(), definition.getNode().getRoot())) {
+//            return;
+//        }
 
         final BlockFace direction = getCurrentDirection(blockMenu);
         final Block block = blockMenu.getBlock();
@@ -88,7 +93,8 @@ public class NetworkVanillaPusher extends NetworkDirectional {
 
         // dirty fix
         try {
-            if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+            if (!Slimefun.getProtectionManager()
+                    .hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
                 sendFeedback(block.getLocation(), FeedbackType.NO_PERMISSION);
                 return;
             }
@@ -97,7 +103,7 @@ public class NetworkVanillaPusher extends NetworkDirectional {
             return;
         }
 
-        final BlockState blockState = PaperLib.getBlockState(targetBlock,false).getState();
+        final BlockState blockState = targetBlock.getState(false);
 
         if (!(blockState instanceof InventoryHolder holder)) {
             sendFeedback(block.getLocation(), FeedbackType.NO_INVENTORY_FOUND);
@@ -139,20 +145,23 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         }
     }
 
-
-    private void handleFurnace(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack stack, @Nonnull FurnaceInventory furnace) {
-        if (stack.getType().isFuel() && (furnace.getFuel() == null || furnace.getFuel().getType() == Material.AIR)) {
+    private void handleFurnace(
+            @NotNull BlockMenu blockMenu, @NotNull ItemStack stack, @NotNull FurnaceInventory furnace) {
+        if (stack.getType().isFuel()
+                && (furnace.getFuel() == null || furnace.getFuel().getType() == Material.AIR)) {
             furnace.setFuel(stack.clone());
             stack.setAmount(0);
             sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
-        } else if (!stack.getType().isFuel() && (furnace.getSmelting() == null || furnace.getSmelting().getType() == Material.AIR)) {
+        } else if (!stack.getType().isFuel()
+                && (furnace.getSmelting() == null || furnace.getSmelting().getType() == Material.AIR)) {
             furnace.setSmelting(stack.clone());
             stack.setAmount(0);
             sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
         }
     }
 
-    private void handleBrewingStand(@Nonnull BlockMenu blockMenu, @Nonnull ItemStack stack, @Nonnull BrewerInventory brewer) {
+    private void handleBrewingStand(
+            @NotNull BlockMenu blockMenu, @NotNull ItemStack stack, @NotNull BrewerInventory brewer) {
         if (stack.getType() == Material.BLAZE_POWDER) {
             if (brewer.getFuel() == null || brewer.getFuel().getType() == Material.AIR) {
                 brewer.setFuel(stack.clone());
@@ -182,9 +191,8 @@ public class NetworkVanillaPusher extends NetworkDirectional {
         }
     }
 
-    @Nonnull
     @Override
-    protected int[] getBackgroundSlots() {
+    protected int @NotNull [] getBackgroundSlots() {
         return BACKGROUND_SLOTS;
     }
 
@@ -225,11 +233,11 @@ public class NetworkVanillaPusher extends NetworkDirectional {
 
     @Override
     public int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return new int[] {INPUT_SLOT};
     }
 
     @Override
-    protected Particle.DustOptions getDustOptions() {
+    protected Particle.@NotNull DustOptions getDustOptions() {
         return new Particle.DustOptions(Color.MAROON, 1);
     }
 }

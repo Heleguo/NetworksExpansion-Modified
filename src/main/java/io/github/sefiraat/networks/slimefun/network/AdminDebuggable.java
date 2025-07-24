@@ -4,6 +4,7 @@ import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.Networks;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;
@@ -28,6 +29,16 @@ public interface AdminDebuggable {
         }
        // StorageCacheUtils.setData(location, DEBUG_KEY, String.valueOf(value));
     }
+
+    static void addViewer0(@NotNull Player player) {
+        VIEWERS.add(player);
+    }
+
+    static void removeViewer0(@NotNull Player player) {
+        VIEWERS.remove(player);
+    }
+
+
 
     default void toggle(@Nonnull Location location, @Nonnull Player player) {
         final boolean isDebug = isDebug(location);

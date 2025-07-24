@@ -1,17 +1,15 @@
 package com.balugaq.netex.api.factories;
 
-
 import com.balugaq.netex.api.data.AdvancedMachineRecipe;
 import com.balugaq.netex.api.data.ItemAmountWrapper;
 import com.balugaq.netex.api.data.RandomMachineRecipe;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
-import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
-
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.abstractItems.MachineRecipe;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Final_ROOT
@@ -22,12 +20,9 @@ public class MachineRecipeFactory {
     private final Map<String, List<MachineRecipe>> recipeMap = new HashMap<>();
     private final Map<String, List<AdvancedMachineRecipe>> advancedRecipeMap = new HashMap<>();
 
-    private MachineRecipeFactory() {
+    private MachineRecipeFactory() {}
 
-    }
-
-    @Nonnull
-    public static MachineRecipeFactory getInstance() {
+    @NotNull public static MachineRecipeFactory getInstance() {
         if (instance == null) {
             synchronized (MachineRecipeFactory.class) {
                 if (instance == null) {
@@ -38,8 +33,7 @@ public class MachineRecipeFactory {
         return instance;
     }
 
-    @Nonnull
-    public List<MachineRecipe> getRecipe(@Nonnull String id) {
+    @NotNull public List<MachineRecipe> getRecipe(@NotNull String id) {
         if (this.recipeMap.containsKey(id)) {
             return this.recipeMap.get(id);
         }
@@ -48,8 +42,7 @@ public class MachineRecipeFactory {
         return machineRecipeList;
     }
 
-    @Nonnull
-    public List<AdvancedMachineRecipe> getAdvancedRecipe(@Nonnull String id) {
+    @NotNull public List<AdvancedMachineRecipe> getAdvancedRecipe(@NotNull String id) {
         if (this.advancedRecipeMap.containsKey(id)) {
             return this.advancedRecipeMap.get(id);
         } else if (this.recipeMap.containsKey(id)) {
@@ -59,7 +52,7 @@ public class MachineRecipeFactory {
         return new ArrayList<>();
     }
 
-    public void initAdvancedRecipeMap(@Nonnull String id) {
+    public void initAdvancedRecipeMap(@NotNull String id) {
         List<MachineRecipe> machineRecipeList = this.recipeMap.get(id);
         if (machineRecipeList == null) {
             return;
@@ -70,14 +63,19 @@ public class MachineRecipeFactory {
 
             AdvancedMachineRecipe.AdvancedRandomOutput[] advancedRandomOutputs;
             if (machineRecipe instanceof RandomMachineRecipe) {
-                advancedRandomOutputs = new AdvancedMachineRecipe.AdvancedRandomOutput[((RandomMachineRecipe) machineRecipe).getRandomOutputs().length];
-                RandomMachineRecipe.RandomOutput[] randomOutputs = ((RandomMachineRecipe) machineRecipe).getRandomOutputs();
+                advancedRandomOutputs = new AdvancedMachineRecipe.AdvancedRandomOutput
+                        [((RandomMachineRecipe) machineRecipe).getRandomOutputs().length];
+                RandomMachineRecipe.RandomOutput[] randomOutputs =
+                        ((RandomMachineRecipe) machineRecipe).getRandomOutputs();
                 for (int i = 0; i < randomOutputs.length; i++) {
-                    advancedRandomOutputs[i] = new AdvancedMachineRecipe.AdvancedRandomOutput(ItemStackUtil.calItemArrayWithAmount(randomOutputs[i].getOutputItem()), randomOutputs[i].getWeight());
+                    advancedRandomOutputs[i] = new AdvancedMachineRecipe.AdvancedRandomOutput(
+                            ItemStackUtil.calItemArrayWithAmount(randomOutputs[i].getOutputItem()),
+                            randomOutputs[i].getWeight());
                 }
             } else {
                 advancedRandomOutputs = new AdvancedMachineRecipe.AdvancedRandomOutput[1];
-                advancedRandomOutputs[0] = new AdvancedMachineRecipe.AdvancedRandomOutput(ItemStackUtil.calItemArrayWithAmount(machineRecipe.getOutput()), 1);
+                advancedRandomOutputs[0] = new AdvancedMachineRecipe.AdvancedRandomOutput(
+                        ItemStackUtil.calItemArrayWithAmount(machineRecipe.getOutput()), 1);
             }
 
             advancedMachineRecipeList.add(new AdvancedMachineRecipe(inputItems, advancedRandomOutputs));

@@ -10,22 +10,19 @@ import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import lombok.experimental.UtilityClass;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
-
+@Deprecated
 @UtilityClass
 public final class DisplayGroupGenerators {
+    @Deprecated
+    public static final CustomItemStack BRIDGE_STACK = new CustomItemStack(Skins.BRIDGE1.getPlayerHead(), "");
 
-    public static final CustomItemStack BRIDGE_STACK = new CustomItemStack(
-            Skins.BRIDGE1.getPlayerHead(), ""
-    );
-    public static final CustomItemStack BRIDGE_CORNER_RIM_STACK = new CustomItemStack(
-            Skins.BRIDGE2.getPlayerHead(), ""
-    );
+    @Deprecated
+    public static final CustomItemStack BRIDGE_CORNER_RIM_STACK =
+            new CustomItemStack(Skins.BRIDGE2.getPlayerHead(), "");
 
-
-    public static DisplayGroup generateStorageUnit_1(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_1(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_1",
@@ -33,12 +30,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_1_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_2(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_2(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_2",
@@ -46,12 +42,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_2_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_3(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_3(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_3",
@@ -59,12 +54,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_3_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_4(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_4(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_4",
@@ -72,12 +66,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_4_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_5(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_5(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_5",
@@ -85,12 +78,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_5_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_6(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_6(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_6",
@@ -98,12 +90,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_6_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_7(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_7(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_7",
@@ -111,12 +102,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_7_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_8(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_8(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_8",
@@ -124,12 +114,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_8_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_9(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_9(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_9",
@@ -137,12 +126,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_9_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_10(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_10(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_10",
@@ -150,12 +138,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_10_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_11(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_11(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_11",
@@ -163,12 +150,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_11_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_12(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_12(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_12",
@@ -176,12 +162,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_12_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateStorageUnit_13(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateStorageUnit_13(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "StorageUnit_13",
@@ -189,12 +174,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(ExpansionItemStacks.CARGO_STORAGE_UNIT_13_MODEL))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateCloche(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateCloche(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "purge",
@@ -202,12 +186,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_STACK))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateCell(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateCell(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1.1f, 0.5f);
         displayGroup.addDisplay(
                 "cell",
@@ -215,12 +198,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_STACK))
                         .setTransformation(Transformations.TWO.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generatePowerNode(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generatePowerNode(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 2f, 0.5f);
         displayGroup.addDisplay(
                 "powernode",
@@ -228,12 +210,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 0, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_STACK))
                         .setTransformation(Transformations.NE_MODEL_CAPACITOR_5.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateBridge1(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateBridge1(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1f, 0.5f);
 
         displayGroup.addDisplay(
@@ -242,21 +223,18 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 0.65, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_STACK))
                         .setTransformation(Transformations.BRIDGE_1.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         displayGroup.addDisplay(
                 "bridge_3",
                 new ItemDisplayBuilder()
                         .setGroupParentOffset(new Vector(0, 0.9, 0.3))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_CORNER_RIM_STACK))
                         .setTransformation(Transformations.BRIDGE_3.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
-
     }
 
-    public static DisplayGroup generateBridge2(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateBridge2(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1f, 0.5f);
         displayGroup.addDisplay(
                 "bridge_2",
@@ -264,12 +242,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_STACK))
                         .setTransformation(Transformations.BRIDGE_2.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateBridge3(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateBridge3(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1f, 0.5f);
         displayGroup.addDisplay(
                 "bridge_3",
@@ -277,12 +254,11 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0.4))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_STACK))
                         .setTransformation(Transformations.BRIDGE_3.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 
-    public static DisplayGroup generateBridge4(@Nonnull Location location) {
+    public static @NotNull DisplayGroup generateBridge4(@NotNull Location location) {
         final DisplayGroup displayGroup = new DisplayGroup(location, 1f, 0.5f);
         displayGroup.addDisplay(
                 "bridge_4",
@@ -290,8 +266,7 @@ public final class DisplayGroupGenerators {
                         .setGroupParentOffset(new Vector(0, 1, 0.25))
                         .setItemStack(ItemStackUtil.getCleanItem(BRIDGE_CORNER_RIM_STACK))
                         .setTransformation(Transformations.BRIDGE_3.getTransformation())
-                        .build(displayGroup)
-        );
+                        .build(displayGroup));
         return displayGroup;
     }
 }

@@ -32,6 +32,7 @@ public class ItemRequest extends ItemStackCache  {
     }
 
 
+
     public void receiveAmount(int amount) {
         this.amount = this.amount - amount;
     }

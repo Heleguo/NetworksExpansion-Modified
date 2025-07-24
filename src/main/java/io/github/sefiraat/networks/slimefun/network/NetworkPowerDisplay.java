@@ -2,10 +2,10 @@ package io.github.sefiraat.networks.slimefun.network;
 
 import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.helpers.Icon;
+import com.balugaq.netex.utils.Lang;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.NetworkStorage;
-import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
@@ -25,47 +25,44 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
-@SuppressWarnings("deprecation")
 public class NetworkPowerDisplay extends NetworkObject {
 
-    private static final int[] BACKGROUND_SLOTS = new int[]{
-            0, 1, 2, 3, 5, 6, 7, 8
-    };
+    private static final int[] BACKGROUND_SLOTS = new int[] {0, 1, 2, 3, 5, 6, 7, 8};
     private static final int DISPLAY_SLOT = 4;
 
-    public NetworkPowerDisplay(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe) {
+    public NetworkPowerDisplay(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.POWER_DISPLAY);
-        addItemHandler(
-                new BlockTicker() {
-                    @Override
-                    public boolean isSynchronized() {
-                        return false;
-                    }
+        addItemHandler(new BlockTicker() {
+            @Override
+            public boolean isSynchronized() {
+                return false;
+            }
 
-                    @Override
-                    public void tick(Block block, SlimefunItem slimefunItem, SlimefunBlockData data) {
-                        BlockMenu blockMenu = data.getBlockMenu();
-                        if (blockMenu != null) {
-                            addToRegistry(block);
-                            setDisplay(blockMenu);
-                        }
-                    }
+            @Override
+            public void tick(@NotNull Block block, SlimefunItem slimefunItem, @NotNull SlimefunBlockData data) {
+                BlockMenu blockMenu = data.getBlockMenu();
+                if (blockMenu != null) {
+                    addToRegistry(block);
+                    setDisplay(blockMenu);
                 }
-        );
+            }
+        });
     }
 
-    private static ItemStack getChargeStack(long charge) {
+    private static @NotNull ItemStack getChargeStack(long charge) {
         return ItemStackUtil.getCleanItem(new CustomItemStack(
                 Material.GREEN_STAINED_GLASS_PANE,
-                Networks.getLocalizationService().getString("icons.power_display.status_title"),
-                String.format(Networks.getLocalizationService().getString("icons.power_display.charge"), String.valueOf(charge))
-        ));
+                Lang.getString("icons.power_display.status_title"),
+                String.format(Lang.getString("icons.power_display.charge"), charge)));
     }
 
-    private void setDisplay(BlockMenu blockMenu) {
+    private void setDisplay(@NotNull BlockMenu blockMenu) {
         if (blockMenu.hasViewer()) {
             final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
@@ -93,9 +90,11 @@ public class NetworkPowerDisplay extends NetworkObject {
             }
 
             @Override
-            public boolean canOpen(@Nonnull Block block, @Nonnull Player player) {
-                return player.hasPermission("slimefun.inventory.bypass") || (NetworkSlimefunItems.NETWORK_POWER_DISPLAY.canUse(player, false)
-                        && Slimefun.getProtectionManager().hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
+            public boolean canOpen(@NotNull Block block, @NotNull Player player) {
+                return player.hasPermission("slimefun.inventory.bypass")
+                        || (NetworkSlimefunItems.NETWORK_POWER_DISPLAY.canUse(player, false)
+                                && Slimefun.getProtectionManager()
+                                        .hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
             }
 
             @Override

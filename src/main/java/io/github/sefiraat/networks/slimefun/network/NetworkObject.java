@@ -1,14 +1,16 @@
 package io.github.sefiraat.networks.slimefun.network;
 
-import com.balugaq.netex.api.enums.FeedbackType;
-import com.balugaq.netex.utils.LocationUtil;
+import com.balugaq.netex.api.interfaces.HangingBlock;
+import com.balugaq.netex.utils.Lang;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.items.SpecialSlimefunItem;
 import io.github.sefiraat.networks.NetworkStorage;
+import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
 import io.github.sefiraat.networks.network.NodeType;
-import io.github.sefiraat.networks.utils.Theme;
+import io.github.thebusybiscuit.slimefun4.api.exceptions.IncompatibleItemHandlerException;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
@@ -16,6 +18,15 @@ import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
 import io.github.thebusybiscuit.slimefun4.core.handlers.BlockPlaceHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.annotation.OverridingMethodsMustInvokeSuper;
+import javax.annotation.ParametersAreNonnullByDefault;
 import lombok.Getter;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
@@ -23,41 +34,52 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 public abstract class NetworkObject extends SpecialSlimefunItem implements AdminDebuggable {
+    public static final Queue<Location> scheduledHangingTick = new ConcurrentLinkedQueue<>();
+    protected static final Set<BlockFace> CHECK_FACES =
+            Set.of(BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST);
 
-    protected static final Set<BlockFace> CHECK_FACES = Set.of(
-            BlockFace.UP,
-            BlockFace.DOWN,
-            BlockFace.NORTH,
-            BlockFace.SOUTH,
-            BlockFace.EAST,
-            BlockFace.WEST
-    );
+    static {
+        Bukkit.getScheduler()
+                .runTaskTimer(
+                        Networks.getInstance(),
+                        () -> {
+                            while (!scheduledHangingTick.isEmpty()) {
+                                final Location location = scheduledHangingTick.poll();
+                                final Block block = location.getBlock();
+                                HangingBlock.tickHangingBlocks(block);
+                            }
+                        },
+                        1L,
+                        Slimefun.getTickerTask().getTickRate());
+    }
+
     private final NodeType nodeType;
     private final List<Integer> slotsToDrop = new ArrayList<>();
+    private final Set<Location> firstTickLocations = new HashSet<>();
 
-
-    protected NetworkObject(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, NodeType type) {
+    protected NetworkObject(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe,
+            NodeType type) {
         this(itemGroup, item, recipeType, recipe, null, type);
     }
 
-    protected NetworkObject(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, ItemStack recipeOutput, NodeType type) {
+    protected NetworkObject(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe,
+            ItemStack recipeOutput,
+            NodeType type) {
         super(itemGroup, item, recipeType, recipe, recipeOutput);
         this.nodeType = type;
         addItemHandler(
@@ -69,8 +91,25 @@ public abstract class NetworkObject extends SpecialSlimefunItem implements Admin
                     }
 
                     @Override
-                    public void tick(Block b, SlimefunItem item, SlimefunBlockData data) {
+                    public void tick(@NotNull Block b, SlimefunItem item, @NotNull SlimefunBlockData data) {
+                        if (!firstTickLocations.contains(b.getLocation())) {
+                            // Netex - Hanging patch start
+                            Bukkit.getScheduler().runTask(Networks.getInstance(), () -> {
+                                HangingBlock.loadHangingBlocks(data);
+                                HangingBlock.doFirstTick(data);
+                            });
+                            // Netex - Hanging patch end
+                            firstTickLocations.add(b.getLocation());
+                            return;
+                        }
+
                         addToRegistry(b);
+                        tickHangingBlocks(b);
+                    }
+
+                    @Override
+                    @NotNull public Optional<IncompatibleItemHandlerException> validate(@NotNull SlimefunItem slimefunItem) {
+                        return Optional.empty();
                     }
                 },
                 new BlockBreakHandler(false, false) {
@@ -90,22 +129,28 @@ public abstract class NetworkObject extends SpecialSlimefunItem implements Admin
                         onPlace(event);
                         postPlace(event);
                     }
-                }
-        );
+                });
     }
 
-    protected void addToRegistry(@Nonnull Block block) {
+    protected void addToRegistry(@NotNull Block block) {
         if (!NetworkStorage.containsKey(block.getLocation())) {
             final NodeDefinition nodeDefinition = new NodeDefinition(nodeType);
             NetworkStorage.registerNode(block.getLocation(), nodeDefinition);
         }
     }
 
-    protected void preBreak(@Nonnull BlockBreakEvent event) {
-
+    protected void tickHangingBlocks(@NotNull Block block) {
+        scheduledHangingTick.add(block.getLocation());
     }
 
-    protected void onBreak(@Nonnull BlockBreakEvent event) {
+    @OverridingMethodsMustInvokeSuper
+    protected void preBreak(@NotNull BlockBreakEvent event) {
+        NetworkRoot.removePersistentAccessHistory(event.getBlock().getLocation());
+        NetworkRoot.removeCountObservingAccessHistory(event.getBlock().getLocation());
+    }
+
+    @OverridingMethodsMustInvokeSuper
+    protected void onBreak(@NotNull BlockBreakEvent event) {
         final Location location = event.getBlock().getLocation();
         final BlockMenu blockMenu = StorageCacheUtils.getMenu(location);
 
@@ -118,27 +163,25 @@ public abstract class NetworkObject extends SpecialSlimefunItem implements Admin
         Slimefun.getDatabaseManager().getBlockDataController().removeBlock(location);
     }
 
-    protected void postBreak(@Nonnull BlockBreakEvent event) {
+    @OverridingMethodsMustInvokeSuper
+    protected void postBreak(@NotNull BlockBreakEvent event) {}
 
-    }
+    @OverridingMethodsMustInvokeSuper
+    @SuppressWarnings("unused")
+    protected void prePlace(@NotNull BlockPlaceEvent event) {}
 
-    protected void prePlace(@Nonnull BlockPlaceEvent event) {
-
-    }
-
-    protected void cancelPlace(BlockPlaceEvent event) {
-        event.getPlayer().sendMessage(Theme.ERROR.getColor() + "This placement would connect two controllers!");
+    @SuppressWarnings("unused")
+    protected void cancelPlace(@NotNull BlockPlaceEvent event) {
+        event.getPlayer().sendMessage(Lang.getString("messages.unsupported-operation.comprehensive.cancel_place"));
         event.setCancelled(true);
-
     }
 
-    protected void onPlace(@Nonnull BlockPlaceEvent event) {
+    @OverridingMethodsMustInvokeSuper
+    protected void onPlace(@NotNull BlockPlaceEvent event) {}
 
-    }
-
-    protected void postPlace(@Nonnull BlockPlaceEvent event) {
-
-    }
+    @OverridingMethodsMustInvokeSuper
+    @SuppressWarnings("unused")
+    protected void postPlace(@NotNull BlockPlaceEvent event) {}
 
     public boolean isAdminDebuggable() {
         return false;

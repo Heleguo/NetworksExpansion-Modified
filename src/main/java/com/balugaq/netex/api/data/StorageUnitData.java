@@ -21,30 +21,36 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-
+@SuppressWarnings("UnusedAssignment")
 @ToString
 public class StorageUnitData {
 
     @Getter
     private final int id;
+
+    @Getter
     private final OfflinePlayer owner;
+
     private final SyncedHashMap<Integer, ItemContainer> storedItems;
     //a view of storedItems using Material as filter
     private final Map<Material, Int2ObjectArrayMap<ItemContainer>> material2Containers;
     private boolean isPlaced;
+
+    @Getter
     private StorageUnitType sizeType;
+
+    @Getter
     private Location lastLocation;
+
     private final byte[] mapLock=new byte[0];
-    //private byte[][] containerLock= IntStream.range(0,54).mapToObj(i->new byte[0]).toArray(byte[][]::new);
-    public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation) {
-        this(id, Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)), sizeType, isPlaced, lastLocation, new SyncedHashMap<>());
-    }
+
     public static class SyncedHashMap<T,W> extends HashMap<T,W>{
         BiConsumer<T,W> putListener=(w,r)->{};
         BiConsumer<Object,W> removeListener=(o,r)->{};
@@ -62,7 +68,17 @@ public class StorageUnitData {
             removeListener.accept(key, removed);
             return removed;
         }
+    }
 
+    public StorageUnitData(
+            int id,  String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation) {
+        this(
+                id,
+                Bukkit.getOfflinePlayer(UUID.fromString(ownerUUID)),
+                sizeType,
+                isPlaced,
+                lastLocation,
+                new SyncedHashMap<>());
     }
 
     public StorageUnitData(int id, String ownerUUID, StorageUnitType sizeType, boolean isPlaced, Location lastLocation, SyncedHashMap<Integer, ItemContainer> storedItems) {
@@ -198,19 +214,11 @@ public class StorageUnitData {
         }
     }
 
-    public StorageUnitType getSizeType() {
-        return sizeType;
-    }
-
     public synchronized void setSizeType(StorageUnitType sizeType) {
         if (this.sizeType != sizeType) {
             this.sizeType = sizeType;
             DataStorage.setContainerSizeType(id, sizeType);
         }
-    }
-
-    public Location getLastLocation() {
-        return lastLocation;
     }
 
     public synchronized void setLastLocation(Location lastLocation) {
@@ -272,11 +280,39 @@ public class StorageUnitData {
         return re;
     }
 
-    public List<ItemContainer> getStoredItems() {
+    public long getTotalAmountLong() {
+        long re = 0;
+        for (ItemContainer each : getStoredItemArray()) {
+            re += each.getAmount();
+        }
+        return re;
+    }
+
+    @Deprecated
+    public @NotNull List<ItemContainer> getStoredItems() {
+        return copyStoredItems();
+    }
+
+    public @NotNull List<ItemContainer> copyStoredItems() {
         synchronized (mapLock){
             return new ArrayList<>(storedItems.values());
         }
     }
+
+    public @NotNull Collection<ItemContainer> getStoredItemsDirectly() {
+        return storedItems.values();
+    }
+
+    public @NotNull Map<Integer, ItemContainer> copyStoredItemsMap() {
+        synchronized (mapLock){
+            return new HashMap<>(storedItems);
+        }
+    }
+
+    public Map<Integer, ItemContainer> getStoredItemsMap() {
+        return storedItems;
+    }
+
     public ItemContainer[] getStoredItemArray(){
         synchronized (mapLock){
             return storedItems.values().toArray(ItemContainer[]::new);
@@ -284,8 +320,6 @@ public class StorageUnitData {
     }
     public Int2ObjectArrayMap<ItemContainer> viewStoredItemByMaterial(Material material){
         synchronized (mapLock){
-//            Networks.getInstance().getLogger().info(material2Containers.toString());
-//            Networks.getInstance().getLogger().info(storedItems.toString());
             return material2Containers.get(material);
         }
     }
@@ -294,6 +328,7 @@ public class StorageUnitData {
         return owner;
     }
     private static final ItemStack EMPTY = new ItemStack(Material.AIR);
+    @Deprecated
     @Nullable
     public ItemStack requestItem(@Nonnull ItemRequest itemRequest) {
 
@@ -374,6 +409,17 @@ public class StorageUnitData {
         }
         return null;
     }
+    @Nullable
+    public ItemStack requestItem0(@NotNull Location accessor, @NotNull ItemRequest itemRequest) {
+        return requestItem0(accessor, itemRequest, true);
+    }
+
+    @Nullable
+    public ItemStack requestItem0(@NotNull Location accessor, @NotNull ItemRequest itemRequest, boolean contentLocked){
+        return requestItem(itemRequest);
+    }
+
+
     private static final Pair<ItemStack,Integer> NULL_REQUEST = Pair.of(null, null);
     @Nonnull
     public Pair<ItemStack,Integer> requestViaIndex(ItemRequest itemRequest, int index, boolean bypassCheck){
@@ -383,10 +429,51 @@ public class StorageUnitData {
         return request == EMPTY? Pair.of(null, index) : (request == null? Pair.of(null,null): Pair.of(request, index));
     }
 
+    public void depositItemStack0(
+        @NotNull Location accessor, @NotNull Map.Entry<ItemStack, Integer> entry, boolean contentLocked) {
+        ItemStack item = StackUtils.getAsQuantity(entry.getKey(), entry.getValue());
+        depositItemStack0(accessor, item, contentLocked);
+        int leftover = item.getAmount();
+        entry.setValue(leftover);
+    }
+    public void depositItemStack0(
+        @NotNull Location accessor, @NotNull Map<ItemStack, Integer> itemsToDeposit, boolean contentLocked) {
+        for (Map.Entry<ItemStack, Integer> entry : itemsToDeposit.entrySet()) {
+            depositItemStack0(accessor, entry, contentLocked);
+        }
+    }
+
+
     public void depositItemStack(@Nonnull ItemStack[] itemsToDeposit, boolean contentLocked) {
         for (ItemStack item : itemsToDeposit) {
             depositItemStack(item, contentLocked);
         }
+    }
+    public void depositItemStack0(
+        @NotNull Location accessor, @NotNull ItemStack @NotNull [] itemsToDeposit, boolean contentLocked) {
+        for (ItemStack item : itemsToDeposit) {
+            depositItemStack0(accessor, item, contentLocked);
+        }
+    }
+
+    public void depositItemStack0(
+        @NotNull Location accessor, @Nullable ItemStack itemsToDeposit, boolean contentLocked, boolean force) {
+        if (itemsToDeposit == null || isBlacklisted(itemsToDeposit)) {
+            return;
+        }
+        int actualAdded = addStoredItem0(accessor, itemsToDeposit, itemsToDeposit.getAmount(), contentLocked, force);
+        if (actualAdded > 0) {
+            itemsToDeposit.setAmount(itemsToDeposit.getAmount() - actualAdded);
+        }
+    }
+
+    public void depositItemStack0(@NotNull Location accessor, ItemStack item, boolean contentLocked) {
+        depositItemStack0(accessor, item, contentLocked, false);
+    }
+
+    public int addStoredItem0(
+        Location accessor, @NotNull ItemStack item, int amount, boolean contentLocked, boolean force){
+        return addStoredItem(item, amount, contentLocked, force);
     }
 
     public void depositItemStack(ItemStack itemsToDeposit, boolean contentLocked, boolean force) {

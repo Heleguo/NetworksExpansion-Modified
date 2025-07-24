@@ -11,6 +11,8 @@ import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -156,5 +158,64 @@ public class BlockMenuUtil {
         }
 
         return true;
+    }
+
+    public static void consumeItem(@NotNull final BlockMenu blockMenu, @Range(from = 0, to = 64) final int slot) {
+        consumeItem(blockMenu, slot, 1);
+    }
+
+    public static void consumeItem(
+            @NotNull final BlockMenu blockMenu,
+            @Range(from = 0, to = 53) final int slot,
+            final boolean replaceConsumables) {
+        consumeItem(blockMenu, slot, 1, replaceConsumables);
+    }
+
+    public static void consumeItem(
+            @NotNull final BlockMenu blockMenu,
+            @Range(from = 0, to = 53) final int slot,
+            @Range(from = 0, to = 64) final int amount) {
+        consumeItem(blockMenu, slot, amount, false);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void consumeItem(
+            @NotNull final BlockMenu blockMenu,
+            @Range(from = 0, to = 53) final int slot,
+            @Range(from = 0, to = 64) final int amount,
+            final boolean replaceConsumables) {
+        if (amount == 0) {
+            return;
+        }
+
+        final ItemStack item = blockMenu.getItemInSlot(slot);
+        if (item != null && item.getType() != Material.AIR) {
+            if (replaceConsumables
+                    && item.getAmount() == 1
+                    && StackUtils.itemsMatch(item, new ItemStack(item.getType()))) {
+                switch (item.getType()) {
+                    case WATER_BUCKET,
+                            LAVA_BUCKET,
+                            MILK_BUCKET,
+                            COD_BUCKET,
+                            SALMON_BUCKET,
+                            PUFFERFISH_BUCKET,
+                            TROPICAL_FISH_BUCKET,
+                            AXOLOTL_BUCKET,
+                            POWDER_SNOW_BUCKET,
+                            TADPOLE_BUCKET -> item.setType(Material.BUCKET);
+                    case POTION, SPLASH_POTION, LINGERING_POTION, HONEY_BOTTLE, DRAGON_BREATH -> item.setType(
+                            Material.GLASS_BOTTLE);
+                    case MUSHROOM_STEW, BEETROOT_SOUP, RABBIT_STEW, SUSPICIOUS_STEW -> item.setType(Material.BOWL);
+                    default -> item.setAmount(0);
+                }
+            } else {
+                if (item.getAmount() <= amount) {
+                    item.setAmount(0);
+                } else {
+                    item.setAmount(item.getAmount() - amount);
+                }
+            }
+        }
     }
 }

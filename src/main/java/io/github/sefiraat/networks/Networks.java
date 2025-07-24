@@ -1,12 +1,13 @@
 package io.github.sefiraat.networks;
 
+import com.balugaq.netex.api.data.ItemFlowRecord;
 import com.balugaq.netex.api.enums.MinecraftVersion;
+import com.balugaq.netex.utils.Debug;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import com.ytdd9527.networksexpansion.core.managers.ConfigManager;
 import com.ytdd9527.networksexpansion.core.services.LocalizationService;
 import com.ytdd9527.networksexpansion.setup.SetupUtil;
-import com.ytdd9527.networksexpansion.utils.ReflectionUtil;
 import com.ytdd9527.networksexpansion.utils.databases.DataSource;
 import com.ytdd9527.networksexpansion.utils.databases.DataStorage;
 import com.ytdd9527.networksexpansion.utils.databases.QueryQueue;
@@ -16,17 +17,14 @@ import io.github.sefiraat.networks.integrations.NetheoPlants;
 import io.github.sefiraat.networks.managers.ListenerManager;
 import io.github.sefiraat.networks.managers.SupportedPluginManager;
 import io.github.sefiraat.networks.slimefun.NetworksSlimefunItemStacks;
+import io.github.sefiraat.networks.slimefun.network.AdminDebuggable;
 import io.github.sefiraat.networks.slimefun.network.NetworkController;
 import io.github.sefiraat.networks.slimefun.network.NetworkQuantumStorage;
 import io.github.sefiraat.networks.utils.NetworkUtils;
 import io.github.thebusybiscuit.slimefun4.api.SlimefunAddon;
-import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideImplementation;
-import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
-import io.github.thebusybiscuit.slimefun4.implementation.guide.CheatSheetSlimefunGuide;
-import io.github.thebusybiscuit.slimefun4.implementation.guide.SurvivalSlimefunGuide;
 import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
-import me.matl114.matlib.core.PluginInitialization;
+import lombok.Getter;
 import me.matl114.matlib.core.UtilInitialization;
 
 import net.guizhanss.guizhanlibplugin.updater.GuizhanUpdater;
@@ -34,9 +32,11 @@ import org.bstats.bukkit.Metrics;
 import org.bstats.charts.AdvancedPie;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import javax.annotation.Nonnull;
@@ -56,13 +56,19 @@ import java.util.logging.Level;
 public class Networks extends JavaPlugin implements SlimefunAddon {
     private static final String DEFAULT_LANGUAGE = "zh-CN";
     private static Networks instance;
+
+    @Getter
     private static DataSource dataSource;
+
+    @Getter
     private static QueryQueue queryQueue;
+
+    @Getter
     private static BukkitRunnable autoSaveThread;
     private static MinecraftVersion minecraftVersion = MinecraftVersion.UNKNOWN;
-    private final String username;
-    private final String repo;
-    private final String branch;
+    private final @NotNull String username;
+    private final @NotNull String repo;
+    private final @NotNull String branch;
     private ConfigManager configManager;
     private ListenerManager listenerManager;
     private SupportedPluginManager supportedPluginManager;
@@ -81,24 +87,11 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         return Networks.getInstance().configManager;
     }
 
-    public static QueryQueue getQueryQueue() {
-        return queryQueue;
-    }
-
-    public static DataSource getDataSource() {
-        return dataSource;
-    }
-
-    public static BukkitRunnable getAutoSaveThread() {
-        return autoSaveThread;
-    }
-
     public static Networks getInstance() {
         return Networks.instance;
     }
 
-    @Nonnull
-    public static PluginManager getPluginManager() {
+    @NotNull public static PluginManager getPluginManager() {
         return Networks.getInstance().getServer().getPluginManager();
     }
 
@@ -155,7 +148,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
             dataSource = new DataSource();
         } catch (ClassNotFoundException | SQLException e) {
             getLogger().warning(getLocalizationService().getString("messages.startup.failed-to-connect-database"));
-            e.printStackTrace();
+            Debug.trace(e);
             onDisable();
         }
 
@@ -181,7 +174,10 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         getLogger().info(getLocalizationService().getString("messages.startup.registering-listeners"));
         this.listenerManager = new ListenerManager();
         getLogger().info(getLocalizationService().getString("messages.startup.registering-commands"));
-        this.getCommand("networks").setExecutor(new NetworksMain());
+        PluginCommand c = this.getCommand("networks");
+        if (c != null) {
+            c.setExecutor(new NetworksMain());
+        }
 
         setupMetrics();
 
@@ -198,10 +194,14 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
                         this,
                         () -> {
                             Set<Location> wrongs = new HashSet<>();
-                            Set<Location> controllers = NetworkController.getNetworks().keySet();
+                            Set<Location> controllers = new HashSet<>(
+                                    NetworkController.getNetworks().keySet());
                             for (Location controller : controllers) {
                                 SlimefunBlockData data = StorageCacheUtils.getBlock(controller);
-                                if (data == null || !NetworksSlimefunItemStacks.NETWORK_CONTROLLER.getItemId().equals(data.getSfId())) {
+                                if (data == null
+                                        || !NetworksSlimefunItemStacks.NETWORK_CONTROLLER
+                                                .getItemId()
+                                                .equals(data.getSfId())) {
                                     wrongs.add(controller);
                                 }
                             }
@@ -213,6 +213,12 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
                         1,
                         Slimefun.getTickerTask().getTickRate());
 
+        Bukkit.getScheduler()
+                .runTaskTimer(
+                        this,
+                        () -> NetworkController.getRecords().values().forEach(ItemFlowRecord::gc),
+                        1,
+                        Slimefun.getTickerTask().getTickRate());
 
         getLogger().info(getLocalizationService().getString("messages.startup.enabled-successfully"));
     }
@@ -229,11 +235,14 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         DataStorage.saveAmountChange();
         if (queryQueue != null) {
             while (!queryQueue.isAllDone()) {
-                getLogger().info(String.format(getLocalizationService().getString("messages.shutdown.saving-data"), queryQueue.getTaskAmount()));
+                getLogger()
+                        .info(String.format(
+                                getLocalizationService().getString("messages.shutdown.saving-data"),
+                                queryQueue.getTaskAmount()));
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Debug.trace(e);
                 }
             }
             queryQueue.scheduleAbort();
@@ -244,6 +253,7 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
         this.matlibInitiazation.onDisable();
     }
 
+    @SuppressWarnings("deprecation")
     public void tryUpdate() {
         if (configManager.isAutoUpdate() && getDescription().getVersion().startsWith("Build")) {
             GuizhanUpdater.start(this, getFile(), username, repo, branch);
@@ -260,16 +270,29 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
     public void environmentCheck() {
         if (!getServer().getPluginManager().isPluginEnabled("GuizhanLibPlugin")) {
             getLogger().log(Level.SEVERE, getLocalizationService().getString("messages.depend.not-found-guizhanlib"));
-            getLogger().log(Level.SEVERE, getLocalizationService().getString("messages.depend.suggest-download-guizhanlib"));
+            getLogger()
+                    .log(
+                            Level.SEVERE,
+                            getLocalizationService().getString("messages.depend.suggest-download-guizhanlib"));
             return;
         }
         try {
-            minecraftVersion = Slimefun.getMinecraftVersion().isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_20) ? MinecraftVersion.of(20, 0) : MinecraftVersion.UNKNOWN;
-            minecraftVersion = Slimefun.getMinecraftVersion().isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_20_5) ? MinecraftVersion.of(20, 5) : minecraftVersion;
-            minecraftVersion = Slimefun.getMinecraftVersion().isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_21) ? MinecraftVersion.of(21, 0) : minecraftVersion;
+            minecraftVersion = Slimefun.getMinecraftVersion()
+                            .isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_20)
+                    ? MinecraftVersion.of(20, 0)
+                    : MinecraftVersion.UNKNOWN;
+            minecraftVersion = Slimefun.getMinecraftVersion()
+                            .isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_20_5)
+                    ? MinecraftVersion.of(20, 5)
+                    : minecraftVersion;
+            minecraftVersion = Slimefun.getMinecraftVersion()
+                            .isAtLeast(io.github.thebusybiscuit.slimefun4.api.MinecraftVersion.MINECRAFT_1_21)
+                    ? MinecraftVersion.of(21, 0)
+                    : minecraftVersion;
         } catch (NoClassDefFoundError | NoSuchFieldError e) {
             for (int i = 0; i < 20; i++) {
-                getLogger().severe(getLocalizationService().getString("messages.depend.suggest-download-newer-slimefun"));
+                getLogger()
+                        .severe(getLocalizationService().getString("messages.depend.suggest-download-newer-slimefun"));
             }
         }
 
@@ -294,7 +317,8 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
             try {
                 NetheoPlants.setup();
             } catch (NoClassDefFoundError e) {
-                getLogger().warning(getLocalizationService().getString("messages.integrations.not-found-netheopoiesis"));
+                getLogger()
+                        .warning(getLocalizationService().getString("messages.integrations.not-found-netheopoiesis"));
             }
         }
     }
@@ -308,21 +332,20 @@ public class Networks extends JavaPlugin implements SlimefunAddon {
 
         AdvancedPie networksChart = new AdvancedPie("networks", () -> {
             Map<String, Integer> networksMap = new HashMap<>();
-            networksMap.put("Number of networks", NetworkController.getNetworks().size());
+            networksMap.put(
+                    "Number of networks", NetworkController.getNetworks().size());
             return networksMap;
         });
 
         metrics.addCustomChart(networksChart);
     }
 
-    @Nonnull
-    @Override
+    @NotNull @Override
     public JavaPlugin getJavaPlugin() {
         return this;
     }
 
-    @Nullable
-    @Override
+    @Nullable @Override
     public String getBugTrackerURL() {
         return "https://github.com/m1919810/NetworksExpansion-Modified/issues/";
     }

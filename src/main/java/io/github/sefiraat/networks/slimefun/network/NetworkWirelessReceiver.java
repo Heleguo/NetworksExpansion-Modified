@@ -21,50 +21,43 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
-@SuppressWarnings("deprecation")
 public class NetworkWirelessReceiver extends NetworkObject {
 
     public static final int RECEIVED_SLOT = 13;
 
-    private static final int[] BACKGROUND_SLOTS = new int[]{
-            0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26
-    };
+    private static final int[] BACKGROUND_SLOTS =
+            new int[] {0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26};
 
-    private static final int[] RECEIVED_SLOTS_TEMPLATE = new int[]{
-            3, 4, 5, 12, 14, 21, 22, 23
-    };
+    private static final int[] RECEIVED_SLOTS_TEMPLATE = new int[] {3, 4, 5, 12, 14, 21, 22, 23};
 
-    public NetworkWirelessReceiver(ItemGroup itemGroup,
-                                   SlimefunItemStack item,
-                                   RecipeType recipeType,
-                                   ItemStack[] recipe
-    ) {
+    public NetworkWirelessReceiver(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.WIRELESS_RECEIVER);
         this.getSlotsToDrop().add(RECEIVED_SLOT);
 
-        addItemHandler(
-                new BlockTicker() {
-                    @Override
-                    public boolean isSynchronized() {
-                        return false;
-                    }
+        addItemHandler(new BlockTicker() {
+            @Override
+            public boolean isSynchronized() {
+                return false;
+            }
 
-                    @Override
-                    public void tick(Block block, SlimefunItem slimefunItem, SlimefunBlockData data) {
-                        BlockMenu blockMenu = data.getBlockMenu();
-                        if (blockMenu != null) {
-                            addToRegistry(block);
-                            onTick(blockMenu);
-                        }
-                    }
+            @Override
+            public void tick(@NotNull Block block, SlimefunItem slimefunItem, @NotNull SlimefunBlockData data) {
+                BlockMenu blockMenu = data.getBlockMenu();
+                if (blockMenu != null) {
+                    addToRegistry(block);
+                    onTick(blockMenu);
                 }
-        );
+            }
+        });
     }
 
-    private void onTick(@Nonnull BlockMenu blockMenu) {
+    private void onTick(@NotNull BlockMenu blockMenu) {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
@@ -81,7 +74,6 @@ public class NetworkWirelessReceiver extends NetworkObject {
 
         definition.getNode().getRoot().addItemStack(itemStack);
         sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
-
     }
 
     @Override
@@ -95,18 +87,17 @@ public class NetworkWirelessReceiver extends NetworkObject {
             }
 
             @Override
-            public boolean canOpen(@Nonnull Block block, @Nonnull Player player) {
-                return player.hasPermission("slimefun.inventory.bypass") || (NetworkSlimefunItems.NETWORK_WIRELESS_RECEIVER.canUse(player, false)
-                        && Slimefun.getProtectionManager()
-                        .hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
+            public boolean canOpen(@NotNull Block block, @NotNull Player player) {
+                return player.hasPermission("slimefun.inventory.bypass")
+                        || (NetworkSlimefunItems.NETWORK_WIRELESS_RECEIVER.canUse(player, false)
+                                && Slimefun.getProtectionManager()
+                                        .hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
             }
 
             @Override
             public int[] getSlotsAccessedByItemTransport(ItemTransportFlow flow) {
                 return new int[0];
             }
-
         };
     }
-
 }

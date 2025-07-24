@@ -6,11 +6,9 @@ import io.github.sefiraat.networks.network.NodeDefinition;
 import lombok.experimental.UtilityClass;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @UtilityClass
@@ -68,4 +66,7 @@ public class NetworkStorage {
         }
     }
 
+    public static @NotNull Map<Location, NodeDefinition> getAllNetworkObjects() {
+        return new HashMap<>(ALL_NETWORK_OBJECTS);
+    }
 }

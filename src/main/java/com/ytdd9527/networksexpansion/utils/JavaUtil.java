@@ -1,6 +1,5 @@
 package com.ytdd9527.networksexpansion.utils;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,27 +7,30 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Final_ROOT
  */
+@SuppressWarnings("GrazieInspection")
 public class JavaUtil {
 
     @SafeVarargs
-    public static <T> Set<T> toSet(T... objects) {
+    public static <T> @NotNull Set<T> toSet(T @NotNull ... objects) {
         Set<T> result = new HashSet<>(objects.length);
         result.addAll(Arrays.asList(objects));
         return result;
     }
 
     @SafeVarargs
-    public static <T> List<T> toList(T... objects) {
+    public static <T> @NotNull List<T> toList(T @NotNull ... objects) {
         List<T> result = new ArrayList<>(objects.length);
         result.addAll(Arrays.asList(objects));
         return result;
     }
 
-    public static int[] toArray(List<Integer> list) {
+    public static int[] toArray(@NotNull List<Integer> list) {
         int[] result = new int[list.size()];
         for (int i = 0; i < list.size(); i++) {
             result[i] = list.get(i);
@@ -36,7 +38,7 @@ public class JavaUtil {
         return result;
     }
 
-    public static int[] reserve(int[] objects) {
+    public static int[] reserve(int @NotNull [] objects) {
         int[] result = objects.clone();
         for (int i = 0; i < objects.length; i++) {
             result[i] = objects[objects.length - 1 - i];
@@ -44,7 +46,7 @@ public class JavaUtil {
         return result;
     }
 
-    public static <T> List<T> reserve(List<T> objectList) {
+    public static <T> @NotNull List<T> reserve(@NotNull List<T> objectList) {
         List<T> result = new ArrayList<>(objectList);
         for (int i = 0; i < objectList.size(); i++) {
             result.set(i, objectList.get(objectList.size() - 1 - i));
@@ -52,7 +54,7 @@ public class JavaUtil {
         return result;
     }
 
-    public static int[] shuffle(int[] objects) {
+    public static int[] shuffle(int @NotNull [] objects) {
         List<Integer> collect = Arrays.stream(objects).boxed().collect(Collectors.toList());
         Collections.shuffle(collect);
         int[] result = objects.clone();
@@ -62,7 +64,7 @@ public class JavaUtil {
         return result;
     }
 
-    public static <T> T[] shuffle(T[] objects) {
+    public static <T> T[] shuffle(T @NotNull [] objects) {
         List<T> collect = Arrays.stream(objects).collect(Collectors.toList());
         Collections.shuffle(collect);
         T[] result = objects.clone();
@@ -72,15 +74,15 @@ public class JavaUtil {
         return result;
     }
 
-    public static <T> List<T> shuffle(List<T> objectList) {
+    public static <T> @NotNull List<T> shuffle(@NotNull List<T> objectList) {
         List<T> list = new ArrayList<>(objectList);
         Collections.shuffle(list);
         return list;
     }
 
-    public static double[] disperse(int size, Number... value) {
+    public static double[] disperse(int size, Number @NotNull ... value) {
         if (size == 1 && value.length > 0) {
-            return new double[]{value[0].doubleValue()};
+            return new double[] {value[0].doubleValue()};
         } else if (size == 0 || value.length == 0) {
             return new double[0];
         }
@@ -94,7 +96,7 @@ public class JavaUtil {
         return result;
     }
 
-    public static String[] split(String string) {
+    public static String @NotNull [] split(@NotNull String string) {
         String[] result = new String[string.length()];
         for (int i = 0; i < string.length(); i++) {
             result[i] = String.valueOf(string.charAt(i));
@@ -106,8 +108,8 @@ public class JavaUtil {
      * Generate random int[] contains 0 1 2 ...... length-1
      * for example, while the input length = 3, the output may be [0, 1, 2] or [0, 2, 1] or [1, 0, 2] or [1, 2, 0] or [2, 0, 1] or [2, 1, 0]
      *
-     * @param length
-     * @return
+     * @param length the length of the array
+     * @return int[]
      */
     public static int[] generateRandomInts(int length) {
         int[] result = new int[length];
@@ -135,12 +137,12 @@ public class JavaUtil {
      * output:
      * list: [c, b, a, e, f, d]
      *
-     * @param list
-     * @param ints
-     * @param <T>
-     * @return
+     * @param list the list to shuffle
+     * @param ints the int[]
+     * @param <T>  the type of the list
+     * @return the shuffled list
      */
-    public static <T> List<T> shuffleByInts(List<T> list, int[] ints) {
+    public static <T> @NotNull List<T> shuffleByInts(@NotNull List<T> list, int @NotNull [] ints) {
         List<T> result = new ArrayList<>(list.size());
         for (int anInt : ints) {
             result.add(list.get(anInt));
@@ -148,14 +150,15 @@ public class JavaUtil {
         return result;
     }
 
-    public static String[] addToFirst(String value, String... values) {
+    public static String @NotNull [] addToFirst(String value, String @NotNull ... values) {
         String[] result = new String[values.length + 1];
         result[0] = value;
         System.arraycopy(values, 0, result, 1, values.length);
         return result;
     }
 
-    public static <T> boolean matchOnce(T source, T... targets) {
+    @SafeVarargs
+    public static <T> boolean matchOnce(T source, T @NotNull ... targets) {
         for (T object : targets) {
             if (object.equals(source)) {
                 return true;
@@ -164,7 +167,7 @@ public class JavaUtil {
         return false;
     }
 
-    public static long testTime(@Nonnull Runnable runnable) {
+    public static long testTime(@NotNull Runnable runnable) {
         long beginTime = System.nanoTime();
         runnable.run();
         return System.nanoTime() - beginTime;
@@ -173,7 +176,8 @@ public class JavaUtil {
     /**
      * @return In most case, it will not return null. (￣▽￣)"
      */
-    public static <T> T getFirstNotNull(T... objects) {
+    @SafeVarargs
+    public static <T> @Nullable T getFirstNonnull(T @NotNull ... objects) {
         for (T object : objects) {
             if (object != null) {
                 return object;

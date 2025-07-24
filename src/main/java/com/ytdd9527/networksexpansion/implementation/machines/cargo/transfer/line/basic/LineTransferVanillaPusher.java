@@ -2,7 +2,9 @@ package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.li
 
 import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.MinecraftVersion;
-import com.balugaq.netex.api.interfaces.Configurable;
+import com.balugaq.netex.api.interfaces.SoftCellBannable;
+import com.balugaq.netex.utils.InventoryUtil;
+import com.balugaq.netex.utils.Lang;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -21,6 +23,10 @@ import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.inventory.InvUtils;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -38,22 +44,19 @@ import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
-public class LineTransferVanillaPusher extends NetworkDirectional implements RecipeDisplayItem, Configurable {
+@SuppressWarnings("ALL")
+public class LineTransferVanillaPusher extends NetworkDirectional implements RecipeDisplayItem, SoftCellBannable {
     private static final int DEFAULT_MAX_DISTANCE = 32;
     private static final int DEFAULT_GRAB_ITEM_TICK = 1;
 
-    private static final int[] BACKGROUND_SLOTS = new int[]{
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 27, 28, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44
+    private static final int[] BACKGROUND_SLOTS = new int[] {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 27, 28, 30, 31, 33, 34, 35, 36, 37, 38,
+        39, 40, 41, 42, 43, 44
     };
-    private static final int[] INPUT_SLOTS = new int[]{24, 25, 26};
+    private static final int[] INPUT_SLOTS = new int[] {24, 25, 26};
     private static final int NORTH_SLOT = 11;
     private static final int SOUTH_SLOT = 29;
     private static final int EAST_SLOT = 21;
@@ -65,11 +68,11 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
     private static int pushItemTick;
     private final HashMap<Location, Integer> TICKER_MAP = new HashMap<>();
 
-    public LineTransferVanillaPusher(ItemGroup itemGroup,
-                                     SlimefunItemStack item,
-                                     RecipeType recipeType,
-                                     ItemStack[] recipe
-    ) {
+    public LineTransferVanillaPusher(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.LINE_TRANSFER_VANILLA_PUSHER);
         for (int slot : getInputSlots()) {
             this.getSlotsToDrop().add(slot);
@@ -85,9 +88,8 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         pushItemTick = config.getInt("items." + configKey + ".pushitem-tick", DEFAULT_GRAB_ITEM_TICK);
     }
 
-
     @Override
-    protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
+    protected void onTick(@Nullable BlockMenu blockMenu, @NotNull Block block) {
         super.onTick(blockMenu, block);
 
         if (blockMenu == null) {
@@ -123,7 +125,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         TICKER_MAP.put(location, tickCounter);
     }
 
-    private void tryPushItem(@Nonnull BlockMenu blockMenu) {
+    private void tryPushItem(@NotNull BlockMenu blockMenu) {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
@@ -132,6 +134,11 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         }
 
         final NetworkRoot root = definition.getNode().getRoot();
+        //disable soft cell ban
+//        if (checkSoftCellBan(blockMenu.getLocation(), root)) {
+//            return;
+//        }
+
         final BlockFace direction = getCurrentDirection(blockMenu);
 
         // Fix for early vanilla pusher release
@@ -172,7 +179,8 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
 
                 // dirty fix
                 try {
-                    if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+                    if (!Slimefun.getProtectionManager()
+                            .hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
                         sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
                         return;
                     }
@@ -187,11 +195,10 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
                 boolean isChest = wildChests && WildChestsAPI.getChest(targetBlock.getLocation()) != null;
 
                 if (inventory instanceof FurnaceInventory furnace) {
-                    handleFurnace(root, template, furnace);
+                    handleFurnace(root, template, furnace, blockMenu);
                 } else if (inventory instanceof BrewerInventory brewer) {
-                    handleBrewingStand(root, template, brewer);
+                    handleBrewingStand(root, template, brewer, blockMenu);
                 } else if (wildChests && isChest) {
-                    continue;
                 } else if (InvUtils.fits(holder.getInventory(), template)) {
                     for (ItemStack targetItem : inventory.getContents()) {
                         if (targetItem == null || targetItem.getType() == Material.AIR) {
@@ -199,7 +206,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
                             if (stack == null) {
                                 break;
                             }
-                            holder.getInventory().addItem(stack);
+                            InventoryUtil.addItem(holder.getInventory(), stack);
                             break;
                         } else if (StackUtils.itemsMatch(targetItem, template)) {
                             int canAdd = template.getMaxStackSize() - targetItem.getAmount();
@@ -208,7 +215,7 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
                                 if (stack == null) {
                                     break;
                                 }
-                                holder.getInventory().addItem(stack);
+                                InventoryUtil.addItem(holder.getInventory(), stack);
                                 break;
                             }
                         }
@@ -220,18 +227,24 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
-    private void handleFurnace(@Nonnull NetworkRoot root, @Nonnull ItemStack template, @Nonnull FurnaceInventory furnace) {
+    private void handleFurnace(
+            @NotNull NetworkRoot root,
+            @NotNull ItemStack template,
+            @NotNull FurnaceInventory furnace,
+            @NotNull BlockMenu blockMenu) {
         if (template.getType().isFuel()
-                && (furnace.getFuel() == null || furnace.getFuel().getType() == Material.AIR)
-        ) {
-            final ItemStack stack = root.getItemStack(new ItemRequest(template, template.getMaxStackSize()));
+                && (furnace.getFuel() == null || furnace.getFuel().getType() == Material.AIR)) {
+            final ItemStack stack =
+                    root.getItemStack(new ItemRequest(template, template.getMaxStackSize()));
             if (stack == null) {
                 return;
             }
             furnace.setFuel(stack.clone());
             stack.setAmount(0);
-        } else if (!template.getType().isFuel() && furnace.getSmelting() == null || furnace.getSmelting().getType() == Material.AIR) {
-            final ItemStack stack = root.getItemStack(new ItemRequest(template, template.getMaxStackSize()));
+        } else if (!template.getType().isFuel() && furnace.getSmelting() == null
+                || furnace.getSmelting().getType() == Material.AIR) {
+            final ItemStack stack =
+                    root.getItemStack(new ItemRequest(template, template.getMaxStackSize()));
             if (stack == null) {
                 return;
             }
@@ -240,10 +253,15 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         }
     }
 
-    private void handleBrewingStand(@Nonnull NetworkRoot root, @Nonnull ItemStack template, @Nonnull BrewerInventory brewer) {
+    private void handleBrewingStand(
+            @NotNull NetworkRoot root,
+            @NotNull ItemStack template,
+            @NotNull BrewerInventory brewer,
+            @NotNull BlockMenu blockMenu) {
         if (template.getType() == Material.BLAZE_POWDER) {
             if (brewer.getFuel() == null || brewer.getFuel().getType() == Material.AIR) {
-                final ItemStack stack = root.getItemStack(new ItemRequest(template.clone(), template.getMaxStackSize()));
+                final ItemStack stack = root.getItemStack(
+                        new ItemRequest(template.clone(), template.getMaxStackSize()));
                 if (stack == null) {
                     return;
                 }
@@ -251,7 +269,8 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
                 stack.setAmount(0);
             } else if (brewer.getIngredient() == null || brewer.getIngredient().getType() == Material.AIR) {
                 if (brewer.getIngredient() == null || brewer.getIngredient().getType() == Material.AIR) {
-                    final ItemStack stack = root.getItemStack(new ItemRequest(template.clone(), template.getMaxStackSize()));
+                    final ItemStack stack = root.getItemStack(
+                        new ItemRequest(template.clone(), template.getMaxStackSize()));
                     if (stack == null) {
                         return;
                     }
@@ -284,9 +303,8 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
         }
     }
 
-    @Nonnull
-    @Override
-    protected int[] getBackgroundSlots() {
+    @NotNull @Override
+    protected int @NotNull [] getBackgroundSlots() {
         return BACKGROUND_SLOTS;
     }
 
@@ -331,18 +349,18 @@ public class LineTransferVanillaPusher extends NetworkDirectional implements Rec
     }
 
     @Override
-    protected Particle.DustOptions getDustOptions() {
+    protected Particle.@NotNull DustOptions getDustOptions() {
         return new Particle.DustOptions(Color.MAROON, 1);
     }
 
-    public List<ItemStack> getDisplayRecipes() {
+    public @NotNull List<ItemStack> getDisplayRecipes() {
         List<ItemStack> displayRecipes = new ArrayList<>(6);
-        displayRecipes.add(new CustomItemStack(Material.BOOK,
-                Networks.getLocalizationService().getString("icons.mechanism.transfers.data_title"),
+        displayRecipes.add(new CustomItemStack(
+                Material.BOOK,
+                Lang.getString("icons.mechanism.transfers.data_title"),
                 "",
-                String.format(Networks.getLocalizationService().getString("icons.mechanism.transfers.max_distance"), maxDistance),
-                String.format(Networks.getLocalizationService().getString("icons.mechanism.transfers.push_item_tick"), pushItemTick)
-        ));
+                String.format(Lang.getString("icons.mechanism.transfers.max_distance"), maxDistance),
+                String.format(Lang.getString("icons.mechanism.transfers.push_item_tick"), pushItemTick)));
         return displayRecipes;
     }
 }

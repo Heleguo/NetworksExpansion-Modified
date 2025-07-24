@@ -1,5 +1,3 @@
 package com.balugaq.netex.api.interfaces;
 
-
-public interface UnCopiableItem {
-}
+public interface UnCopiableItem {}

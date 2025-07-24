@@ -8,24 +8,20 @@ import lombok.Setter;
 import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.matl114.matlib.utils.reflect.ReflectUtils;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.lang.invoke.VarHandle;
 
-
+@Getter
 public class ItemContainer extends ItemStackCache  {
-    @Getter
     private final int id;
-    //private final ItemStack sample;
-    //@Getter
-    //private final ItemStackWrapper wrapper;
-    @Getter
+
     private final ItemStackWrapper wrapper;
-    @Getter
     private final int storageUnitId;
+
     static final VarHandle ATOMIC_AMOUNT_HANDLE = ReflectUtils.getVarHandlePrivate(ItemContainer.class, "amount").withInvokeExactBehavior();
     @Setter
-    @Getter
     volatile int amount;
 
     public ItemContainer(int id, @Nonnull ItemStack item, int amount, int storageId) {
@@ -38,8 +34,13 @@ public class ItemContainer extends ItemStackCache  {
 
     }
 
+
     public ItemStack getSample() {
         return getItemStack().clone();
+    }
+
+    public @NotNull ItemStack getSampleDirectly() {
+        return getItemStack();
     }
 
     public boolean isSimilar(ItemStack other) {
@@ -78,22 +79,11 @@ public class ItemContainer extends ItemStackCache  {
         return ret;
     }
 
-    public String toString() {
-        return "ItemContainer{" +
-
-                ", sample=" + this.getItemStack() +
-                ", wrapper=(ItemStackCache)this" +
-                ", amount=" + amount +
-                '}';
+    public @NotNull String toString() {
+        return "ItemContainer{" + "id="
+                + id + ", sample="
+                + getItemStack() + ", wrapper="
+                + wrapper + ", amount="
+                + amount + '}';
     }
-
-//    private String cacheId;
-//    private boolean initializedId= false;
-//    private static final VarHandle ATOMIC_IDCACHE_HANDLE = ReflectUtils.getVarHandlePrivate(ItemContainer.class, "initializedId").withInvokeExactBehavior();
-//    public final String getOptionalId(){
-//        if(ATOMIC_IDCACHE_HANDLE.compareAndSet((ItemContainer)this, false,true)){
-//            cacheId= StackUtils.getOptionalId(getItemStack()); //meta==null?null: Slimefun.getItemDataService().getItemData(meta).orElse(null);
-//        }
-//        return cacheId;
-//    }
 }

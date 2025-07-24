@@ -1,5 +1,8 @@
 name: Networks
-author: Sefiraat, balugaq, ytdd9527
+authors:
+  - Sefiraat
+  - balugaq
+  - ytdd9527
 description: No idea yet
 main: io.github.sefiraat.networks.Networks
 website: https://github.com/ytdd9527/NetworksExpansion
@@ -17,6 +20,8 @@ softdepend:
   - RoseStacker
   - WildStacker
   - mcMMO
+  - GuguSlimefunLib
+  - JustEnoughGuide
 commands:
   networks:
     aliases: networksexpansion
@@ -60,6 +65,9 @@ permissions:
   networks.commands.getstorageitem:
     description: Allows you to use the /networks getstorageitem command
     default: op
-  networks.commands.worldedit.*:
+  networks.commands.worldedit.*: # Deprecated
     description: Allows you to use all Networks WorldEdit commands
+    default: op
+  networks.commands.map:
+    description: Allows you to use the /networks map command
     default: op

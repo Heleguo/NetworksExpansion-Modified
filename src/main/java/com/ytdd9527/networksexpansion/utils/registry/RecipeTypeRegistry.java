@@ -3,15 +3,15 @@ package com.ytdd9527.networksexpansion.utils.registry;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Final_ROOT
@@ -20,15 +20,18 @@ import java.util.Set;
 public class RecipeTypeRegistry {
     private static volatile RecipeTypeRegistry instance;
     boolean init = false;
+
+    @Getter
     private Set<RecipeType> recipeTypeSet;
+
+    @Getter
     private Map<RecipeType, List<SlimefunItem>> recipeSlimefunItemMap;
 
     private RecipeTypeRegistry() {
         this.init();
     }
 
-    @Nonnull
-    public static RecipeTypeRegistry getInstance() {
+    @NotNull public static RecipeTypeRegistry getInstance() {
         if (instance == null) {
             synchronized (RecipeTypeRegistry.class) {
                 if (instance == null) {
@@ -80,16 +83,7 @@ public class RecipeTypeRegistry {
         }
     }
 
-    public Set<RecipeType> getRecipeTypeSet() {
-        return this.recipeTypeSet;
-    }
-
-    public Map<RecipeType, List<SlimefunItem>> getRecipeSlimefunItemMap() {
-        return recipeSlimefunItemMap;
-    }
-
-    @Nullable
-    public RecipeType getRecipeTypeById(String id) {
+    @Nullable public RecipeType getRecipeTypeById(String id) {
         for (RecipeType recipeType : this.getRecipeTypeSet()) {
             if (recipeType.getKey().getKey().equals(id)) {
                 return recipeType;
@@ -98,8 +92,7 @@ public class RecipeTypeRegistry {
         return null;
     }
 
-    @Nonnull
-    public List<SlimefunItem> getByRecipeType(@Nonnull RecipeType recipeType) {
+    @NotNull public List<SlimefunItem> getByRecipeType(@NotNull RecipeType recipeType) {
         if (this.recipeSlimefunItemMap.containsKey(recipeType)) {
             return this.recipeSlimefunItemMap.get(recipeType);
         } else {

@@ -5,16 +5,16 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Getter
 @ToString
-@SuppressWarnings("unused")
 public class SuperRecipe {
     private final ItemStack[] input;
     private final ItemStack[] output;
     private final int consumeEnergy;
-    private final SuperRecipeHandler handler;
+    private final @Nullable SuperRecipeHandler handler;
     private final boolean isShaped;
 
     public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack[] output, int consumeEnergy) {
@@ -36,7 +36,7 @@ public class SuperRecipe {
     public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack output, int consumeEnergy) {
         this.isShaped = isShaped;
         this.input = input;
-        this.output = new ItemStack[]{output};
+        this.output = new ItemStack[] {output};
         this.consumeEnergy = consumeEnergy;
         this.handler = null;
     }
@@ -44,12 +44,17 @@ public class SuperRecipe {
     public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack output) {
         this.isShaped = isShaped;
         this.input = input;
-        this.output = new ItemStack[]{output};
+        this.output = new ItemStack[] {output};
         this.consumeEnergy = 0;
         this.handler = null;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack[] output, int consumeEnergy, SuperRecipeHandler handler) {
+    public SuperRecipe(
+            boolean isShaped,
+            ItemStack[] input,
+            ItemStack[] output,
+            int consumeEnergy,
+            @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
         this.input = input;
         this.output = output;
@@ -57,7 +62,7 @@ public class SuperRecipe {
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack[] output, SuperRecipeHandler handler) {
+    public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack[] output, @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
         this.input = input;
         this.output = output;
@@ -65,50 +70,65 @@ public class SuperRecipe {
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack output, int consumeEnergy, SuperRecipeHandler handler) {
+    public SuperRecipe(
+            boolean isShaped,
+            ItemStack[] input,
+            ItemStack output,
+            int consumeEnergy,
+            @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
         this.input = input;
-        this.output = new ItemStack[]{output};
+        this.output = new ItemStack[] {output};
         this.consumeEnergy = consumeEnergy;
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack output, SuperRecipeHandler handler) {
+    public SuperRecipe(boolean isShaped, ItemStack[] input, ItemStack output, @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
         this.input = input;
-        this.output = new ItemStack[]{output};
+        this.output = new ItemStack[] {output};
         this.consumeEnergy = 0;
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack input, ItemStack[] output, int consumeEnergy, SuperRecipeHandler handler) {
+    public SuperRecipe(
+            boolean isShaped,
+            ItemStack input,
+            ItemStack[] output,
+            int consumeEnergy,
+            @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
-        this.input = new ItemStack[]{input};
+        this.input = new ItemStack[] {input};
         this.output = output;
         this.consumeEnergy = consumeEnergy;
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack input, ItemStack[] output, SuperRecipeHandler handler) {
+    public SuperRecipe(boolean isShaped, ItemStack input, ItemStack[] output, @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
-        this.input = new ItemStack[]{input};
+        this.input = new ItemStack[] {input};
         this.output = output;
         this.consumeEnergy = 0;
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack input, ItemStack output, int consumeEnergy, SuperRecipeHandler handler) {
+    public SuperRecipe(
+            boolean isShaped,
+            ItemStack input,
+            ItemStack output,
+            int consumeEnergy,
+            @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
-        this.input = new ItemStack[]{input};
-        this.output = new ItemStack[]{output};
+        this.input = new ItemStack[] {input};
+        this.output = new ItemStack[] {output};
         this.consumeEnergy = consumeEnergy;
         this.handler = handler;
     }
 
-    public SuperRecipe(boolean isShaped, ItemStack input, ItemStack output, SuperRecipeHandler handler) {
+    public SuperRecipe(boolean isShaped, ItemStack input, ItemStack output, @Nullable SuperRecipeHandler handler) {
         this.isShaped = isShaped;
-        this.input = new ItemStack[]{input};
-        this.output = new ItemStack[]{output};
+        this.input = new ItemStack[] {input};
+        this.output = new ItemStack[] {output};
         this.consumeEnergy = 0;
         this.handler = handler;
     }

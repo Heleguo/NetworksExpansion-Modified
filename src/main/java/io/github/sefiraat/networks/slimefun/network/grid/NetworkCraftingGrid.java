@@ -2,8 +2,10 @@ package io.github.sefiraat.networks.slimefun.network.grid;
 
 import com.balugaq.netex.api.helpers.Icon;
 import com.balugaq.netex.api.helpers.SupportedCraftingTableRecipes;
+import com.balugaq.netex.utils.BlockMenuUtil;
+import com.balugaq.netex.utils.Lang;
 import io.github.sefiraat.networks.NetworkStorage;
-import io.github.sefiraat.networks.Networks;
+import io.github.sefiraat.networks.events.NetworkCraftEvent;
 import io.github.sefiraat.networks.network.GridItemRequest;
 import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.NodeDefinition;
@@ -15,6 +17,9 @@ import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.ItemUtils;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
+import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
+import java.util.HashMap;
+import java.util.Map;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
 import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
@@ -24,24 +29,19 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public class NetworkCraftingGrid extends AbstractGrid {
 
     private static final int[] BACKGROUND_SLOTS = {
-            0, 1, 3, 4, 5, 14, 23, 32, 33, 35, 41, 42, 44, 45, 47, 49, 50, 51, 52, 53
+        0, 1, 3, 4, 5, 14, 23, 32, 33, 35, 41, 42, 44, 45, 47, 49, 50, 51, 52, 53
     };
 
     private static final int[] DISPLAY_SLOTS = {
-            9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 27, 28, 29, 30, 31, 36, 37, 38, 39, 40
+        9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 27, 28, 29, 30, 31, 36, 37, 38, 39, 40
     };
 
-    private static final int[] CRAFT_ITEMS = {
-            6, 7, 8, 15, 16, 17, 24, 25, 26
-    };
+    private static final int[] CRAFT_ITEMS = {6, 7, 8, 15, 16, 17, 24, 25, 26};
 
     private static final int INPUT_SLOT = 2;
     private static final int FILTER = 45;
@@ -54,8 +54,11 @@ public class NetworkCraftingGrid extends AbstractGrid {
 
     private static final Map<Location, GridCache> CACHE_MAP = new HashMap<>();
 
-
-    public NetworkCraftingGrid(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe) {
+    public NetworkCraftingGrid(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack[] recipe) {
         super(itemGroup, item, recipeType, recipe);
         for (int craftItem : CRAFT_ITEMS) {
             this.getSlotsToDrop().add(craftItem);
@@ -68,20 +71,23 @@ public class NetworkCraftingGrid extends AbstractGrid {
         getPreset();
     }
 
-    @Nonnull
-    @Override
+    @NotNull @Override
     public BlockMenuPreset getPreset() {
         return new BlockMenuPreset(this.getId(), this.getItemName()) {
 
             @Override
             public void init() {
                 drawBackground(BACKGROUND_SLOTS);
+                drawBackground(getDisplaySlots());
+                setSize(54);
             }
 
             @Override
-            public boolean canOpen(@Nonnull Block block, @Nonnull Player player) {
-                return player.hasPermission("slimefun.inventory.bypass") || (NetworkSlimefunItems.NETWORK_CRAFTING_GRID.canUse(player, false)
-                        && Slimefun.getProtectionManager().hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
+            public boolean canOpen(@NotNull Block block, @NotNull Player player) {
+                return player.hasPermission("slimefun.inventory.bypass")
+                        || (NetworkSlimefunItems.NETWORK_CRAFTING_GRID.canUse(player, false)
+                                && Slimefun.getProtectionManager()
+                                        .hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
             }
 
             @Override
@@ -89,9 +95,8 @@ public class NetworkCraftingGrid extends AbstractGrid {
                 return new int[0];
             }
 
-            @SuppressWarnings("deprecation")
             @Override
-            public void newInstance(@Nonnull BlockMenu menu, @Nonnull Block b) {
+            public void newInstance(@NotNull BlockMenu menu, @NotNull Block b) {
                 CACHE_MAP.put(menu.getLocation(), new GridCache(0, 0, GridCache.SortOrder.ALPHABETICAL));
 
                 menu.replaceExistingItem(getPagePrevious(), getPagePreviousStack());
@@ -99,14 +104,19 @@ public class NetworkCraftingGrid extends AbstractGrid {
                     GridCache gridCache = getCacheMap().get(menu.getLocation());
                     gridCache.setPage(gridCache.getPage() <= 0 ? 0 : gridCache.getPage() - 1);
                     CACHE_MAP.put(menu.getLocation(), gridCache);
+                    updateDisplay(menu);
                     return false;
                 });
 
                 menu.replaceExistingItem(getPageNext(), getPageNextStack());
                 menu.addMenuClickHandler(getPageNext(), (p, slot, item, action) -> {
                     GridCache gridCache = getCacheMap().get(menu.getLocation());
-                    gridCache.setPage(gridCache.getPage() >= gridCache.getMaxPages() ? gridCache.getMaxPages() : gridCache.getPage() + 1);
+                    gridCache.setPage(
+                            gridCache.getPage() >= gridCache.getMaxPages()
+                                    ? gridCache.getMaxPages()
+                                    : gridCache.getPage() + 1);
                     getCacheMap().put(menu.getLocation(), gridCache);
+                    updateDisplay(menu);
                     return false;
                 });
 
@@ -119,6 +129,7 @@ public class NetworkCraftingGrid extends AbstractGrid {
                         gridCache.setSortOrder(GridCache.SortOrder.ALPHABETICAL);
                     }
                     getCacheMap().put(menu.getLocation(), gridCache);
+                    updateDisplay(menu);
                     return false;
                 });
 
@@ -130,7 +141,7 @@ public class NetworkCraftingGrid extends AbstractGrid {
                 });
 
                 for (int displaySlot : getDisplaySlots()) {
-                    menu.replaceExistingItem(displaySlot, null);
+                    menu.replaceExistingItem(displaySlot, ChestMenuUtils.getBackground());
                     menu.addMenuClickHandler(displaySlot, (p, slot, item, action) -> false);
                 }
 
@@ -143,12 +154,21 @@ public class NetworkCraftingGrid extends AbstractGrid {
                     }
                     return false;
                 });
+
+                menu.addPlayerInventoryClickHandler((p, s, i, a) -> {
+                    if (!a.isShiftClicked() || a.isRightClicked()) {
+                        return true;
+                    }
+
+                    // Shift+Left-click
+                    receiveItem(p, i, a, menu);
+                    return false;
+                });
             }
         };
     }
 
-    @Nonnull
-    @Override
+    @NotNull @Override
     protected Map<Location, GridCache> getCacheMap() {
         return CACHE_MAP;
     }
@@ -188,8 +208,7 @@ public class NetworkCraftingGrid extends AbstractGrid {
         return FILTER;
     }
 
-    @SuppressWarnings("deprecation")
-    private void tryCraft(@Nonnull BlockMenu menu, @Nonnull Player player) {
+    private void tryCraft(@NotNull BlockMenu menu, @NotNull Player player) {
         // Get node and, if it doesn't exist - escape
         final NodeDefinition definition = NetworkStorage.getNode(menu.getLocation());
         if (definition.getNode() == null) {
@@ -208,7 +227,8 @@ public class NetworkCraftingGrid extends AbstractGrid {
         ItemStack crafted = null;
 
         // Go through each slimefun recipe, test and set the ItemStack if found
-        for (Map.Entry<ItemStack[], ItemStack> entry : SupportedCraftingTableRecipes.getRecipes().entrySet()) {
+        for (Map.Entry<ItemStack[], ItemStack> entry :
+                SupportedCraftingTableRecipes.getRecipes().entrySet()) {
             if (SupportedCraftingTableRecipes.testRecipe(inputs, entry.getKey())) {
                 crafted = entry.getValue().clone();
                 break;
@@ -218,7 +238,7 @@ public class NetworkCraftingGrid extends AbstractGrid {
         if (crafted != null) {
             final SlimefunItem sfi2 = SlimefunItem.getByItem(crafted);
             if (sfi2 != null && sfi2.isDisabled()) {
-                player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.encoder.disabled_output"));
+                player.sendMessage(Lang.getString("messages.unsupported-operation.encoder.disabled_output"));
                 return;
             }
         }
@@ -229,12 +249,22 @@ public class NetworkCraftingGrid extends AbstractGrid {
         }
 
         // If no item crafted OR result doesn't fit, escape
-        if (crafted.getType() == Material.AIR || !menu.fits(crafted, CRAFT_OUTPUT_SLOT)) {
+        if (crafted.getType() == Material.AIR || !BlockMenuUtil.fits(menu, crafted, CRAFT_OUTPUT_SLOT)) {
             return;
         }
 
+        // fire craft event
+        NetworkCraftEvent event = new NetworkCraftEvent(player, this, inputs, crafted);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return;
+        }
+        crafted = event.getOutput();
+
         // Push item
-        menu.pushItem(crafted, CRAFT_OUTPUT_SLOT);
+        if (crafted != null) {
+            BlockMenuUtil.pushItem(menu, crafted, CRAFT_OUTPUT_SLOT);
+        }
 
         NetworkRoot root = definition.getNode().getRoot();
         root.refreshRootItems();
@@ -260,7 +290,7 @@ public class NetworkCraftingGrid extends AbstractGrid {
         }
     }
 
-    private void tryReturnItems(@Nonnull BlockMenu menu) {
+    private void tryReturnItems(@NotNull BlockMenu menu) {
         // Get node and, if it doesn't exist - escape
         final NodeDefinition definition = NetworkStorage.getNode(menu.getLocation());
 

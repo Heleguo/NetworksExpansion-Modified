@@ -1,5 +1,6 @@
 package io.github.sefiraat.networks.integrations;
 
+import com.balugaq.netex.utils.Lang;
 import dev.sefiraat.netheopoiesis.api.items.DoNothingSeed;
 import dev.sefiraat.netheopoiesis.api.items.HarvestableSeed;
 import dev.sefiraat.netheopoiesis.api.plant.Growth;
@@ -23,46 +24,51 @@ public class NetheoPlants {
             "NTW_STONE_CHUNK_SEED",
             Skulls.SEED_PURPLE.getPlayerHead(),
             Theme.SEED,
-            Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.stone_chunk_seed.name"),
-            Networks.getLocalizationService().getStringArray("messages.integrations.netheopoiesis.stone_chunk_seed.lore"),
-            Stacks.getCanBePlacedOnLore(Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_level.highest"), Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_tips"))
-    );
+            Lang.getString("messages.integrations.netheopoiesis.stone_chunk_seed.name"),
+            Lang.getStringArray("messages.integrations.netheopoiesis.stone_chunk_seed.lore"),
+            Stacks.getCanBePlacedOnLore(
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_level.highest"),
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_tips")));
 
     public static final SlimefunItemStack SYNTHETIC_SEED = Theme.themedSeed(
             "NTW_SYNTHETIC_SEED",
             Skulls.SEED_ORANGE.getPlayerHead(),
             Theme.SEED,
-            Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.synthetic_seed.name"),
-            Networks.getLocalizationService().getStringArray("messages.integrations.netheopoiesis.synthetic_seed.lore"),
-            Stacks.getCanBePlacedOnLore(Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_level.highest"), Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_tips"))
-    );
+            Lang.getString("messages.integrations.netheopoiesis.synthetic_seed.name"),
+            Lang.getStringArray("messages.integrations.netheopoiesis.synthetic_seed.lore"),
+            Stacks.getCanBePlacedOnLore(
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_level.highest"),
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_tips")));
 
     public static final SlimefunItemStack SYNTHETIC_EMERALD_SEED = Theme.themedSeed(
             "NTW_SYNTHETIC_EMERALD_SEED",
             Skulls.SEED_GREEN.getPlayerHead(),
             Theme.SEED,
-            Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.synthetic_emerald_seed.name"),
-            Networks.getLocalizationService().getStringArray("messages.integrations.netheopoiesis.synthetic_emerald_seed.lore"),
-            Stacks.getCanBePlacedOnLore(Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_level.high"), Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_tips"))
-    );
+            Lang.getString("messages.integrations.netheopoiesis.synthetic_emerald_seed.name"),
+            Lang.getStringArray("messages.integrations.netheopoiesis.synthetic_emerald_seed.lore"),
+            Stacks.getCanBePlacedOnLore(
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_level.high"),
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_tips")));
 
     public static final SlimefunItemStack SYNTHETIC_DIAMOND_SEED = Theme.themedSeed(
             "NTW_SYNTHETIC_DIAMOND_SEED",
             Skulls.SEED_GREEN.getPlayerHead(),
             Theme.SEED,
-            Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.synthetic_diamond_seed.name"),
-            Networks.getLocalizationService().getStringArray("messages.integrations.netheopoiesis.synthetic_diamond_seed.lore"),
-            Stacks.getCanBePlacedOnLore(Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_level.high"), Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_tips"))
-    );
+            Lang.getString("messages.integrations.netheopoiesis.synthetic_diamond_seed.name"),
+            Lang.getStringArray("messages.integrations.netheopoiesis.synthetic_diamond_seed.lore"),
+            Stacks.getCanBePlacedOnLore(
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_level.high"),
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_tips")));
 
     public static final SlimefunItemStack FRAGMENTED_SEED = Theme.themedSeed(
             "NTW_FRAGMENTED_SEED",
             Skulls.SEED_GREEN.getPlayerHead(),
             Theme.SEED,
-            Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.fragmented_seed.name"),
-            Networks.getLocalizationService().getStringArray("messages.integrations.netheopoiesis.fragmented_seed.lore"),
-            Stacks.getCanBePlacedOnLore(Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_level.high"), Networks.getLocalizationService().getString("messages.integrations.netheopoiesis.dirt_tips"))
-    );
+            Lang.getString("messages.integrations.netheopoiesis.fragmented_seed.name"),
+            Lang.getStringArray("messages.integrations.netheopoiesis.fragmented_seed.lore"),
+            Stacks.getCanBePlacedOnLore(
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_level.high"),
+                    Lang.getString("messages.integrations.netheopoiesis.dirt_tips")));
 
     public static void setup() {
 

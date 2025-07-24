@@ -1,7 +1,7 @@
 package com.balugaq.netex.api.helpers;
 
 import com.balugaq.netex.api.interfaces.CanTestRecipe;
-import com.balugaq.netex.api.interfaces.HasRecipes;
+import com.balugaq.netex.api.interfaces.RecipeHolder;
 import com.ytdd9527.networksexpansion.implementation.machines.manual.ExpansionWorkbench;
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.utils.StackUtils;
@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @UtilityClass
-public final class SupportedExpansionWorkbenchRecipes implements HasRecipes, CanTestRecipe {
+public final class SupportedExpansionWorkbenchRecipes implements RecipeHolder, CanTestRecipe {
 
     private static final Map<ItemStack[], ItemStack> RECIPES = new HashMap<>();
 

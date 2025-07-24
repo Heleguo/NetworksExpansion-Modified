@@ -5,136 +5,108 @@ auto-update: true
 language: zh-CN
 
 # Do not change this value unless you know what you are doing.
-config-version: Final-Version-2
+config-version: Special-Version-33
 
 # Do not change this value unless you know what you are doing.
 debug: false
 
 drawer-auto-save-period: 300
 
-# max-distance means the maximum distance that the item can be pushed or grabbed.
+rpg-fix:
+  force-check-lore: false
+
+speed-up:
+  persistent-threshold: 15
+  cache-miss-threshold: 15
+  soft-cell-ban: false
+  soft-cell-ban-threshold: 0
+
+speed-down:
+  transport-miss-threshold: 120
+  reduce-ms: 8000
+
+record-gc:
+  threshold: 131072
+  deadline: 120000 # milliseconds
+
+# max-distance means the max distance that the transfer can access. Unit: Block
+# pushitem-tick means the interval time to push. Unit: SF Tick
+# grabitem-tick means the interval time to grab. Unit: SF Tick
+# required-power means the power required to tick. Unit: J
 # 1 SF Tick = 0.5 seconds
-# pushitem-tick means the time it takes to push.
-# grabitem-tick means the time it takes to grab.
-# required-power means the power required to use the item.
 items:
   NTW_EXPANSION_LINE_TRANSFER_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_MORE_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_BEST_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_GRABBER:
     max-distance: 32
     grabitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER:
     max-distance: 32
     pushitem-tick: 1
     grabitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_PLUS_PUSHER:
     max-distance: 64
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_PLUS_MORE_PUSHER:
     max-distance: 64
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_PLUS_BEST_PUSHER:
     max-distance: 64
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_PLUS_GRABBER:
     max-distance: 64
     grabitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_PLUS:
     max-distance: 64
     pushitem-tick: 1
     grabitem-tick: 1
     required-power: 5000
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_MORE_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_BEST_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_GRABBER:
     max-distance: 32
     grabitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER:
     max-distance: 32
     pushitem-tick: 1
     grabitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_PLUS_PUSHER:
     max-distance: 64
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_PLUS_MORE_PUSHER:
     max-distance: 64
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_PLUS_BEST_PUSHER:
     max-distance: 64
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_PLUS_GRABBER:
     max-distance: 64
     grabitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_ADVANCED_LINE_TRANSFER_PLUS:
     max-distance: 64
     pushitem-tick: 1
     grabitem-tick: 1
     required-power: 5000
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_VANILLA_PUSHER:
     max-distance: 32
     pushitem-tick: 1
-    use-special-model:
-      enable: false
   NTW_EXPANSION_LINE_TRANSFER_VANILLA_GRABBER:
     max-distance: 32
     grabitem-tick: 1
-    use-special-model:
-      enable: false
-
   CARGO_STORAGE_UNIT_1_MODEL:
     use-special-model:
       enable: true

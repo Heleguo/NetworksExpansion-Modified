@@ -1,5 +1,6 @@
 package com.ytdd9527.networksexpansion.implementation.tools;
 
+import com.balugaq.netex.utils.Lang;
 import com.jeff_media.morepersistentdatatypes.DataType;
 import com.xzavier0722.mc.plugin.slimefun4.storage.controller.SlimefunBlockData;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
@@ -8,8 +9,8 @@ import com.ytdd9527.networksexpansion.implementation.ExpansionItemStacks;
 import com.ytdd9527.networksexpansion.implementation.machines.unit.NetworksDrawer;
 import io.github.mooy1.infinityexpansion.items.storage.StorageCache;
 import io.github.mooy1.infinityexpansion.items.storage.StorageUnit;
-import io.github.sefiraat.networks.Networks;
 import io.github.sefiraat.networks.managers.SupportedPluginManager;
+import io.github.sefiraat.networks.network.NetworkRoot;
 import io.github.sefiraat.networks.network.barrel.FluffyBarrel;
 import io.github.sefiraat.networks.network.barrel.InfinityBarrel;
 import io.github.sefiraat.networks.network.barrel.NetworkStorage;
@@ -29,6 +30,9 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.ItemUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import io.ncbpfluffybear.fluffymachines.items.Barrel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
 import org.bukkit.Location;
@@ -39,60 +43,62 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-@SuppressWarnings("unused")
 public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
-    @Nonnull
-    public static final Interaction[] CHECK_INTERACTIONS = new Interaction[] {
-            Interaction.PLACE_BLOCK, Interaction.BREAK_BLOCK, Interaction.INTERACT_BLOCK
-    };
-    @Nonnull
-    public static final List<String> DEFAULT_LORE = ExpansionItemStacks.ITEM_MOVER.getItemMeta() == null ? new ArrayList<>() : (ExpansionItemStacks.ITEM_MOVER.getItemMeta().hasLore() && ExpansionItemStacks.ITEM_MOVER.getItemMeta().getLore() != null ? ExpansionItemStacks.ITEM_MOVER.getItemMeta().getLore() : new ArrayList<>());
+    @NotNull public static final Interaction[] CHECK_INTERACTIONS =
+            new Interaction[] {Interaction.PLACE_BLOCK, Interaction.BREAK_BLOCK, Interaction.INTERACT_BLOCK};
 
-    public ItemMover(@Nonnull ItemGroup itemGroup, @Nonnull SlimefunItemStack item, @Nonnull RecipeType recipeType, @Nonnull ItemStack[] recipe) {
+    @SuppressWarnings("deprecation")
+    @NotNull public static final List<String> DEFAULT_LORE = ExpansionItemStacks.ITEM_MOVER.getItemMeta() == null
+            ? new ArrayList<>()
+            : (ExpansionItemStacks.ITEM_MOVER.getItemMeta().hasLore()
+                            && ExpansionItemStacks.ITEM_MOVER.getItemMeta().getLore() != null
+                    ? ExpansionItemStacks.ITEM_MOVER.getItemMeta().getLore()
+                    : new ArrayList<>());
+
+    public ItemMover(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            @NotNull ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe);
-        addItemHandler(
-                (ItemUseHandler) e -> {
-                    final Player player = e.getPlayer();
-                    final Optional<Block> optional = e.getClickedBlock();
-                    if (optional.isPresent()) {
-                        final ItemStack itemStack = e.getItem();
-                        if (itemStack.getType() != Material.DEBUG_STICK) {
-                            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.invalid_item_mover"));
-                            return;
-                        }
-                        if (itemStack.getAmount() != 1) {
-                            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.invalid_item_mover_amount"));
-                            return;
-                        }
-                        if (!itemStack.hasItemMeta() || itemStack.getItemMeta() == null) {
-                            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.invalid_item_mover_meta"));
-                            return;
-                        }
-                        final Location location = optional.get().getLocation();
-                        if (hasPermission(player, location)) {
-                            if (!player.isSneaking()) {
-                                // Right-click
-                                tryDepositIntoMover(player, itemStack, location);
-                            } else {
-                                // Shift+Right-click
-                                tryWithdrawFromMover(player, itemStack, location);
-                            }
-                        }
-                    }
-                    e.cancel();
+        addItemHandler((ItemUseHandler) e -> {
+            final Player player = e.getPlayer();
+            final Optional<Block> optional = e.getClickedBlock();
+            if (optional.isPresent()) {
+                final ItemStack itemStack = e.getItem();
+                if (itemStack.getType() != Material.DEBUG_STICK) {
+                    player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.invalid_item_mover"));
+                    return;
                 }
-        );
+                if (itemStack.getAmount() != 1) {
+                    player.sendMessage(
+                            Lang.getString("messages.unsupported-operation.item_mover.invalid_item_mover_amount"));
+                    return;
+                }
+                if (!itemStack.hasItemMeta() || itemStack.getItemMeta() == null) {
+                    player.sendMessage(
+                            Lang.getString("messages.unsupported-operation.item_mover.invalid_item_mover_meta"));
+                    return;
+                }
+                final Location location = optional.get().getLocation();
+                if (hasPermission(player, location)) {
+                    if (!player.isSneaking()) {
+                        // Right-click
+                        tryDepositIntoMover(player, itemStack, location);
+                    } else {
+                        // Shift+Right-click
+                        tryWithdrawFromMover(player, itemStack, location);
+                    }
+                }
+            }
+            e.cancel();
+        });
     }
 
-    @Nullable
-    public static ItemStack getStoredItemStack(PersistentDataHolder holder) {
+    @Nullable public static ItemStack getStoredItemStack(@Nullable PersistentDataHolder holder) {
         if (holder == null) {
             return null;
         }
@@ -100,8 +106,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         return DataTypeMethods.getCustom(holder, Keys.ITEM_MOVER_ITEM, DataType.ITEM_STACK);
     }
 
-    @Nullable
-    public static ItemStack getStoredItemStack(ItemStack mover) {
+    @Nullable public static ItemStack getStoredItemStack(@Nullable ItemStack mover) {
         if (mover == null || mover.getType() == Material.AIR) {
             return null;
         }
@@ -114,7 +119,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         return getStoredItemStack(itemMeta);
     }
 
-    public static int getStoredAmount(PersistentDataHolder holder) {
+    public static int getStoredAmount(@Nullable PersistentDataHolder holder) {
         if (holder == null) {
             return 0;
         }
@@ -127,7 +132,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         return amount;
     }
 
-    public static int getStoredAmount(ItemStack mover) {
+    public static int getStoredAmount(@Nullable ItemStack mover) {
         if (mover == null || mover.getType() == Material.AIR) {
             return 0;
         }
@@ -140,7 +145,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         return getStoredAmount(itemMeta);
     }
 
-    public static void setStoredItemStack(ItemStack mover, @Nullable ItemStack itemStack) {
+    public static void setStoredItemStack(@Nullable ItemStack mover, @Nullable ItemStack itemStack) {
         if (mover == null || mover.getType() == Material.AIR) {
             return;
         }
@@ -159,7 +164,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         mover.setItemMeta(itemMeta);
     }
 
-    public static void setStoredAmount(ItemStack mover, int amount) {
+    public static void setStoredAmount(@Nullable ItemStack mover, int amount) {
         if (mover == null || mover.getType() == Material.AIR) {
             return;
         }
@@ -178,7 +183,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         mover.setItemMeta(itemMeta);
     }
 
-    public static void depositItem(ItemStack mover, ItemStack incoming) {
+    public static void depositItem(ItemStack mover, @Nullable ItemStack incoming) {
         if (incoming == null || incoming.getType() == Material.AIR) {
             return;
         }
@@ -200,7 +205,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         }
     }
 
-    private static void clearPDC(ItemStack mover) {
+    private static void clearPDC(@Nullable ItemStack mover) {
         if (mover == null || mover.getType() == Material.AIR) {
             return;
         }
@@ -216,7 +221,8 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         mover.setItemMeta(itemMeta);
     }
 
-    public static void updateLore(ItemStack itemStack) {
+    @SuppressWarnings("deprecation")
+    public static void updateLore(@Nullable ItemStack itemStack) {
         if (itemStack == null || itemStack.getType() == Material.AIR) {
             return;
         }
@@ -231,8 +237,10 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
 
         List<String> lore = cloneDefaultLore();
         if (storedItemStack != null && amount > 0) {
-            lore.add(String.format(Networks.getLocalizationService().getString("messages.normal-operation.item_mover.stored_item"), ItemStackHelper.getDisplayName(storedItemStack)));
-            lore.add(String.format(Networks.getLocalizationService().getString("messages.normal-operation.item_mover.stored_amount"), amount));
+            lore.add(String.format(
+                    Lang.getString("messages.normal-operation.item_mover.stored_item"),
+                    ItemStackHelper.getDisplayName(storedItemStack)));
+            lore.add(String.format(Lang.getString("messages.normal-operation.item_mover.stored_amount"), amount));
         } else {
             clearPDC(itemStack);
         }
@@ -240,8 +248,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         itemStack.setItemMeta(itemMeta);
     }
 
-    @Nullable
-    public static BarrelIdentity getBarrel(@Nonnull Player player, @Nonnull Location location) {
+    @Nullable public static BarrelIdentity getBarrel(@NotNull Player player, @NotNull Location location) {
         final SlimefunItem sfitem = StorageCacheUtils.getSfItem(location);
 
         if (sfitem == null) {
@@ -257,17 +264,17 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         if (fluffyEnabled && sfitem instanceof Barrel barrel) {
             return getFluffyBarrel(location, barrel);
         } else if (sfitem instanceof NetworkQuantumStorage) {
-            return getNetworkStorage(location);
+            BlockMenu menu = StorageCacheUtils.getMenu(location);
+            return menu == null? null: NetworkRoot.getNetworkStorage(menu);
         } else if (sfitem instanceof NetworksDrawer) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.suggest_use_drawers"));
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.suggest_use_drawers"));
             return null;
         }
 
         return null;
     }
 
-    @Nullable
-    public static InfinityBarrel getInfinityBarrel(@Nonnull Location location, @Nonnull StorageUnit unit) {
+    @Nullable public static InfinityBarrel getInfinityBarrel(@NotNull Location location, @NotNull StorageUnit unit) {
         StorageCache cache = unit.getCache(location);
         if (cache == null) {
             return null;
@@ -320,8 +327,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         return new InfinityBarrel(location, displayItem, stored, cache);
     }
 
-    @Nullable
-    private static FluffyBarrel getFluffyBarrel(@Nonnull Location location, @Nonnull Barrel barrel) {
+    @Nullable private static FluffyBarrel getFluffyBarrel(@NotNull Location location, @NotNull Barrel barrel) {
         Block block = location.getBlock();
         ItemStack itemStack;
         try {
@@ -344,36 +350,13 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         int limit = barrel.getCapacity(block);
         boolean voidExcess = Boolean.parseBoolean(StorageCacheUtils.getData(location, "trash"));
 
-        return new FluffyBarrel(
-                location,
-                clone,
-                stored,
-                limit,
-                voidExcess
-        );
+        return new FluffyBarrel(location, clone, stored, limit, voidExcess);
     }
 
-    @Nullable
-    public static NetworkStorage getNetworkStorage(@Nonnull Location location) {
-        QuantumCache cache = NetworkQuantumStorage.getCaches().get(location);
-        if (cache == null) {
-            return null;
-        }
 
-        final ItemStack stored = cache.getItemStack();
-        if (stored == null || stored.getType() == Material.AIR) {
-            return null;
-        }
 
-        final long storedAmount = cache.getAmount();
-        if (storedAmount < 0) {
-            return null;
-        }
-
-        return new NetworkStorage(location, stored,cache, storedAmount);
-    }
-
-    private static void tryDepositIntoMover(Player player, ItemStack mover, Location clickedLocation) {
+    private static void tryDepositIntoMover(
+            @NotNull Player player, ItemStack mover, @NotNull Location clickedLocation) {
         if (!hasPermission(player, clickedLocation)) {
             return;
         }
@@ -381,13 +364,13 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         ItemStack storedItemStack = getStoredItemStack(mover);
         BarrelIdentity barrel = getBarrel(player, clickedLocation);
         if (barrel == null || barrel.getItemStack() == null || barrel.getAmount() <= 0) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.invalid_storage"));
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.invalid_storage"));
             return;
         }
 
         int have = barrel.getAmount() > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) barrel.getAmount();
         if (have <= 0) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.empty_storage"));
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.empty_storage"));
             return;
         }
 
@@ -402,7 +385,7 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         ItemStack fetched = barrel.requestItem(itemRequest);
 
         if (fetched == null || fetched.getType() == Material.AIR) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.invalid_item"));
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.invalid_item"));
             return;
         }
 
@@ -410,11 +393,13 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         String name = ItemStackHelper.getDisplayName(fetched);
         depositItem(mover, fetched);
         int after = fetched.getAmount();
-        player.sendMessage(String.format(Networks.getLocalizationService().getString("messages.completed-operation.item_mover.deposit_success"), name, before - after));
+        player.sendMessage(String.format(
+                Lang.getString("messages.completed-operation.item_mover.deposit_success"), name, before - after));
         updateLore(mover);
     }
 
-    private static void tryWithdrawFromMover(Player player, ItemStack mover, Location clickedLocation) {
+    private static void tryWithdrawFromMover(
+            @NotNull Player player, ItemStack mover, @NotNull Location clickedLocation) {
         if (!hasPermission(player, clickedLocation)) {
             return;
         }
@@ -422,19 +407,19 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         ItemStack storedItemStack = getStoredItemStack(mover);
         BarrelIdentity barrel = getBarrel(player, clickedLocation);
         if (barrel == null) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.invalid_storage"));
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.invalid_storage"));
             return;
         }
 
         int have = barrel.getAmount() > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) barrel.getAmount();
 
         if (storedItemStack == null || storedAmount <= 0) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.empty_mover"));
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.empty_mover"));
             return;
         }
 
-        if (have >= Integer.MAX_VALUE) {
-            player.sendMessage(Networks.getLocalizationService().getString("messages.unsupported-operation.item_mover.full_storage"));
+        if (have == Integer.MAX_VALUE) {
+            player.sendMessage(Lang.getString("messages.unsupported-operation.item_mover.full_storage"));
             return;
         }
 
@@ -444,20 +429,16 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         barrel.depositItemStack(clone);
         int after = clone.getAmount();
         setStoredAmount(mover, clone.getAmount());
-        player.sendMessage(String.format(Networks.getLocalizationService().getString("messages.completed-operation.item_mover.withdraw_success"), name, before - after));
+        player.sendMessage(String.format(
+                Lang.getString("messages.completed-operation.item_mover.withdraw_success"), name, before - after));
         updateLore(mover);
     }
 
-    private static List<String> cloneDefaultLore() {
+    private static @NotNull List<String> cloneDefaultLore() {
         return new ArrayList<>(DEFAULT_LORE);
     }
 
-    @Override
-    public boolean canStack(@Nonnull ItemMeta itemMeta, @Nonnull ItemMeta itemMeta1) {
-        return itemMeta.getPersistentDataContainer().equals(itemMeta1.getPersistentDataContainer());
-    }
-
-    public static boolean hasPermission(Player player, Location location) {
+    public static boolean hasPermission(@NotNull Player player, @NotNull Location location) {
         for (Interaction interaction : CHECK_INTERACTIONS) {
             if (!Slimefun.getProtectionManager().hasPermission(player, location, interaction)) {
                 return false;
@@ -465,10 +446,11 @@ public class ItemMover extends SpecialSlimefunItem implements DistinctiveItem {
         }
 
         SlimefunItem sfitem = StorageCacheUtils.getSfItem(location);
-        if (!Slimefun.getPermissionsService().hasPermission(player, sfitem)) {
-            return false;
-        }
+        return Slimefun.getPermissionsService().hasPermission(player, sfitem);
+    }
 
-        return true;
+    @Override
+    public boolean canStack(@NotNull ItemMeta itemMeta, @NotNull ItemMeta itemMeta1) {
+        return itemMeta.getPersistentDataContainer().equals(itemMeta1.getPersistentDataContainer());
     }
 }

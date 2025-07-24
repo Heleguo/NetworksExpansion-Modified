@@ -1,6 +1,7 @@
 package io.github.sefiraat.networks.slimefun.groups;
 
-import io.github.sefiraat.networks.Networks;
+import com.balugaq.netex.utils.Lang;
+import com.ytdd9527.networksexpansion.utils.TextUtil;
 import io.github.sefiraat.networks.slimefun.NetworksItemGroups;
 import io.github.sefiraat.networks.utils.Theme;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -10,6 +11,7 @@ import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuide;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
+import javax.annotation.ParametersAreNonnullByDefault;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -19,19 +21,15 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @noinspection deprecation
  */
 public class MainFlexGroup extends FlexItemGroup {
 
-
-    private static final ItemStack DOCS_ITEM_STACK = Theme.themedItemStack(
-            Networks.getLocalizationService().getIcon("docs_icon", Material.BOOK),
-            Theme.GUIDE
-    );
+    private static final ItemStack DOCS_ITEM_STACK =
+            Theme.themedItemStack(Lang.getIcon("docs_icon", Material.BOOK), Theme.GUIDE);
 
     private static final int GUIDE_BACK = 1;
     private static final int DOCS = 9;
@@ -40,14 +38,10 @@ public class MainFlexGroup extends FlexItemGroup {
     private static final int NETWORK_ITEMS = 12;
     private static final int NETWORK_QUANTUMS = 13;
 
-    private static final int[] HEADER = new int[]{
-            0, 1, 2, 3, 4, 5, 6, 7, 8
-    };
-    private static final int[] FOOTER = new int[]{
-            45, 46, 47, 48, 49, 50, 51, 52, 53
-    };
+    private static final int[] HEADER = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    private static final int[] FOOTER = new int[] {45, 46, 47, 48, 49, 50, 51, 52, 53};
 
-    public MainFlexGroup(NamespacedKey key, ItemStack item, int tier) {
+    public MainFlexGroup(@NotNull NamespacedKey key, @NotNull ItemStack item, int tier) {
         super(key, item, tier);
     }
 
@@ -89,11 +83,7 @@ public class MainFlexGroup extends FlexItemGroup {
         menu.replaceExistingItem(
                 GUIDE_BACK,
                 ChestMenuUtils.getBackButton(
-                        player,
-                        "",
-                        ChatColor.GRAY + Slimefun.getLocalization().getMessage(player, "guide.back.guide")
-                )
-        );
+                        player, "", TextUtil.GRAY + Slimefun.getLocalization().getMessage(player, "guide.back.guide")));
         menu.addMenuClickHandler(GUIDE_BACK, (player1, slot, itemStack, clickAction) -> {
             SlimefunGuide.openMainMenu(profile, mode, 1);
             return false;
@@ -102,37 +92,37 @@ public class MainFlexGroup extends FlexItemGroup {
         // Docs
         menu.replaceExistingItem(DOCS, DOCS_ITEM_STACK);
         menu.addMenuClickHandler(DOCS, (player1, i1, itemStack1, clickAction) -> {
-            final TextComponent link = new TextComponent(Networks.getLocalizationService().getString("icons.docs_icon.click_to_visit_wiki"));
+            final TextComponent link = new TextComponent(Lang.getString("icons.docs_icon.click_to_visit_wiki"));
             link.setColor(ChatColor.YELLOW);
-            link.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://slimefun-addons-wiki.guizhanss.cn/networks/"));
+            link.setClickEvent(
+                    new ClickEvent(ClickEvent.Action.OPEN_URL, "https://slimefun-addons-wiki.guizhanss.cn/networks/"));
             player.spigot().sendMessage(link);
             return false;
         });
 
         // Materials
         menu.replaceExistingItem(MATERIALS, NetworksItemGroups.MATERIALS.getItem(player));
-        menu.addMenuClickHandler(MATERIALS, (player1, i1, itemStack1, clickAction) ->
-                openPage(profile, NetworksItemGroups.MATERIALS, mode, 1)
-        );
+        menu.addMenuClickHandler(
+                MATERIALS,
+                (player1, i1, itemStack1, clickAction) -> openPage(profile, NetworksItemGroups.MATERIALS, mode, 1));
 
         // Tools
         menu.replaceExistingItem(TOOLS, NetworksItemGroups.TOOLS.getItem(player));
-        menu.addMenuClickHandler(TOOLS, (player1, i1, itemStack1, clickAction) ->
-                openPage(profile, NetworksItemGroups.TOOLS, mode, 1)
-        );
+        menu.addMenuClickHandler(
+                TOOLS, (player1, i1, itemStack1, clickAction) -> openPage(profile, NetworksItemGroups.TOOLS, mode, 1));
 
         // Network Items
         menu.replaceExistingItem(NETWORK_ITEMS, NetworksItemGroups.NETWORK_ITEMS.getItem(player));
-        menu.addMenuClickHandler(NETWORK_ITEMS, (player1, i1, itemStack1, clickAction) ->
-                openPage(profile, NetworksItemGroups.NETWORK_ITEMS, mode, 1)
-        );
-
+        menu.addMenuClickHandler(
+                NETWORK_ITEMS,
+                (player1, i1, itemStack1, clickAction) -> openPage(profile, NetworksItemGroups.NETWORK_ITEMS, mode, 1));
 
         // Network Quantums
         menu.replaceExistingItem(NETWORK_QUANTUMS, NetworksItemGroups.NETWORK_QUANTUMS.getItem(player));
-        menu.addMenuClickHandler(NETWORK_QUANTUMS, (player1, i1, itemStack1, clickAction) ->
-                openPage(profile, NetworksItemGroups.NETWORK_QUANTUMS, mode, 1)
-        );
+        menu.addMenuClickHandler(
+                NETWORK_QUANTUMS,
+                (player1, i1, itemStack1, clickAction) ->
+                        openPage(profile, NetworksItemGroups.NETWORK_QUANTUMS, mode, 1));
     }
 
     @ParametersAreNonnullByDefault

@@ -10,87 +10,39 @@ import io.github.thebusybiscuit.slimefun4.core.handlers.EntityInteractHandler;
 import io.github.thebusybiscuit.slimefun4.core.handlers.ItemUseHandler;
 import io.github.thebusybiscuit.slimefun4.core.handlers.ToolUseHandler;
 import io.github.thebusybiscuit.slimefun4.core.handlers.WeaponUseHandler;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Final_ROOT
  * @since 2.0
  */
-// TODO: Optimization
 public class UnusableSlimefunItem extends SpecialSlimefunItem {
-    public UnusableSlimefunItem(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe) {
+    public UnusableSlimefunItem(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe);
         this.addItemHandler(MachineUtil.BLOCK_PLACE_HANDLER_DENY);
-        this.addItemHandler(new ItemUseHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onRightClick(PlayerRightClickEvent e) {
-                e.cancel();
-            }
-        });
-        this.addItemHandler(new WeaponUseHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onHit(@Nonnull EntityDamageByEntityEvent e, @Nonnull Player player, @Nonnull ItemStack item) {
-                e.setCancelled(true);
-            }
-        });
-        this.addItemHandler(new EntityInteractHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onInteract(PlayerInteractEntityEvent e, ItemStack item, boolean offHand) {
-                e.setCancelled(true);
-            }
-        });
-        this.addItemHandler(new ToolUseHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onToolUse(BlockBreakEvent e, ItemStack tool, int fortune, List<ItemStack> drops) {
-                e.setCancelled(true);
-            }
-        });
+        this.addItemHandler((ItemUseHandler) PlayerRightClickEvent::cancel);
+        this.addItemHandler((WeaponUseHandler) (e, player, item2) -> e.setCancelled(true));
+        this.addItemHandler((EntityInteractHandler) (e, item1, offHand) -> e.setCancelled(true));
+        this.addItemHandler((ToolUseHandler) (e, tool, fortune, drops) -> e.setCancelled(true));
     }
 
-    public UnusableSlimefunItem(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, @Nullable ItemStack recipeOutput) {
+    public UnusableSlimefunItem(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe,
+            @Nullable ItemStack recipeOutput) {
         super(itemGroup, item, recipeType, recipe, recipeOutput);
         this.addItemHandler(MachineUtil.BLOCK_PLACE_HANDLER_DENY);
-        this.addItemHandler(new ItemUseHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onRightClick(PlayerRightClickEvent e) {
-                e.cancel();
-            }
-        });
-        this.addItemHandler(new WeaponUseHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onHit(@Nonnull EntityDamageByEntityEvent e, @Nonnull Player player, @Nonnull ItemStack item) {
-                e.setCancelled(true);
-            }
-        });
-        this.addItemHandler(new EntityInteractHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onInteract(PlayerInteractEntityEvent e, ItemStack item, boolean offHand) {
-                e.setCancelled(true);
-            }
-        });
-        this.addItemHandler(new ToolUseHandler() {
-            @Override
-            @EventHandler(priority = EventPriority.LOWEST)
-            public void onToolUse(BlockBreakEvent e, ItemStack tool, int fortune, List<ItemStack> drops) {
-                e.setCancelled(true);
-            }
-        });
+        this.addItemHandler((ItemUseHandler) PlayerRightClickEvent::cancel);
+        this.addItemHandler((WeaponUseHandler) (e, player, item2) -> e.setCancelled(true));
+        this.addItemHandler((EntityInteractHandler) (e, item1, offHand) -> e.setCancelled(true));
+        this.addItemHandler((ToolUseHandler) (e, tool, fortune, drops) -> e.setCancelled(true));
     }
 }

@@ -1,19 +1,20 @@
 package com.ytdd9527.networksexpansion.core.managers;
 
+import com.balugaq.netex.utils.Debug;
+import com.balugaq.netex.utils.Lang;
 import io.github.sefiraat.networks.Networks;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import javax.annotation.ParametersAreNonnullByDefault;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 public class ConfigManager {
-
 
     public ConfigManager() {
         setupDefaultConfig();
@@ -40,7 +41,7 @@ public class ConfigManager {
         try {
             existingConfig.save(existingFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            Debug.trace(e);
         }
     }
 
@@ -58,18 +59,62 @@ public class ConfigManager {
     }
 
     public boolean isAutoUpdate() {
-        return Networks.getInstance().getConfig().getBoolean("auto-update");
+        return Networks.getInstance().getConfig().getBoolean("auto-update", false);
     }
 
     public boolean isDebug() {
-        return Networks.getInstance().getConfig().getBoolean("debug");
+        return Networks.getInstance().getConfig().getBoolean("debug", false);
     }
 
-    public String getLanguage() {
-        return Networks.getInstance().getConfig().getString("language");
+    public @NotNull String getLanguage() {
+        return Networks.getInstance().getConfig().getString("language", "zh-CN");
+    }
+
+    public boolean isForceCheckLore() {
+        return Networks.getInstance().getConfig().getBoolean("rpg-fix.force-check-lore", false);
+    }
+
+    public int getPersistentThreshold() {
+        return Networks.getInstance().getConfig().getInt("speed-up.persistent-threshold", 15);
+    }
+
+    public int getCacheMissThreshold() {
+        return Networks.getInstance().getConfig().getInt("speed-up.cache-miss-threshold", 15);
+    }
+
+    public int getReduceMs() {
+        return Networks.getInstance().getConfig().getInt("speed-down.reduce-ms", 8000);
+    }
+
+    public int getTransportMissThreshold() {
+        return Networks.getInstance().getConfig().getInt("speed-down.transport-miss-threshold", 120);
+    }
+
+    public long getRecordGCThreshold() {
+        return Networks.getInstance().getConfig().getLong("record-gc.threshold", 131072);
+    }
+
+    public long getRecordGCDeadline() {
+        return Networks.getInstance().getConfig().getLong("record-gc.deadline", 120000);
+    }
+
+    public boolean getSoftCellBan() {
+        return Networks.getInstance().getConfig().getBoolean("speed-up.soft-cell-ban", false);
+    }
+
+    public int getSoftCellBanThreshold() {
+        return Networks.getInstance().getConfig().getInt("speed-up.soft-cell-ban-threshold", 0);
+    }
+
+    public int getInt(@NotNull String path) {
+        return getInt(path, 0);
+    }
+
+    public int getInt(@NotNull String path, int defaultValue) {
+        return Networks.getInstance().getConfig().getInt(path, defaultValue);
     }
 
     public void saveAll() {
-        Networks.getInstance().getLogger().info(Networks.getLocalizationService().getString("messages.save-all"));
+        Networks.getInstance().getLogger().info(Lang.getString("messages.save-all"));
     }
 }

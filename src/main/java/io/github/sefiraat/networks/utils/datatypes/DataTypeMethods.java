@@ -1,15 +1,14 @@
 package io.github.sefiraat.networks.utils.datatypes;
 
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @UtilityClass
 public class DataTypeMethods {
@@ -21,8 +20,8 @@ public class DataTypeMethods {
      * @param key    The key of the data to retrieve
      * @return An object associated with this key or null if it doesn't exist
      */
-    @Nullable
-    public static <T, Z> Z getCustom(@Nonnull PersistentDataHolder holder, @Nonnull NamespacedKey key, @Nonnull PersistentDataType<T, Z> type) {
+    @Nullable public static <T, Z> Z getCustom(
+            @NotNull PersistentDataHolder holder, @NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
         return holder.getPersistentDataContainer().get(key, type);
     }
 
@@ -33,10 +32,10 @@ public class DataTypeMethods {
      * @param holder The {@link PersistentDataHolder} to retrieve the data from
      * @param key    The key of the data to retrieve
      * @return An {@link Optional} describing the result
-     * @see PersistentDataAPI#getCustom(PersistentDataHolder, NamespacedKey, PersistentDataType)
+     * @see PersistentDataAPI#get(PersistentDataHolder, NamespacedKey, PersistentDataType)
      */
-    @Nonnull
-    public static <T, Z> Optional<Z> getOptionalCustom(@Nonnull PersistentDataHolder holder, @Nonnull NamespacedKey key, @Nonnull PersistentDataType<T, Z> type) {
+    @NotNull public static <T, Z> Optional<Z> getOptionalCustom(
+            @NotNull PersistentDataHolder holder, @NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
         return Optional.ofNullable(getCustom(holder, key, type));
     }
 
@@ -48,7 +47,11 @@ public class DataTypeMethods {
      * @param defaultVal The default value to use if no key is found
      * @return The object associated with this key or the default value if it doesn't exist
      */
-    public static <T, Z> Z getCustom(@Nonnull PersistentDataHolder holder, @Nonnull NamespacedKey key, @Nonnull PersistentDataType<T, Z> type, @Nonnull Z defaultVal) {
+    public static <T, Z> @NotNull Z getCustom(
+            @NotNull PersistentDataHolder holder,
+            @NotNull NamespacedKey key,
+            @NotNull PersistentDataType<T, Z> type,
+            @NotNull Z defaultVal) {
         return holder.getPersistentDataContainer().getOrDefault(key, type, defaultVal);
     }
 
@@ -60,7 +63,8 @@ public class DataTypeMethods {
      * @param key    The key to check for
      * @return {@code true} if the holder has a {@link PersistentDataContainer} with the specified key.
      */
-    public static <T, Z> boolean hasCustom(@Nonnull PersistentDataHolder holder, @Nonnull NamespacedKey key, @Nonnull PersistentDataType<T, Z> type) {
+    public static <T, Z> boolean hasCustom(
+            @NotNull PersistentDataHolder holder, @NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
         return holder.getPersistentDataContainer().has(key, type);
     }
 
@@ -72,7 +76,11 @@ public class DataTypeMethods {
      * @param type   The {@link PersistentDataType} to be used.
      * @param obj    The object to put in the container
      */
-    public static <T, Z> void setCustom(@Nonnull PersistentDataHolder holder, @Nonnull NamespacedKey key, @Nonnull PersistentDataType<T, Z> type, @Nonnull Z obj) {
+    public static <T, Z> void setCustom(
+            @NotNull PersistentDataHolder holder,
+            @NotNull NamespacedKey key,
+            @NotNull PersistentDataType<T, Z> type,
+            @NotNull Z obj) {
         holder.getPersistentDataContainer().set(key, type, obj);
     }
 
@@ -82,7 +90,7 @@ public class DataTypeMethods {
      * @param holder The {@link PersistentDataHolder} to remove the data from
      * @param key    The key of the data to remove
      */
-    public static <T, Z> void removeCustom(@Nonnull PersistentDataHolder holder, @Nonnull NamespacedKey key) {
+    public static <T, Z> void removeCustom(@NotNull PersistentDataHolder holder, @NotNull NamespacedKey key) {
         holder.getPersistentDataContainer().remove(key);
     }
 }

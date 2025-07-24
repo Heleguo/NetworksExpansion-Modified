@@ -1,19 +1,21 @@
 package com.balugaq.netex.api.data;
 
-
 import com.ytdd9527.networksexpansion.utils.itemstacks.ItemStackUtil;
 import io.github.sefiraat.networks.utils.StackUtils;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author Final_ROOT
  * @since 2.0
  */
+@Setter
+@Getter
 public class ItemAmountWrapper extends ItemWrapper {
     private int amount;
 
@@ -22,37 +24,37 @@ public class ItemAmountWrapper extends ItemWrapper {
         this.amount = 0;
     }
 
-    public ItemAmountWrapper(@Nonnull ItemStack itemStack) {
+    public ItemAmountWrapper(@NotNull ItemStack itemStack) {
         super(itemStack);
         this.amount = itemStack.getAmount();
     }
 
-    public ItemAmountWrapper(@Nonnull ItemStack itemStack, int amount) {
+    public ItemAmountWrapper(@NotNull ItemStack itemStack, int amount) {
         super(itemStack);
         this.amount = amount;
     }
 
-    public ItemAmountWrapper(@Nonnull ItemStack itemStack, @Nullable ItemMeta itemMeta) {
+    public ItemAmountWrapper(@NotNull ItemStack itemStack, @Nullable ItemMeta itemMeta) {
         super(itemStack, itemMeta);
         this.amount = itemStack.getAmount();
     }
 
-    public ItemAmountWrapper(@Nonnull ItemStack itemStack, @Nullable ItemMeta itemMeta, int amount) {
+    public ItemAmountWrapper(@NotNull ItemStack itemStack, @Nullable ItemMeta itemMeta, int amount) {
         super(itemStack, itemMeta);
         this.amount = amount;
     }
 
-    public ItemAmountWrapper(@Nonnull ItemWrapper itemWrapper) {
+    public ItemAmountWrapper(@NotNull ItemWrapper itemWrapper) {
         super(itemWrapper.getItemStack(), itemWrapper.getItemMeta());
         this.amount = itemWrapper.getItemStack().getAmount();
     }
 
-    public ItemAmountWrapper(@Nonnull ItemWrapper itemWrapper, int amount) {
+    public ItemAmountWrapper(@NotNull ItemWrapper itemWrapper, int amount) {
         super(itemWrapper.getItemStack(), itemWrapper.getItemMeta());
         this.amount = amount;
     }
 
-    public static void addToList(@Nonnull List<ItemAmountWrapper> list, @Nonnull ItemAmountWrapper item) {
+    public static void addToList(@NotNull List<ItemAmountWrapper> list, @NotNull ItemAmountWrapper item) {
         for (ItemAmountWrapper existedItem : list) {
             if (StackUtils.itemsMatch(existedItem.getItemStack(), item.getItemStack())) {
                 existedItem.addAmount(item.amount);
@@ -62,7 +64,7 @@ public class ItemAmountWrapper extends ItemWrapper {
         list.add(item.shallowClone());
     }
 
-    public static void addToList(@Nonnull List<ItemAmountWrapper> list, @Nonnull ItemAmountWrapper item, int mul) {
+    public static void addToList(@NotNull List<ItemAmountWrapper> list, @NotNull ItemAmountWrapper item, int mul) {
         for (ItemAmountWrapper existedItem : list) {
             if (StackUtils.itemsMatch(existedItem.getItemStack(), item.getItemStack())) {
                 existedItem.addAmount(item.amount * mul);
@@ -70,14 +72,6 @@ public class ItemAmountWrapper extends ItemWrapper {
             }
         }
         list.add(new ItemAmountWrapper(item.getItemStack(), item.getItemMeta(), item.amount * mul));
-    }
-
-    public int getAmount() {
-        return this.amount;
-    }
-
-    public void setAmount(int amount) {
-        this.amount = amount;
     }
 
     public void addAmount(int amount) {
@@ -89,41 +83,40 @@ public class ItemAmountWrapper extends ItemWrapper {
     }
 
     @Override
-    public void newWrap(@Nonnull ItemStack itemStack) {
+    public void newWrap(@NotNull ItemStack itemStack) {
         super.newWrap(itemStack);
         this.amount = itemStack.getAmount();
     }
 
-    public void newWrap(@Nonnull ItemStack itemStack, int amount) {
+    public void newWrap(@NotNull ItemStack itemStack, int amount) {
         super.newWrap(itemStack);
         this.amount = amount;
     }
 
     @Override
-    public void newWrap(@Nonnull ItemStack itemStack, @Nullable ItemMeta itemMeta) {
+    public void newWrap(@NotNull ItemStack itemStack, @Nullable ItemMeta itemMeta) {
         super.newWrap(itemStack, itemMeta);
         this.amount = itemStack.getAmount();
     }
 
-    public void newWrap(@Nonnull ItemStack itemStack, @Nullable ItemMeta itemMeta, int amount) {
+    public void newWrap(@NotNull ItemStack itemStack, @Nullable ItemMeta itemMeta, int amount) {
         super.newWrap(itemStack, itemMeta);
         this.amount = amount;
     }
 
-    @Nonnull
-    @Override
+    @NotNull @Override
     public ItemAmountWrapper shallowClone() {
         return new ItemAmountWrapper(this.getItemStack(), this.getItemMeta(), this.amount);
     }
 
-    @Nonnull
-    @Override
+    @NotNull @Override
     public ItemAmountWrapper deepClone() {
         ItemStack itemStack = ItemStackUtil.cloneItem(this.getItemStack());
         itemStack.setAmount(this.getItemStack().getAmount());
         return new ItemAmountWrapper(ItemStackUtil.cloneItem(this.getItemStack()), this.amount);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public int hashCode() {
         int hash = 31 + this.getItemStack().getType().hashCode();

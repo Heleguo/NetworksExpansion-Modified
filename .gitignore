@@ -11,4 +11,5 @@
 .classpath
 .project
 dependency-reduced-pom.xml
+.git-versioned-pom.xml
 *.bat

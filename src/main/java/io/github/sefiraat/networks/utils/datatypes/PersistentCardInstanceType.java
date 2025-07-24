@@ -8,8 +8,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A {@link PersistentDataType} for {@link CardInstance}
@@ -18,10 +17,11 @@ import javax.annotation.Nonnull;
  * @author Sfiguz7
  * @author Walshy
  */
-
+@Deprecated
 public class PersistentCardInstanceType implements PersistentDataType<PersistentDataContainer, CardInstance> {
 
-    public static final PersistentDataType<PersistentDataContainer, CardInstance> TYPE = new PersistentCardInstanceType();
+    public static final PersistentDataType<PersistentDataContainer, CardInstance> TYPE =
+            new PersistentCardInstanceType();
 
     public static final NamespacedKey ITEM = Keys.newKey("item");
     public static final NamespacedKey AMOUNT = Keys.newKey("amount");
@@ -29,23 +29,23 @@ public class PersistentCardInstanceType implements PersistentDataType<Persistent
     public static final NamespacedKey UNSTACK = Keys.newKey("time");
 
     @Override
-    @Nonnull
-    public Class<PersistentDataContainer> getPrimitiveType() {
+    @NotNull public Class<PersistentDataContainer> getPrimitiveType() {
         return PersistentDataContainer.class;
     }
 
     @Override
-    @Nonnull
-    public Class<CardInstance> getComplexType() {
+    @NotNull public Class<CardInstance> getComplexType() {
         return CardInstance.class;
     }
 
     @Override
-    @Nonnull
-    public PersistentDataContainer toPrimitive(@Nonnull CardInstance complex, @Nonnull PersistentDataAdapterContext context) {
+    @NotNull public PersistentDataContainer toPrimitive(
+            @NotNull CardInstance complex, @NotNull PersistentDataAdapterContext context) {
         final PersistentDataContainer container = context.newPersistentDataContainer();
 
-        container.set(ITEM, DataType.ITEM_STACK, complex.getItemStack());
+        if (complex.getItemStack() != null) {
+            container.set(ITEM, DataType.ITEM_STACK, complex.getItemStack());
+        }
         container.set(AMOUNT, DataType.INTEGER, complex.getAmount());
         container.set(LIMIT, DataType.INTEGER, complex.getLimit());
         container.set(UNSTACK, DataType.LONG, System.currentTimeMillis());
@@ -53,12 +53,15 @@ public class PersistentCardInstanceType implements PersistentDataType<Persistent
     }
 
     @Override
-    @Nonnull
-    public CardInstance fromPrimitive(@Nonnull PersistentDataContainer primitive, @Nonnull PersistentDataAdapterContext context) {
+    @NotNull public CardInstance fromPrimitive(
+            @NotNull PersistentDataContainer primitive, @NotNull PersistentDataAdapterContext context) {
         final ItemStack item = primitive.get(ITEM, DataType.ITEM_STACK);
-        final int amount = primitive.get(AMOUNT, DataType.INTEGER);
-        final int limit = primitive.get(LIMIT, DataType.INTEGER);
+        final Integer amount = primitive.get(AMOUNT, DataType.INTEGER);
+        final Integer limit = primitive.get(LIMIT, DataType.INTEGER);
 
+        if (amount == null || limit == null) {
+            return new CardInstance(null, 0, 0);
+        }
         return new CardInstance(item, amount, limit);
     }
 }

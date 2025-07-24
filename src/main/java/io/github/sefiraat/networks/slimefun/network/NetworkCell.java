@@ -1,8 +1,5 @@
 package io.github.sefiraat.networks.slimefun.network;
 
-import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
-import com.ytdd9527.networksexpansion.utils.DisplayGroupGenerators;
-import dev.sefiraat.sefilib.entity.display.DisplayGroup;
 import io.github.sefiraat.networks.network.NodeType;
 import io.github.sefiraat.networks.slimefun.NetworkSlimefunItems;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -10,22 +7,17 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
-import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
-import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.inventory.ItemStack;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import lombok.Setter;
+import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
+import me.mrCookieSlime.Slimefun.api.item_transport.ItemTransportFlow;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
+@Setter
 public class NetworkCell extends NetworkObject {
 
     public static final List<Integer> SLOTS = new ArrayList<>();
@@ -39,7 +31,11 @@ public class NetworkCell extends NetworkObject {
 
     private boolean useSpecialModel = false;
 
-    public NetworkCell(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe) {
+    public NetworkCell(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack[] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.CELL);
         for (int slot : SLOTS) {
             this.getSlotsToDrop().add(slot);
@@ -56,9 +52,11 @@ public class NetworkCell extends NetworkObject {
             }
 
             @Override
-            public boolean canOpen(@Nonnull Block block, @Nonnull Player player) {
-                return player.hasPermission("slimefun.inventory.bypass") || (NetworkSlimefunItems.NETWORK_CELL.canUse(player, false)
-                        && Slimefun.getProtectionManager().hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
+            public boolean canOpen(@NotNull Block block, @NotNull Player player) {
+                return player.hasPermission("slimefun.inventory.bypass")
+                        || (NetworkSlimefunItems.NETWORK_CELL.canUse(player, false)
+                                && Slimefun.getProtectionManager()
+                                        .hasPermission(player, block.getLocation(), Interaction.INTERACT_BLOCK));
             }
 
             @Override
@@ -66,56 +64,5 @@ public class NetworkCell extends NetworkObject {
                 return SLOTS.stream().mapToInt(Integer::intValue).toArray();
             }
         };
-    }
-
-    @Override
-    public void onPlace(BlockPlaceEvent e) {
-        super.onPlace(e);
-        if (useSpecialModel) {
-            e.getBlock().setType(Material.BARRIER);
-            setupDisplay(e.getBlock().getLocation());
-        }
-    }
-
-    @Override
-    public void postBreak(BlockBreakEvent e) {
-        super.postBreak(e);
-        Location location = e.getBlock().getLocation();
-        removeDisplay(location);
-        e.getBlock().setType(Material.AIR);
-    }
-
-    public void setUseSpecialModel(boolean useSpecialModel) {
-        this.useSpecialModel = useSpecialModel;
-    }
-
-    private void setupDisplay(@Nonnull Location location) {
-        DisplayGroup displayGroup = DisplayGroupGenerators.generateCell(location.clone().add(0.5, 0, 0.5));
-        StorageCacheUtils.setData(location, KEY_UUID, displayGroup.getParentUUID().toString());
-    }
-
-    private void removeDisplay(@Nonnull Location location) {
-        DisplayGroup group = getDisplayGroup(location);
-        if (group != null) {
-            group.remove();
-        }
-    }
-
-    @Nullable
-    private UUID getDisplayGroupUUID(@Nonnull Location location) {
-        String uuid = StorageCacheUtils.getData(location, KEY_UUID);
-        if (uuid == null) {
-            return null;
-        }
-        return UUID.fromString(uuid);
-    }
-
-    @Nullable
-    private DisplayGroup getDisplayGroup(@Nonnull Location location) {
-        UUID uuid = getDisplayGroupUUID(location);
-        if (uuid == null) {
-            return null;
-        }
-        return DisplayGroup.fromUUID(uuid);
     }
 }

@@ -1,20 +1,23 @@
 package com.ytdd9527.networksexpansion.utils.itemstacks;
 
 import lombok.experimental.UtilityClass;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Final_ROOT
  */
 @UtilityClass
 public class CompareUtil {
-    public static SimpleComparator<Integer> INTEGER_SIMPLE_COMPARATOR = (comparison, compared) -> comparison - compared;
+    public static @NotNull SimpleComparator<Integer> INTEGER_SIMPLE_COMPARATOR =
+            (comparison, compared) -> comparison - compared;
 
     /**
      * @param sources          should be ordered
      * @param simpleComparator {@link SimpleComparator#compare(Object, Object)}
      * @return The index that the targetValue match. Or -1 if not matched.
      */
-    public static <T> int getIndex(T[] sources, T targetValue, SimpleComparator<T> simpleComparator) {
+    public static <T> int getIndex(
+            T @NotNull [] sources, T targetValue, @NotNull SimpleComparator<T> simpleComparator) {
         int left = 0;
         int right = sources.length;
         int mid = (left + right) >> 1;
@@ -38,7 +41,8 @@ public class CompareUtil {
      * @param simpleComparator {@link SimpleComparator#compare(Object, Object)}
      * @return The smallest index that the targetValue match (or be close to).
      */
-    public static <T> int getSmallFuzzyIndex(T[] sources, T targetValue, SimpleComparator<T> simpleComparator) {
+    public static <T> int getSmallFuzzyIndex(
+            T @NotNull [] sources, T targetValue, @NotNull SimpleComparator<T> simpleComparator) {
         int left = 0;
         int right = sources.length;
         int mid = (left + right) >> 1;
@@ -62,7 +66,8 @@ public class CompareUtil {
      * @param simpleComparator {@link SimpleComparator#compare(Object, Object)}
      * @return The smallest index that the targetValue match (or be close to).
      */
-    public static <T> int getBigFuzzyIndex(T[] sources, T targetValue, SimpleComparator<T> simpleComparator) {
+    public static <T> int getBigFuzzyIndex(
+            T @NotNull [] sources, T targetValue, @NotNull SimpleComparator<T> simpleComparator) {
         int left = 0;
         int right = sources.length;
         int mid = (left + right) >> 1;
@@ -85,7 +90,7 @@ public class CompareUtil {
      * @param sources should be ordered
      * @return The index that the targetValue match. Or -1 if not matched.
      */
-    public static int getIntIndex(int[] sources, int targetValue) {
+    public static int getIntIndex(int @NotNull [] sources, int targetValue) {
         int left = 0;
         int right = sources.length;
         int mid = (left + right) >> 1;
@@ -108,7 +113,7 @@ public class CompareUtil {
      * @param sources should be ordered
      * @return The smallest index that the targetValue match (or be close to).
      */
-    public static int getIntSmallFuzzyIndex(int[] sources, int targetValue) {
+    public static int getIntSmallFuzzyIndex(int @NotNull [] sources, int targetValue) {
         int left = 0;
         int right = sources.length;
         int mid = (left + right) >> 1;
@@ -131,7 +136,7 @@ public class CompareUtil {
      * @param sources should be ordered
      * @return The smallest index that the targetValue match (or be close to).
      */
-    public static int getIntBigFuzzyIndex(int[] sources, int targetValue) {
+    public static int getIntBigFuzzyIndex(int @NotNull [] sources, int targetValue) {
         int left = 0;
         int right = sources.length;
         int mid = (left + right) >> 1;

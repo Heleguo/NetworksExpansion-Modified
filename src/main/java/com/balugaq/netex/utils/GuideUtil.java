@@ -2,16 +2,14 @@ package com.balugaq.netex.utils;
 
 import io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile;
 import io.github.thebusybiscuit.slimefun4.core.guide.GuideHistory;
-import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideImplementation;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
-import lombok.experimental.UtilityClass;
-import org.bukkit.entity.Player;
-
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import javax.annotation.ParametersAreNonnullByDefault;
+import lombok.experimental.UtilityClass;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Final_ROOT, balugaq
@@ -21,7 +19,8 @@ import java.lang.reflect.Method;
 public class GuideUtil {
     @ParametersAreNonnullByDefault
     public static void openMainMenuAsync(Player player, SlimefunGuideMode mode, int selectedPage) {
-        if (!PlayerProfile.get(player, profile -> Slimefun.runSync(() -> openMainMenu(player, profile, mode, selectedPage)))) {
+        if (!PlayerProfile.get(
+                player, profile -> Slimefun.runSync(() -> openMainMenu(player, profile, mode, selectedPage)))) {
             Slimefun.getLocalization().sendMessage(player, "messages.opening-guide");
         }
     }
@@ -31,13 +30,13 @@ public class GuideUtil {
         Slimefun.getRegistry().getSlimefunGuide(mode).openMainMenu(profile, selectedPage);
     }
 
-    public static void removeLastEntry(@Nonnull GuideHistory guideHistory) {
+    public static void removeLastEntry(@NotNull GuideHistory guideHistory) {
         try {
             Method getLastEntry = guideHistory.getClass().getDeclaredMethod("getLastEntry", boolean.class);
             getLastEntry.setAccessible(true);
             getLastEntry.invoke(guideHistory, true);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
+            Debug.trace(e);
         }
     }
 }

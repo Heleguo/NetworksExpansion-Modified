@@ -7,11 +7,16 @@ import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import javax.annotation.Nonnull;
 
 public interface MenuWithPrefetch extends MenuWithData {
-    public int getPrefetchCount();
-    default NetworkRoot.PusherPrefetcherInfo getPrefetcher(BlockMenu menu, int index){
-        DataContainer container = getDataContainer(menu);
-        return (NetworkRoot.PusherPrefetcherInfo) container.getObject(index);
+    @Deprecated
+    default int getPrefetchCount(){
+        return 0;
     }
+    default NetworkRoot.PusherPrefetcherInfo getPrefetcher(BlockMenu menu, int index){
+//        DataContainer container = getDataContainer(menu);
+//        return (NetworkRoot.PusherPrefetcherInfo) container.getObject(index);
+        return NetworkRoot.PusherPrefetcherInfo.DEFAULT;
+    }
+    @Deprecated
     default DataContainer newDataContainer(){
         return new DataContainer() {
             final Object[] value = new Object[MenuWithPrefetch.this.getPrefetchCount()];

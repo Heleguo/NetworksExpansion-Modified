@@ -2,6 +2,8 @@ package io.github.sefiraat.networks.slimefun.network;
 
 import com.balugaq.netex.api.enums.FeedbackType;
 import com.balugaq.netex.api.enums.MinecraftVersion;
+import com.balugaq.netex.api.interfaces.SoftCellBannable;
+import com.balugaq.netex.utils.Lang;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -13,8 +15,7 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
-import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
-import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
+import java.util.UUID;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -30,17 +31,16 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.UUID;
+public class NetworkVanillaGrabber extends NetworkDirectional implements SoftCellBannable {
 
-@SuppressWarnings("deprecation")
-public class NetworkVanillaGrabber extends NetworkDirectional {
-
-    private static final int[] BACKGROUND_SLOTS = new int[]{
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 24, 26, 27, 28, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44
+    private static final int[] BACKGROUND_SLOTS = new int[] {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 24, 26, 27, 28, 30, 31, 33, 34, 35, 36,
+        37, 38, 39, 40, 41, 42, 43, 44
     };
     private static final int OUTPUT_SLOT = 25;
     private static final int NORTH_SLOT = 11;
@@ -50,24 +50,25 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
     private static final int UP_SLOT = 14;
     private static final int DOWN_SLOT = 32;
 
-    public NetworkVanillaGrabber(ItemGroup itemGroup,
-                                 SlimefunItemStack item,
-                                 RecipeType recipeType,
-                                 ItemStack[] recipe
-    ) {
+    public NetworkVanillaGrabber(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.PUSHER);
         this.getSlotsToDrop().add(OUTPUT_SLOT);
     }
 
     @Override
-    protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
+    protected void onTick(@Nullable BlockMenu blockMenu, @NotNull Block block) {
         super.onTick(blockMenu, block);
         if (blockMenu != null) {
             tryGrabItem(blockMenu);
         }
     }
 
-    private void tryGrabItem(@Nonnull BlockMenu blockMenu) {
+    @SuppressWarnings("removal")
+    private void tryGrabItem(@NotNull BlockMenu blockMenu) {
 
         final ItemStack itemInSlot = blockMenu.getItemInSlot(OUTPUT_SLOT);
 
@@ -83,6 +84,11 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
             return;
         }
 
+        //remove cell ban
+//        if (checkSoftCellBan(blockMenu.getLocation(), definition.getNode().getRoot())) {
+//            return;
+//        }
+
         final BlockFace direction = getCurrentDirection(blockMenu);
         final Block block = blockMenu.getBlock();
         final Block targetBlock = block.getRelative(direction);
@@ -97,7 +103,8 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
 
         // dirty fix
         try {
-            if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+            if (!Slimefun.getProtectionManager()
+                    .hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
                 sendFeedback(block.getLocation(), FeedbackType.NO_PERMISSION);
                 return;
             }
@@ -105,7 +112,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
             sendFeedback(block.getLocation(), FeedbackType.ERROR_OCCURRED);
             return;
         }
-        final BlockState blockState = PaperLib.getBlockState(targetBlock,false).getState();
+        final BlockState blockState = targetBlock.getState(false);
 
         if (!(blockState instanceof InventoryHolder holder)) {
             sendFeedback(block.getLocation(), FeedbackType.NO_INVENTORY_FOUND);
@@ -146,7 +153,8 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
                             grabItem(blockMenu, stack);
                         }
                     } else {
-                        if (potionMeta.getBasePotionData().getType() != PotionType.WATER) {
+                        PotionData bpd = potionMeta.getBasePotionData();
+                        if (bpd != null && bpd.getType() != PotionType.WATER) {
                             grabItem(blockMenu, stack);
                             break;
                         }
@@ -162,7 +170,7 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         }
     }
 
-    private boolean grabItem(@Nonnull BlockMenu blockMenu, @Nullable ItemStack stack) {
+    private boolean grabItem(@NotNull BlockMenu blockMenu, @Nullable ItemStack stack) {
         if (stack != null && stack.getType() != Material.AIR) {
             blockMenu.replaceExistingItem(OUTPUT_SLOT, stack.clone());
             stack.setAmount(0);
@@ -173,9 +181,8 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
         }
     }
 
-    @Nonnull
     @Override
-    protected int[] getBackgroundSlots() {
+    protected int @NotNull [] getBackgroundSlots() {
         return BACKGROUND_SLOTS;
     }
 
@@ -216,11 +223,11 @@ public class NetworkVanillaGrabber extends NetworkDirectional {
 
     @Override
     public int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT};
+        return new int[] {OUTPUT_SLOT};
     }
 
     @Override
-    protected Particle.DustOptions getDustOptions() {
+    protected Particle.@NotNull DustOptions getDustOptions() {
         return new Particle.DustOptions(Color.MAROON, 1);
     }
 }

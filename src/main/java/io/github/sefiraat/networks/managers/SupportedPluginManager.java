@@ -6,8 +6,10 @@ import dev.rosewood.rosestacker.api.RoseStackerAPI;
 import dev.rosewood.rosestacker.stack.StackedItem;
 import io.github.sefiraat.networks.Networks;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Item;
+import org.jetbrains.annotations.NotNull;
 
 public class SupportedPluginManager {
 
@@ -20,11 +22,14 @@ public class SupportedPluginManager {
     private final @Getter boolean slimeHud;
     private final @Getter boolean roseStacker;
     private final @Getter boolean wildStacker;
-
+    private final @Getter boolean guguSlimefunLib;
     private @Getter RoseStackerAPI roseStackerAPI;
     // region First Tick Only Registrations
     private @Getter boolean mcMMO;
     private @Getter boolean wildChests;
+
+    @Setter
+    private @Getter boolean justEnoughGuide;
 
     // endregion
 
@@ -42,13 +47,23 @@ public class SupportedPluginManager {
         }
 
         this.wildStacker = Bukkit.getPluginManager().isPluginEnabled("WildStacker");
+        this.guguSlimefunLib = Bukkit.getPluginManager().isPluginEnabled("GuguSlimefunLib");
+        this.justEnoughGuide = Bukkit.getPluginManager().isPluginEnabled("JustEnoughGuide");
+        if (this.justEnoughGuide) {
+            try {
+                Class.forName("com.balugaq.jeg.api.objects.events.GuideEvents");
+            } catch (ClassNotFoundException ignored) {
+                this.justEnoughGuide = false;
+            }
+        }
+
         Networks.getInstance()
                 .getServer()
                 .getScheduler()
                 .runTaskLater(Networks.getInstance(), this::firstTickRegistrations, 1);
     }
 
-    public static int getStackAmount(Item item) {
+    public static int getStackAmount(@NotNull Item item) {
         if (getInstance().isWildStacker()) {
             return WildStackerAPI.getItemAmount(item);
         } else if (getInstance().isRoseStacker()) {
@@ -59,7 +74,7 @@ public class SupportedPluginManager {
         }
     }
 
-    public static void setStackAmount(Item item, int amount) {
+    public static void setStackAmount(@NotNull Item item, int amount) {
         if (getInstance().isWildStacker()) {
             WildStackerAPI.getStackedItem(item).setStackAmount(amount, true);
         } else if (getInstance().isRoseStacker()) {

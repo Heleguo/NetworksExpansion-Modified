@@ -1,6 +1,6 @@
 package com.balugaq.netex.api.enums;
 
-import io.github.sefiraat.networks.Networks;
+import com.balugaq.netex.utils.Lang;
 import io.github.sefiraat.networks.utils.Keys;
 import lombok.Getter;
 import org.bukkit.Keyed;
@@ -55,22 +55,34 @@ public enum FeedbackType implements Keyed {
     PROTECTED_BLOCK,
     RESULT_IS_TOO_LARGE,
     SUCCESS,
-    WORKING;
+    WORKING,
+    NOT_ALLOWED_ITEM,
+    SOFT_CELL_BANNED,
 
-    private final NamespacedKey key;
-    private final String message;
+    TICKING,
+    TRANSFER_TICKING,
+    TRANSFER_TRY_PUSH_ITEM_WITH_COUNTER,
+    TRANSFER_TRY_PUSH_ITEM,
+    TRANSFER_TRY_GRAB_ITEM_WITH_COUNTER,
+    TRANSFER_TRY_GRAB_ITEM,
+    ROOT_REQUEST_0,
+    ROOT_LIMITING_ACCESS_OUTPUT,
+    ROOT_LIMITING_ACCESS_INPUT;
+
+    private final @NotNull NamespacedKey key;
+    private final @NotNull String message;
+
     FeedbackType() {
         this.key = Keys.newKey(name().toLowerCase());
-        this.message = Networks.getLocalizationService().getString("messages.feedback." + this.key.getKey());
+        this.message = Lang.getString("messages.feedback." + this.key.getKey());
     }
 
-    FeedbackType(String key) {
+    FeedbackType(@NotNull String key) {
         this.key = Keys.newKey(key);
-        this.message = Networks.getLocalizationService().getString("messages.feedback." + this.key.getKey());
+        this.message = Lang.getString("messages.feedback." + this.key.getKey());
     }
 
-    @NotNull
-    @Override
+    @NotNull @Override
     public NamespacedKey getKey() {
         return this.key;
     }

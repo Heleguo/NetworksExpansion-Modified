@@ -1,7 +1,12 @@
 package com.ytdd9527.networksexpansion.implementation.machines.cargo.transfer.line.basic;
 
 import com.balugaq.netex.api.enums.FeedbackType;
-import com.balugaq.netex.api.interfaces.Configurable;
+import com.balugaq.netex.api.enums.MinecraftVersion;
+import com.balugaq.netex.api.enums.TransferType;
+import com.balugaq.netex.api.factories.TransferConfigFactory;
+import com.balugaq.netex.api.interfaces.SoftCellBannable;
+import com.balugaq.netex.api.transfer.TransferConfiguration;
+import com.balugaq.netex.utils.Lang;
 import com.bgsoftware.wildchests.api.WildChestsAPI;
 import com.xzavier0722.mc.plugin.slimefun4.storage.util.StorageCacheUtils;
 import io.github.sefiraat.networks.NetworkStorage;
@@ -17,6 +22,10 @@ import io.github.thebusybiscuit.slimefun4.core.attributes.RecipeDisplayItem;
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -27,28 +36,23 @@ import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
-@SuppressWarnings("deprecation")
-public class LineTransferVanillaGrabber extends NetworkDirectional implements RecipeDisplayItem, Configurable {
+public class LineTransferVanillaGrabber extends NetworkDirectional implements RecipeDisplayItem, SoftCellBannable {
     private static final int DEFAULT_MAX_DISTANCE = 32;
     private static final int DEFAULT_GRAB_ITEM_TICK = 1;
-    private static final int[] BACKGROUND_SLOTS = new int[]{
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 24, 25, 26, 27, 28, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44
+    private static final int[] BACKGROUND_SLOTS = new int[] {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 20, 22, 23, 24, 25, 26, 27, 28, 30, 31, 33, 34, 35,
+        36, 37, 38, 39, 40, 41, 42, 43, 44
     };
     private static final int NORTH_SLOT = 11;
     private static final int SOUTH_SLOT = 29;
@@ -57,33 +61,26 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
     private static final int UP_SLOT = 14;
     private static final int DOWN_SLOT = 32;
 
-    private static int maxDistance;
-    private static int grabItemTick;
+    private static final TransferConfiguration config =
+            TransferConfigFactory.getTransferConfiguration(TransferType.LINE_TRANSFER_VANILLA_GRABBER);
+    private static final int maxDistance = config.maxDistance;
+    private static final int grabItemTick = config.defaultGrabTick;
     private final HashMap<Location, Integer> TICKER_MAP = new HashMap<>();
 
-    public LineTransferVanillaGrabber(ItemGroup itemGroup,
-                                      SlimefunItemStack item,
-                                      RecipeType recipeType,
-                                      ItemStack[] recipe
-    ) {
+    public LineTransferVanillaGrabber(
+            @NotNull ItemGroup itemGroup,
+            @NotNull SlimefunItemStack item,
+            @NotNull RecipeType recipeType,
+            ItemStack @NotNull [] recipe) {
         super(itemGroup, item, recipeType, recipe, NodeType.LINE_TRANSFER_VANILLA_GRABBER);
-        loadConfigurations();
-    }
-
-    public void loadConfigurations() {
-        String configKey = getId();
-        FileConfiguration config = Networks.getInstance().getConfig();
-
-        maxDistance = config.getInt("items." + configKey + ".max-distance", DEFAULT_MAX_DISTANCE);
-        grabItemTick = config.getInt("items." + configKey + ".grabitem-tick", DEFAULT_GRAB_ITEM_TICK);
     }
 
     @Override
-    protected void onTick(@Nullable BlockMenu blockMenu, @Nonnull Block block) {
+    protected void onTick(@Nullable BlockMenu blockMenu, @NotNull Block block) {
         super.onTick(blockMenu, block);
 
         if (blockMenu == null) {
-            sendFeedback(blockMenu.getLocation(), FeedbackType.INVALID_BLOCK);
+            sendFeedback(block.getLocation(), FeedbackType.INVALID_BLOCK);
             return;
         }
         final Location location = blockMenu.getLocation();
@@ -114,7 +111,8 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         TICKER_MAP.put(location, tickCounter);
     }
 
-    private void tryGrabItem(@Nonnull BlockMenu blockMenu) {
+    @SuppressWarnings("removal")
+    private void tryGrabItem(@NotNull BlockMenu blockMenu) {
         final NodeDefinition definition = NetworkStorage.getNode(blockMenu.getLocation());
 
         if (definition == null || definition.getNode() == null) {
@@ -123,6 +121,11 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         }
 
         final NetworkRoot root = definition.getNode().getRoot();
+        //remove cell ban
+//        if (checkSoftCellBan(blockMenu.getLocation(), root)) {
+//            return;
+//        }
+
         final BlockFace direction = getCurrentDirection(blockMenu);
 
         // Fix for early vanilla pusher release
@@ -139,7 +142,8 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         Block targetBlock = block.getRelative(direction);
         for (int d = 0; d <= maxDistance; d++) {
             try {
-                if (!Slimefun.getProtectionManager().hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
+                if (!Slimefun.getProtectionManager()
+                        .hasPermission(offlinePlayer, targetBlock, Interaction.INTERACT_BLOCK)) {
                     sendFeedback(blockMenu.getLocation(), FeedbackType.NO_PERMISSION);
                     break;
                 }
@@ -179,9 +183,17 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
                     final ItemStack stack = brewerInventory.getContents()[i];
                     if (stack != null && stack.getType() == Material.POTION) {
                         final PotionMeta potionMeta = (PotionMeta) stack.getItemMeta();
-                        if (potionMeta.getBasePotionData().getType() != PotionType.WATER) {
-                            grabItem(root, blockMenu, stack);
-                            break;
+                        if (Networks.getInstance().getMCVersion().isAtLeast(MinecraftVersion.MC1_20_5)) {
+                            if (potionMeta.getBasePotionType() != PotionType.WATER) {
+                                grabItem(root, blockMenu, stack);
+                                break;
+                            }
+                        } else {
+                            PotionData bpd = potionMeta.getBasePotionData();
+                            if (bpd != null && bpd.getType() != PotionType.WATER) {
+                                grabItem(root, blockMenu, stack);
+                                break;
+                            }
                         }
                     }
                 }
@@ -197,7 +209,7 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         sendFeedback(blockMenu.getLocation(), FeedbackType.WORKING);
     }
 
-    private boolean grabItem(@Nonnull NetworkRoot root, @Nonnull BlockMenu blockMenu, @Nullable ItemStack stack) {
+    private boolean grabItem(@NotNull NetworkRoot root, @NotNull BlockMenu blockMenu, @Nullable ItemStack stack) {
         if (stack != null && stack.getType() != Material.AIR) {
             root.addItemStack(stack);
             return true;
@@ -206,9 +218,8 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
         }
     }
 
-    @Nonnull
     @Override
-    protected int[] getBackgroundSlots() {
+    protected int @NotNull [] getBackgroundSlots() {
         return BACKGROUND_SLOTS;
     }
 
@@ -248,18 +259,18 @@ public class LineTransferVanillaGrabber extends NetworkDirectional implements Re
     }
 
     @Override
-    protected Particle.DustOptions getDustOptions() {
+    protected Particle.@NotNull DustOptions getDustOptions() {
         return new Particle.DustOptions(Color.MAROON, 1);
     }
 
-    public List<ItemStack> getDisplayRecipes() {
+    public @NotNull List<ItemStack> getDisplayRecipes() {
         List<ItemStack> displayRecipes = new ArrayList<>(6);
-        displayRecipes.add(new CustomItemStack(Material.BOOK,
-                Networks.getLocalizationService().getString("icons.mechanism.transfers.data_title"),
+        displayRecipes.add(new CustomItemStack(
+                Material.BOOK,
+                Lang.getString("icons.mechanism.transfers.data_title"),
                 "",
-                String.format(Networks.getLocalizationService().getString("icons.mechanism.transfers.max_distance"), maxDistance),
-                String.format(Networks.getLocalizationService().getString("icons.mechanism.transfers.grab_item_tick"), grabItemTick)
-        ));
+                String.format(Lang.getString("icons.mechanism.transfers.max_distance"), maxDistance),
+                String.format(Lang.getString("icons.mechanism.transfers.grab_item_tick"), grabItemTick)));
         return displayRecipes;
     }
 }
