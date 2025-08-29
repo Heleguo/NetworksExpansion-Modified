@@ -256,9 +256,9 @@
         </dependency>
         <!-- Matlib Library -->
         <dependency>
-            <groupId>com.github.m1919810</groupId>
+            <groupId>com.github.Heleguo</groupId>
             <artifactId>matlib</artifactId>
-            <version>327725e</version>
+            <version>887de1d</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

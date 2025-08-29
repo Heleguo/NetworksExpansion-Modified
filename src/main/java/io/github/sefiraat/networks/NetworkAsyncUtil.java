@@ -160,6 +160,9 @@ public class NetworkAsyncUtil implements Manager {
     public Semaphore getParallelTaskLock(Location loc){
         return parallelTaskLock.computeIfAbsent(loc, (k)->new Semaphore(1));
     }
+    public boolean isAutoDisable() {
+        return false;
+    }
     private static final AtomicInteger taskCounter = new AtomicInteger(0);
 //    public Future<Void> submitParallel(Runnable... runnables){
 //        return null;
