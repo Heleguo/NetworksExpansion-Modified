@@ -15,7 +15,7 @@ import lombok.experimental.UtilityClass;
 import me.matl114.matlib.nmsMirror.impl.CraftBukkit;
 import me.matl114.matlib.nmsMirror.impl.NMSCore;
 import me.matl114.matlib.nmsMirror.impl.NMSItem;
-import me.matl114.matlib.nmsMirror.inventory.v1_20_R4.ItemStackHelper_1_20_R4;
+import me.matl114.matlib.nmsMirror.inventory.ItemStackHelper;
 import me.matl114.matlib.nmsUtils.ItemUtils;
 import me.matl114.matlib.utils.CraftUtils;
 import me.matl114.matlib.utils.version.Version;
@@ -172,7 +172,7 @@ public class StackUtils {
     public static boolean itemsMatchCore(@Nullable ItemStack cache, @Nullable ItemStack cache2, boolean checkLore){
         return ItemUtils.matchItemStack(cache, cache2, checkLore);
     }
-    private static final boolean VERSION_AT_1_20_R4 = NMSItem.ITEMSTACK instanceof ItemStackHelper_1_20_R4;
+    private static final boolean VERSION_AT_1_20_R4 = NMSItem.ITEMSTACK instanceof ItemStackHelper;
     public static boolean itemsMatchCore(@Nullable ItemStack cache, @Nullable ItemStack cache2, boolean checkLore, boolean checkAmount, boolean checkCustomModelId) {
         // Null check
 //        if (cache.getItemStack() == null || cache2.getItemStack()== null) {
